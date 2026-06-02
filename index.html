@@ -193,6 +193,22 @@ tr:hover td{background:#fafcff}
 .deadline-wrap .form-control{flex:1}
 .deadline-clear{font-size:11px;color:var(--color-text3);cursor:pointer;background:none;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:4px 10px;flex-shrink:0;white-space:nowrap}
 .deadline-clear:hover{background:var(--color-bg);color:var(--color-danger);border-color:var(--color-danger)}
+/* Filter bar */
+.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:2px;padding:10px 12px;background:var(--color-bg);border-radius:var(--radius-sm);font-size:12px}
+.filter-bar select,.filter-bar input{font-size:12px;padding:4px 6px;border:1px solid var(--color-border);border-radius:4px;color:var(--color-text);background:#fff;min-width:70px}
+.filter-bar .filter-tag{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:99px;font-size:11px;background:var(--color-primary-light);color:var(--color-primary);cursor:pointer}
+.filter-bar .filter-tag.active{background:var(--color-primary);color:#fff}
+.filter-bar .filter-clear{font-size:11px;color:var(--color-text3);cursor:pointer;background:none;border:none;padding:2px 4px}
+.filter-bar .filter-clear:hover{color:var(--color-danger)}
+/* Export dropdown */
+.export-wrap{position:relative}
+.export-dropdown{position:absolute;right:0;top:100%;z-index:30;background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-sm);box-shadow:var(--shadow-md);min-width:130px;display:none;margin-top:2px}
+.export-dropdown.open{display:block}
+.export-dropdown button{display:block;width:100%;padding:8px 14px;text-align:left;font-size:12.5px;color:var(--color-text);background:none;border:none;cursor:pointer;white-space:nowrap}
+.export-dropdown button:hover{background:var(--color-bg)}
+/* Dashboard clickable metric */
+.metric-clickable{cursor:pointer;transition:all .15s}
+.metric-clickable:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.1)}
 
 .subtask-input:focus{border-color:var(--color-primary);outline:none}
 /* Multi-select dropdown */
@@ -430,9 +446,23 @@ tr:hover td{background:#fafcff}
           <div class="chart-wrap"><canvas id="contractChart" role="img" aria-label="合同金额分布饼图">合同分布图</canvas></div>
         </div>
       </div>
+      <div class="grid-2" style="margin-top:16px">
+        <div class="card">
+          <div class="card-header"><span class="card-title">⭐ 重点工作</span><button class="btn btn-sm btn-outline" onclick="navigate('todo');setTimeout(()=>switchTodoTab('key'),100)">查看全部</button></div>
+          <div id="dashKeyTodo"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">🔄 周期工作</span><button class="btn btn-sm btn-outline" onclick="navigate('todo');setTimeout(()=>switchTodoTab('recurring'),100)">查看全部</button></div>
+          <div id="dashRecurringTodo"></div>
+        </div>
+      </div>
       <div class="card" style="margin-top:16px">
         <div class="card-header"><span class="card-title">最近任务</span><button class="btn btn-sm btn-outline" onclick="navigate('todo',document.querySelector('.nav-item:nth-child(2)'))">查看全部</button></div>
         <div id="dashRecentTodo"></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-header"><span class="card-title">✅ 已完成工作</span><button class="btn btn-sm btn-outline" onclick="navigate('todo');setTimeout(()=>switchTodoTab('record'),100)">查看全部</button></div>
+        <div id="dashDoneTodo"></div>
       </div>
       <div class="card" style="margin-top:16px;display:none" id="dashReminderCard">
         <div class="card-header"><span class="card-title">⏰ 截止提醒</span><button class="btn btn-sm btn-outline" onclick="navigate('todo',document.querySelector('.nav-item:nth-child(2)'))">查看详情</button></div>
@@ -450,6 +480,25 @@ tr:hover td{background:#fafcff}
           <button class="todo-tab" data-tab="record" onclick="switchTodoTab('record')">记录<span class="tab-count" id="tabCount-record">0</span></button>
         </div>
         <button class="btn btn-primary btn-sm" onclick="openModal('todoModal')">+ 新建工作</button>
+      </div>
+      <div class="filter-bar" id="todoFilterBar">
+        <span style="color:var(--color-text3);flex-shrink:0">筛选:</span>
+        <select id="filterYear" onchange="renderTodo()"><option value="">全部年份</option></select>
+        <select id="filterMonth" onchange="renderTodo()"><option value="">全部月份</option></select>
+        <select id="filterDay" onchange="renderTodo()" style="min-width:60px"><option value="">全部日期</option></select>
+        <span style="color:var(--color-text3);margin:0 2px">|</span>
+        <span id="filterCatTags"></span>
+        <span style="color:var(--color-text3);margin:0 2px">|</span>
+        <span id="filterSrcTags"></span>
+        <button class="filter-clear" onclick="clearTodoFilters()" title="清除筛选">✕ 清空</button>
+        <div style="margin-left:auto" class="export-wrap">
+          <button class="btn btn-sm btn-outline" onclick="document.getElementById('exportDropdown').classList.toggle('open');event.stopPropagation()">📥 导出 ▾</button>
+          <div class="export-dropdown" id="exportDropdown">
+            <button onclick="exportTodos('all');document.getElementById('exportDropdown').classList.remove('open')">导出全部数据</button>
+            <button onclick="exportTodos('current');document.getElementById('exportDropdown').classList.remove('open')">导出当前筛选结果</button>
+            <button onclick="exportTodos('page');document.getElementById('exportDropdown').classList.remove('open')">导出当前页面</button>
+          </div>
+        </div>
       </div>
       <div id="reminderBanner" style="display:none"></div>
       <div class="todo-tab-content" id="todoTabContent"></div>
@@ -1132,15 +1181,17 @@ function renderDashboard(){
   const expenses=DB.get('expenses');
 
   const pendingTodo=todos.filter(t=>t.type==='pending').length;
+  const keyTodo=todos.filter(t=>t.type==='key').length;
+  const recurringTodo=todos.filter(t=>t.type==='recurring').length;
   const doneTodo=todos.filter(t=>t.type==='record').length;
   const contractSum=contracts.reduce((s,c)=>s+(+c.amount||0),0);
   const expSum=expenses.filter(e=>e.status==='已报销').reduce((s,e)=>s+(+e.amount||0),0);
 
   document.getElementById('dashMetrics').innerHTML=`
-    <div class="metric"><div class="metric-label">待办工作</div><div class="metric-value" style="color:var(--color-primary)">${pendingTodo}</div><div class="metric-sub">已完成 ${doneTodo} 项</div></div>
-    <div class="metric"><div class="metric-label">合同总数</div><div class="metric-value">${contracts.length}</div><div class="metric-sub">金额 ¥${fmt(contractSum)}</div></div>
-    <div class="metric"><div class="metric-label">采购记录</div><div class="metric-value">${purchases.length}</div><div class="metric-sub">申请中 ${purchases.filter(p=>p.status==='申请中').length} 项</div></div>
-    <div class="metric"><div class="metric-label">已报销金额</div><div class="metric-value" style="color:var(--color-teal)">¥${fmt(expSum)}</div><div class="metric-sub">本月报销记录 ${expenses.filter(e=>{const m=new Date().toISOString().slice(0,7);return(e.date||'').startsWith(m)}).length} 项</div></div>
+    <div class="metric metric-clickable" onclick="navigate('todo');setTimeout(()=>switchTodoTab('pending'),100)"><div class="metric-label">待办工作</div><div class="metric-value" style="color:var(--color-primary)">${pendingTodo}</div><div class="metric-sub">点击查看详情</div></div>
+    <div class="metric metric-clickable" onclick="navigate('todo');setTimeout(()=>switchTodoTab('key'),100)"><div class="metric-label">⭐ 重点工作</div><div class="metric-value" style="color:var(--color-purple)">${keyTodo}</div><div class="metric-sub">点击查看详情</div></div>
+    <div class="metric metric-clickable" onclick="navigate('todo');setTimeout(()=>switchTodoTab('recurring'),100)"><div class="metric-label">🔄 周期工作</div><div class="metric-value" style="color:var(--color-teal)">${recurringTodo}</div><div class="metric-sub">点击查看详情</div></div>
+    <div class="metric metric-clickable" onclick="navigate('todo');setTimeout(()=>switchTodoTab('record'),100)"><div class="metric-label">✅ 已完成</div><div class="metric-value" style="color:var(--color-success)">${doneTodo}</div><div class="metric-sub">点击查看详情</div></div>
   `;
 
   // Todo trend chart (last 7 days completions)
@@ -1172,12 +1223,42 @@ function renderDashboard(){
   // Recent pending todos
   const recent=todos.filter(t=>t.type==='pending').slice(0,5);
   document.getElementById('dashRecentTodo').innerHTML=recent.length?
-    recent.map(t=>`<div class="todo-item">
+    recent.map(t=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('todo');setTimeout(()=>switchTodoTab('pending'),100)">
       <div class="priority-dot" style="background:${PRIORITY_COLOR[t.priority]||PRIORITY_COLOR['mid']}"></div>
       <div class="todo-text">${esc(t.name)}</div>
       ${t.deadline?`<span class="badge badge-gray" style="font-size:11px;flex-shrink:0">${t.deadline}</span>`:''}
     </div>`).join(''):
     '<div class="empty-state" style="padding:20px"><p>暂无待办工作</p></div>';
+
+  // Key todos
+  const keyItems=todos.filter(t=>t.type==='key').slice(0,4);
+  document.getElementById('dashKeyTodo').innerHTML=keyItems.length?
+    keyItems.map(t=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('todo');setTimeout(()=>switchTodoTab('key'),100)">
+      <div class="priority-dot" style="background:${PRIORITY_COLOR[t.priority]||PRIORITY_COLOR['mid']}"></div>
+      <div class="todo-text">${esc(t.name)}</div>
+      ${t.deadline?`<span class="badge" style="font-size:10px;flex-shrink:0;background:#f3e8ff;color:#7c3aed">${t.deadline}</span>`:''}
+    </div>`).join(''):
+    '<div class="empty-state" style="padding:20px"><p>暂无重点工作</p></div>';
+
+  // Recurring todos
+  const recItems=todos.filter(t=>t.type==='recurring').slice(0,4);
+  document.getElementById('dashRecurringTodo').innerHTML=recItems.length?
+    recItems.map(t=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('todo');setTimeout(()=>switchTodoTab('recurring'),100)">
+      <div class="priority-dot" style="background:${PRIORITY_COLOR[t.priority]||PRIORITY_COLOR['mid']}"></div>
+      <div class="todo-text">${esc(t.name)}</div>
+      ${t.deadline?`<span class="badge" style="font-size:10px;flex-shrink:0;background:#ccfbf1;color:#0f766e">${t.deadline}</span>`:''}
+    </div>`).join(''):
+    '<div class="empty-state" style="padding:20px"><p>暂无周期工作</p></div>';
+
+  // Done todos
+  const doneItems=todos.filter(t=>t.type==='record').slice(0,5);
+  document.getElementById('dashDoneTodo').innerHTML=doneItems.length?
+    doneItems.map(t=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('todo');setTimeout(()=>switchTodoTab('record'),100)">
+      <div class="priority-dot" style="background:${PRIORITY_COLOR[t.priority]||PRIORITY_COLOR['mid']}"></div>
+      <div class="todo-text">${esc(t.name)}</div>
+      ${t.completeDate?`<span class="badge" style="font-size:10px;flex-shrink:0;background:#dcfce7;color:#166534">✓ ${t.completeDate}</span>`:''}
+    </div>`).join(''):
+    '<div class="empty-state" style="padding:20px"><p>暂无已完成工作</p></div>';
   // Deadline reminders on dashboard
   const dashReminders=checkDeadlineReminders().slice(0,4);
   const rCard=document.getElementById('dashReminderCard');
@@ -1230,9 +1311,36 @@ function renderTodo(){
   const badge=document.getElementById('todoCount');
   if(pendingCount>0){badge.style.display='';badge.textContent=pendingCount}else{badge.style.display='none'}
 
-  const filtered=todos.filter(t=>t.type===activeTodoTab);
+  let filtered=todos.filter(t=>t.type===activeTodoTab);
+  // Apply filters
+  const fy=document.getElementById('filterYear')?.value||'';
+  const fm=document.getElementById('filterMonth')?.value||'';
+  const fd=document.getElementById('filterDay')?.value||'';
+  const fcats=getActiveFilterTags('filterCatTags');
+  const fsrcs=getActiveFilterTags('filterSrcTags');
+  if(fy) filtered=filtered.filter(t=>(t.issueDate||t.createdAt||t.completeDate||'').startsWith(fy));
+  if(fm){
+    const mkey=fy?fy+'-'+fm:'-'+fm;
+    filtered=filtered.filter(t=>{
+      const d=t.issueDate||t.createdAt||t.completeDate||'';
+      return d.startsWith(mkey);
+    });
+  }
+  if(fd){
+    filtered=filtered.filter(t=>{
+      const d=t.issueDate||t.createdAt||t.completeDate||'';
+      const dkey=fy&&fm?fy+'-'+fm+'-'+fd:(fy?fy+'-':fm?fm+'-':'')+fd;
+      return d.includes(fd);
+    });
+  }
+  if(fcats.length) filtered=filtered.filter(t=>fcats.some(c=>(t.category||[]).includes(c)));
+  if(fsrcs.length) filtered=filtered.filter(t=>fsrcs.some(s=>(t.source||[]).includes(s)));
+
+  initTodoFilters(todos);
+
   if(!filtered.length){
-    document.getElementById('todoTabContent').innerHTML='<div class="empty-state"><p>暂无'+TYPE_LABELS[activeTodoTab]+'记录</p></div>';
+    document.getElementById('todoTabContent').innerHTML='<div class="empty-state"><p>暂无符合筛选的'+TYPE_LABELS[activeTodoTab]+'记录</p></div>';
+    renderReminders();
     return;
   }
 
@@ -1516,6 +1624,165 @@ function deleteTodo(id){
 document.getElementById('todoModal').addEventListener('click',function(e){if(e.target===this)closeModal('todoModal')});
 
 // ============================================================
+//  TODO FILTERS & EXPORT
+// ============================================================
+function initTodoFilters(todos){
+  // Populate year/month/day dropdowns
+  const dates=[];const cats=[];const srcs=[];
+  todos.forEach(t=>{
+    const d=t.issueDate||t.createdAt||t.completeDate||'';
+    if(d)dates.push(d.slice(0,7)); // YYYY-MM
+    (t.category||[]).forEach(c=>{if(c&&!cats.includes(c))cats.push(c)});
+    (t.source||[]).forEach(s=>{if(s&&!srcs.includes(s))srcs.push(s)});
+  });
+  // Year options
+  const years=[...new Set(dates.map(d=>d.slice(0,4)))].sort().reverse();
+  const fySel=document.getElementById('filterYear');
+  if(fySel&&fySel.options.length<=1){
+    const sy=fySel.value;
+    fySel.innerHTML='<option value="">全部年份</option>'+years.map(y=>`<option value="${y}" ${y===sy?'selected':''}>${y}年</option>`).join('');
+  }
+  // Month options
+  const fmSel=document.getElementById('filterMonth');
+  const months=[...new Set(dates.map(d=>d.slice(5,7)))].sort();
+  if(fmSel&&fmSel.options.length<=1){
+    const sm=fmSel.value;
+    fmSel.innerHTML='<option value="">全部月份</option>'+months.map(m=>`<option value="${m}" ${m===sm?'selected':''}>${m}月</option>`).join('');
+  }
+  // Day options (1-31)
+  const fdSel=document.getElementById('filterDay');
+  if(fdSel&&fdSel.options.length<=1){
+    const sd=fdSel.value;
+    fdSel.innerHTML='<option value="">全部日期</option>';
+    for(let i=1;i<=31;i++){const s=String(i).padStart(2,'0');fdSel.innerHTML+=`<option value="${s}" ${s===sd?'selected':''}>${i}日</option>`;}
+  }
+  // Category tags
+  renderFilterTags('filterCatTags',cats,'cat');
+  // Source tags
+  renderFilterTags('filterSrcTags',srcs,'src');
+}
+
+function renderFilterTags(containerId,items,prefix){
+  const container=document.getElementById(containerId);
+  if(!container)return;
+  const active=getActiveFilterTags(containerId);
+  let html='';
+  items.forEach(v=>{
+    html+=`<span class="filter-tag ${active.includes(v)?'active':''}" data-key="${prefix}-${v}" onclick="toggleFilterTag('${containerId}','${v}');renderTodo()">${v}</span>`;
+  });
+  container.innerHTML=html;
+}
+
+function getActiveFilterTags(containerId){
+  const container=document.getElementById(containerId);
+  if(!container||!container.dataset.active)return [];
+  return container.dataset.active.split('||').filter(Boolean);
+}
+
+function toggleFilterTag(containerId,value){
+  const container=document.getElementById(containerId);
+  let active=getActiveFilterTags(containerId);
+  const idx=active.indexOf(value);
+  if(idx>-1)active.splice(idx,1);else active.push(value);
+  container.dataset.active=active.join('||');
+}
+
+function clearTodoFilters(){
+  ['filterYear','filterMonth','filterDay'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  ['filterCatTags','filterSrcTags'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.dataset.active='';
+  });
+  renderTodo();
+}
+
+function getVisibleTodos(){
+  // Returns currently displayed (filtered) todos
+  const todos=DB.get('todos');
+  let filtered=todos.filter(t=>t.type===activeTodoTab);
+  const fy=document.getElementById('filterYear')?.value||'';
+  const fm=document.getElementById('filterMonth')?.value||'';
+  const fd=document.getElementById('filterDay')?.value||'';
+  const fcats=getActiveFilterTags('filterCatTags');
+  const fsrcs=getActiveFilterTags('filterSrcTags');
+  if(fy) filtered=filtered.filter(t=>(t.issueDate||t.createdAt||t.completeDate||'').startsWith(fy));
+  if(fm) filtered=filtered.filter(t=>(t.issueDate||t.createdAt||t.completeDate||'').slice(5,7)===fm);
+  if(fd) filtered=filtered.filter(t=>(t.issueDate||t.createdAt||t.completeDate||'').includes(fd));
+  if(fcats.length) filtered=filtered.filter(t=>fcats.some(c=>(t.category||[]).includes(c)));
+  if(fsrcs.length) filtered=filtered.filter(t=>fsrcs.some(s=>(t.source||[]).includes(s)));
+  return filtered;
+}
+
+function exportTodos(mode){
+  let data;
+  if(mode==='all'){
+    data=DB.get('todos');
+  }else if(mode==='current'){
+    // Export with current filters applied
+    const todos=DB.get('todos');
+    let filtered=todos;
+    const fy=document.getElementById('filterYear')?.value||'';
+    const fm=document.getElementById('filterMonth')?.value||'';
+    const fd=document.getElementById('filterDay')?.value||'';
+    const fcats=getActiveFilterTags('filterCatTags');
+    const fsrcs=getActiveFilterTags('filterSrcTags');
+    if(fy||fm||fd||fcats.length||fsrcs.length){
+      filtered=todos.filter(t=>{
+        if(fy&&!(t.issueDate||t.createdAt||t.completeDate||'').startsWith(fy))return false;
+        if(fm&&(t.issueDate||t.createdAt||t.completeDate||'').slice(5,7)!==fm)return false;
+        if(fd&&!(t.issueDate||t.createdAt||t.completeDate||'').includes(fd))return false;
+        if(fcats.length&&!fcats.some(c=>(t.category||[]).includes(c)))return false;
+        if(fsrcs.length&&!fsrcs.some(s=>(t.source||[]).includes(s)))return false;
+        return true;
+      });
+    }
+    data=filtered;
+  }else{
+    // Export current page tab
+    data=getVisibleTodos();
+  }
+  if(!data||!data.length){toast('没有可导出的数据');return;}
+  // Build CSV
+  const headers=['类型','名称','优先级','类别','来源','下发日期','截止日期','完成日期','状态','堵点','内容','子任务'];
+  const rows=[headers.join(',')];
+  data.forEach(t=>{
+    const typeName=TYPE_LABELS[t.type]||t.type||'';
+    rows.push([
+      csvEscape(typeName),
+      csvEscape(t.name||''),
+      t.priority||'',
+      csvEscape((t.category||[]).join(';')),
+      csvEscape((t.source||[]).join(';')),
+      t.issueDate||'',
+      t.deadline||'',
+      t.completeDate||'',
+      t.status||'',
+      csvEscape(t.blocker||''),
+      csvEscape(t.content||''),
+      csvEscape((t.subtasks||[]).map(s=>(s.done?'✓':'☐')+' '+s.text).join('; '))
+    ].join(','));
+  });
+  const csv='\uFEFF'+rows.join('\n'); // BOM for Excel
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const now=new Date().toISOString().slice(0,10);
+  a.href=url;a.download=`工作记录_${mode}_${now}.csv`;
+  a.click();URL.revokeObjectURL(url);
+  toast(`已导出 ${data.length} 条记录`);
+}
+
+function csvEscape(str){
+  if(!str)return '';
+  str=String(str);
+  if(str.includes(',')||str.includes('"')||str.includes('\n')){
+    return '"'+str.replace(/"/g,'""')+'"';
+  }
+  return str;
+}
+
+// ============================================================
 //  MULTI-SELECT
 // ============================================================
 const OPTIONS_STORE={};
@@ -1609,6 +1876,9 @@ function toggleMultiSelect(id){
 document.addEventListener('click',function(e){
   if(!e.target.closest('.multi-select')&&!e.target.closest('.multi-dropdown')){
     document.querySelectorAll('.multi-dropdown.open').forEach(d=>d.classList.remove('open'));
+  }
+  if(!e.target.closest('.export-wrap')){
+    document.querySelectorAll('.export-dropdown.open').forEach(d=>d.classList.remove('open'));
   }
 });
 
