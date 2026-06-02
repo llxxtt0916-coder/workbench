@@ -2695,10 +2695,10 @@ function parseInvoiceText(text){
 
   // 类型推断
   const t=text.toLowerCase();
-  if(t.match(/餐|饮|食|饭店|餐厅|食堂|外卖|ctober|restaurant|dinner|lunch'))info.type='餐饮';
-  else if(t.match(/酒店|住宿|宾馆|入住|退房|hotel|accommodation|lodging'))info.type='住宿';
-  else if(t.match(/打车|出租|滴滴|地铁|公交|火车|高铁|机票|uber|携程|滴滴出行|transport|taxi|metro|train|flight'))info.type='交通';
-  else if(t.match(/办公|文具|用品|打印|耗材|office|stationery|supplies'))info.type='办公用品';
+  if(t.match(/餐|饮|食|饭店|餐厅|食堂|外卖|ctober|restaurant|dinner|lunch/))info.type='餐饮';
+  else if(t.match(/酒店|住宿|宾馆|入住|退房|hotel|accommodation|lodging/))info.type='住宿';
+  else if(t.match(/打车|出租|滴滴|地铁|公交|火车|高铁|机票|uber|携程|滴滴出行|transport|taxi|metro|train|flight/))info.type='交通';
+  else if(t.match(/办公|文具|用品|打印|耗材|office|stationery|supplies/))info.type='办公用品';
   else info.type='其他';
 
   // 报销事项：优先取发票标题/货物名称第一行有意义的内容
