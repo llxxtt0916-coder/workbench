@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ffffff">
+<title>我的工作台</title>
+<link rel="manifest" href="manifest.json">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --nav-w:220px;
+  --color-bg:#f7f8fa;
+  --color-surface:#ffffff;
+  --color-border:#e8eaed;
+  --color-primary:#3b6bde;
+  --color-primary-light:#eef2fc;
+  --color-text:#1a1a2e;
+  --color-text2:#6b7280;
+  --color-text3:#9ca3af;
+  --color-danger:#e24b4a;
+  --color-success:#22c55e;
+  --color-warning:#f59e0b;
+  --color-purple:#7c3aed;
+  --color-teal:#0f766e;
+  --radius:10px;
+  --radius-sm:6px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,.10);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB',sans-serif;background:var(--color-bg);color:var(--color-text);min-height:100vh;overflow-x:hidden}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer;border:none;background:none;font-family:inherit}
+input,textarea,select{font-family:inherit;outline:none}
+
+/* ===== LAYOUT ===== */
+.app{display:flex;min-height:100vh}
+.sidebar{width:var(--nav-w);background:var(--color-surface);border-right:1px solid var(--color-border);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100;transition:transform .25s ease}
+.main{margin-left:var(--nav-w);flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{height:56px;background:var(--color-surface);border-bottom:1px solid var(--color-border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:50}
+.page-content{padding:24px;flex:1;max-width:1100px;width:100%}
+
+/* ===== SIDEBAR ===== */
+.logo{padding:20px 16px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--color-border)}
+.logo-icon{width:32px;height:32px;border-radius:8px;background:var(--color-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-text{font-size:15px;font-weight:600;color:var(--color-text)}
+.nav-section{padding:8px 8px 4px;font-size:11px;color:var(--color-text3);font-weight:500;letter-spacing:.5px;text-transform:uppercase;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);margin:1px 8px;cursor:pointer;font-size:13.5px;color:var(--color-text2);transition:all .15s;position:relative}
+.nav-item:hover{background:var(--color-bg);color:var(--color-text)}
+.nav-item.active{background:var(--color-primary-light);color:var(--color-primary);font-weight:500}
+.nav-item .nav-icon{width:18px;height:18px;flex-shrink:0;opacity:.7}
+.nav-item.active .nav-icon{opacity:1}
+.nav-badge{background:var(--color-danger);color:#fff;font-size:10px;border-radius:99px;padding:1px 5px;margin-left:auto}
+.sidebar-footer{padding:12px 8px;border-top:1px solid var(--color-border);margin-top:auto;font-size:12px;color:var(--color-text3);text-align:center}
+
+/* ===== TOPBAR ===== */
+.menu-btn{display:none;width:36px;height:36px;border-radius:var(--radius-sm);align-items:center;justify-content:center;color:var(--color-text2);font-size:18px}
+.page-title{font-size:16px;font-weight:600;color:var(--color-text)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--color-primary);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;cursor:pointer}
+
+/* ===== CARDS ===== */
+.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.card-sm{padding:14px 16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:14px;font-weight:600;color:var(--color-text)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+/* ===== METRIC CARD ===== */
+.metric{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.metric-label{font-size:12px;color:var(--color-text2);margin-bottom:6px}
+.metric-value{font-size:26px;font-weight:600;color:var(--color-text);line-height:1}
+.metric-sub{font-size:11px;color:var(--color-text3);margin-top:4px}
+
+/* ===== BUTTONS ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;transition:all .15s;cursor:pointer;border:1px solid transparent}
+.btn-primary{background:var(--color-primary);color:#fff}
+.btn-primary:hover{background:#2d58c8}
+.btn-outline{background:transparent;border-color:var(--color-border);color:var(--color-text2)}
+.btn-outline:hover{background:var(--color-bg);border-color:#c0c5ce}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:5px}
+.btn-ghost{background:transparent;color:var(--color-text2)}
+.btn-ghost:hover{background:var(--color-bg)}
+.btn-danger{background:#fef2f2;color:var(--color-danger);border-color:#fecaca}
+.btn-danger:hover{background:#fee2e2}
+
+/* ===== FORM ===== */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:12px;font-weight:500;color:var(--color-text2);margin-bottom:5px}
+.form-control{width:100%;padding:8px 12px;border:1px solid var(--color-border);border-radius:var(--radius-sm);font-size:13.5px;color:var(--color-text);background:var(--color-surface);transition:border .15s}
+.form-control:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px rgba(59,107,222,.1)}
+textarea.form-control{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ===== MODAL ===== */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--color-surface);border-radius:var(--radius);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-md)}
+.modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--color-border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:15px;font-weight:600}
+.modal-body{padding:20px}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--color-border);display:flex;justify-content:flex-end;gap:8px}
+.close-btn{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--color-text3);font-size:18px}
+.close-btn:hover{background:var(--color-bg);color:var(--color-text)}
+
+/* ===== TABLE ===== */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-size:11.5px;font-weight:600;color:var(--color-text2);background:#fafafa;border-bottom:1px solid var(--color-border);white-space:nowrap}
+td{padding:11px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafcff}
+
+/* ===== BADGE ===== */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500}
+.badge-blue{background:#eff6ff;color:#1d4ed8}
+.badge-green{background:#f0fdf4;color:#15803d}
+.badge-red{background:#fef2f2;color:#b91c1c}
+.badge-yellow{background:#fffbeb;color:#b45309}
+.badge-purple{background:#f5f3ff;color:#6d28d9}
+.badge-gray{background:#f3f4f6;color:#374151}
+.badge-teal{background:#f0fdfa;color:#0f766e}
+
+/* ===== TAGS ===== */
+.tag-input-wrap{display:flex;flex-wrap:wrap;gap:6px;padding:6px;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);min-height:38px;align-items:center}
+.tag-chip{display:inline-flex;align-items:center;gap:4px;background:var(--color-primary-light);color:var(--color-primary);padding:2px 8px;border-radius:99px;font-size:12px}
+.tag-chip .rm{cursor:pointer;opacity:.6;font-size:14px;line-height:1}
+.tag-chip .rm:hover{opacity:1}
+.tag-filter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tag-pill{padding:4px 12px;border-radius:99px;font-size:12px;cursor:pointer;border:1px solid var(--color-border);background:transparent;color:var(--color-text2);transition:all .15s}
+.tag-pill:hover,.tag-pill.active{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
+
+/* ===== TODO ===== */
+.todo-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);transition:background .1s}
+.todo-item:hover{background:#fafcff}
+.todo-item.done .todo-text{text-decoration:line-through;color:var(--color-text3)}
+.todo-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--color-border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all .15s}
+.todo-check.checked{background:var(--color-primary);border-color:var(--color-primary)}
+.todo-text{font-size:13.5px;line-height:1.5;flex:1}
+.todo-meta{font-size:11px;color:var(--color-text3);margin-top:2px}
+.todo-actions{display:none;gap:4px}
+.todo-item:hover .todo-actions{display:flex}
+.priority-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:6px}
+.p-high{background:var(--color-danger)}
+.p-mid{background:var(--color-warning)}
+.p-low{background:var(--color-success)}
+
+/* ===== INSPIRATION CARD ===== */
+.insp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.insp-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .15s,transform .1s}
+.insp-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.insp-card-title{font-size:13.5px;font-weight:500;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.insp-card-body{font-size:12.5px;color:var(--color-text2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.insp-card-footer{margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.insp-tags{display:flex;flex-wrap:wrap;gap:4px}
+
+/* ===== SEARCH BAR ===== */
+.search-wrap{position:relative;flex:1;max-width:320px}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none}
+.search-input{width:100%;padding:7px 10px 7px 32px;border:1px solid var(--color-border);border-radius:var(--radius-sm);font-size:13px;color:var(--color-text);background:var(--color-bg)}
+.search-input:focus{border-color:var(--color-primary);background:#fff}
+
+/* ===== STATUS/PROGRESS ===== */
+.progress-bar{height:4px;border-radius:2px;background:#e5e7eb;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;background:var(--color-primary);transition:width .4s}
+
+/* ===== MOBILE NAV OVERLAY ===== */
+.nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:99}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .nav-overlay.open{display:block}
+  .main{margin-left:0}
+  .menu-btn{display:flex}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+  .page-content{padding:14px}
+  .form-row{grid-template-columns:1fr}
+  .topbar{padding:0 14px}
+  .grid-2.dash-metrics{grid-template-columns:1fr 1fr}
+}
+@media(max-width:400px){
+  .grid-2.dash-metrics{grid-template-columns:1fr}
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state{text-align:center;padding:48px 20px;color:var(--color-text3)}
+.empty-state svg{opacity:.3;margin-bottom:12px}
+.empty-state p{font-size:13px}
+
+/* ===== PAGES ===== */
+.page{display:none}
+.page.active{display:block}
+
+/* ===== SECTION HEADER ===== */
+.section-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+
+/* ===== FINANCE TABS ===== */
+.tabs{display:flex;border-bottom:1px solid var(--color-border);margin-bottom:16px;gap:2px}
+.tab{padding:9px 16px;font-size:13px;color:var(--color-text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tab:hover{color:var(--color-text)}
+.tab.active{color:var(--color-primary);border-bottom-color:var(--color-primary);font-weight:500}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ===== CHART ===== */
+.chart-wrap{position:relative;width:100%;height:200px}
+
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:10px 20px;border-radius:var(--radius);font-size:13px;z-index:999;transition:transform .3s;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* sync status */
+.sync-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sync-ok{background:var(--color-success)}
+.sync-loading{background:var(--color-warning);animation:pulse 1s ease-in-out infinite}
+.sync-error{background:var(--color-danger)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* backup banner */
+.backup-banner{display:none;align-items:center;gap:10px;padding:10px 16px;background:#fffbeb;border:1px solid #fde68a;border-radius:var(--radius);margin-bottom:16px;font-size:12.5px;color:#92400e}
+.backup-banner.show{display:flex}
+.backup-banner .btn{flex-shrink:0;font-size:11px;padding:4px 10px}
+
+/* settings grid */
+.settings-row{display:flex;align-items:flex-start;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--color-border)}
+.settings-row:last-child{border-bottom:none}
+.settings-label{font-size:13px;font-weight:500;color:var(--color-text)}
+.settings-desc{font-size:11.5px;color:var(--color-text3);margin-top:2px}
+.settings-input{width:200px;padding:6px 10px;border:1px solid var(--color-border);border-radius:var(--radius-sm);font-size:13px}
+.settings-input:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px rgba(59,107,222,.1)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- NAV OVERLAY (mobile) -->
+<div class="nav-overlay" id="navOverlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="7" height="7" rx="2" fill="#fff"/><rect x="9" y="2" width="7" height="7" rx="2" fill="rgba(255,255,255,.6)"/><rect x="2" y="9" width="7" height="7" rx="2" fill="rgba(255,255,255,.6)"/><rect x="9" y="9" width="7" height="7" rx="2" fill="rgba(255,255,255,.4)"/></svg>
+    </div>
+    <span class="logo-text">我的工作台</span>
+  </div>
+
+  <nav style="flex:1;overflow-y:auto;padding-bottom:8px">
+    <div class="nav-section">总览</div>
+    <div class="nav-item active" onclick="navigate('dashboard',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 000 2h14a1 1 0 000-2H3zm0 4a1 1 0 000 2h10a1 1 0 000-2H3zm0 4a1 1 0 000 2h7a1 1 0 000-2H3z"/></svg>
+      驾驶舱
+    </div>
+
+    <div class="nav-section">工作</div>
+    <div class="nav-item" onclick="navigate('todo',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+      任务待办
+      <span class="nav-badge" id="todoCount" style="display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="navigate('inspiration',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+      灵感收集
+    </div>
+
+    <div class="nav-section">管理</div>
+    <div class="nav-item" onclick="navigate('contract',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+      合同管理
+    </div>
+    <div class="nav-item" onclick="navigate('purchase',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>
+      采购管理
+    </div>
+    <div class="nav-item" onclick="navigate('expense',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
+      报销台账
+    </div>
+  </nav>
+
+  <div class="sidebar-footer" id="clockDisplay">加载中…</div>
+  <div class="nav-item" onclick="openModal('settingsModal')" style="margin-bottom:4px">
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+    设置
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <header class="topbar">
+    <button class="menu-btn" onclick="toggleSidebar()" id="menuBtn">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+    </button>
+    <span class="page-title" id="pageTitle">驾驶舱</span>
+    <div class="topbar-right">
+      <span class="sync-dot sync-ok" id="syncDot" title="同步状态" style="margin-right:4px"></span>
+      <span style="font-size:11px;color:var(--color-text3);margin-right:8px" id="syncLabel">就绪</span>
+      <div class="avatar" title="导出数据 &amp; 设置" onclick="openModal('settingsModal')">⚙</div>
+    </div>
+  </header>
+
+  <div class="page-content">
+
+    <!-- Backup reminder -->
+    <div class="backup-banner" id="backupBanner">
+      <span>⏰ 已经 <strong id="backupDays">7</strong> 天没有备份数据了，建议导出备份防止数据丢失。</span>
+      <button class="btn btn-sm btn-primary" onclick="doBackup()">立即备份</button>
+      <button class="btn btn-sm btn-outline" onclick="dismissBackup()">稍后</button>
+    </div>
+
+    <!-- ====== DASHBOARD PAGE ====== -->
+    <div class="page active" id="page-dashboard">
+      <div class="grid-4 dash-metrics grid-2" style="margin-bottom:20px" id="dashMetrics"></div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">本月任务完成趋势</span>
+          </div>
+          <div class="chart-wrap"><canvas id="todoChart" role="img" aria-label="本月任务完成趋势折线图">任务趋势图</canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">合同金额分布</span>
+          </div>
+          <div class="chart-wrap"><canvas id="contractChart" role="img" aria-label="合同金额分布饼图">合同分布图</canvas></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-header"><span class="card-title">最近任务</span><button class="btn btn-sm btn-outline" onclick="navigate('todo',document.querySelector('.nav-item:nth-child(2)'))">查看全部</button></div>
+        <div id="dashRecentTodo"></div>
+      </div>
+    </div>
+
+    <!-- ====== TODO PAGE ====== -->
+    <div class="page" id="page-todo">
+      <div class="section-header">
+        <div class="search-wrap">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="#9ca3af"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+          <input class="search-input" id="todoSearch" placeholder="搜索任务…" oninput="renderTodo()">
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <select class="form-control btn-sm" id="todoFilter" style="width:auto;padding:5px 8px" onchange="renderTodo()">
+            <option value="">全部</option>
+            <option value="pending">待完成</option>
+            <option value="done">已完成</option>
+          </select>
+          <select class="form-control btn-sm" id="todoPriFilter" style="width:auto;padding:5px 8px" onchange="renderTodo()">
+            <option value="">全部优先级</option>
+            <option value="high">高</option>
+            <option value="mid">中</option>
+            <option value="low">低</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="openModal('todoModal')">+ 新建任务</button>
+        </div>
+      </div>
+      <div class="card" style="padding:8px 0">
+        <div id="todoList"></div>
+      </div>
+    </div>
+
+    <!-- ====== INSPIRATION PAGE ====== -->
+    <div class="page" id="page-inspiration">
+      <div class="section-header">
+        <div class="search-wrap">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="#9ca3af"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+          <input class="search-input" id="inspSearch" placeholder="搜索灵感…" oninput="renderInspiration()">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('inspModal')">+ 记录灵感</button>
+      </div>
+      <div id="inspTagFilter" class="tag-filter"></div>
+      <div class="insp-grid" id="inspList"></div>
+    </div>
+
+    <!-- ====== CONTRACT PAGE ====== -->
+    <div class="page" id="page-contract">
+      <div class="section-header">
+        <div class="search-wrap">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="#9ca3af"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+          <input class="search-input" id="contractSearch" placeholder="搜索合同…" oninput="renderContracts()">
+        </div>
+        <div style="display:flex;gap:6px">
+          <select class="form-control btn-sm" id="contractStatusFilter" style="width:auto;padding:5px 8px" onchange="renderContracts()">
+            <option value="">全部状态</option>
+            <option value="执行中">执行中</option>
+            <option value="已完成">已完成</option>
+            <option value="已过期">已过期</option>
+            <option value="待签">待签</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="openModal('contractModal')">+ 新增合同</button>
+        </div>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>合同名称</th><th>对方</th><th>金额</th><th>签署日期</th><th>到期日期</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody id="contractTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== PURCHASE PAGE ====== -->
+    <div class="page" id="page-purchase">
+      <div class="section-header">
+        <div class="search-wrap">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="#9ca3af"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4-816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+          <input class="search-input" id="purchaseSearch" placeholder="搜索采购…" oninput="renderPurchases()">
+        </div>
+        <div style="display:flex;gap:6px">
+          <select class="form-control btn-sm" id="purchaseStatusFilter" style="width:auto;padding:5px 8px" onchange="renderPurchases()">
+            <option value="">全部状态</option>
+            <option value="申请中">申请中</option>
+            <option value="审批通过">审批通过</option>
+            <option value="已到货">已到货</option>
+            <option value="已拒绝">已拒绝</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="openModal('purchaseModal')">+ 新增采购</button>
+        </div>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>采购名称</th><th>供应商</th><th>金额</th><th>申请日期</th><th>状态</th><th>备注</th><th>操作</th></tr></thead>
+            <tbody id="purchaseTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== EXPENSE PAGE ====== -->
+    <div class="page" id="page-expense">
+      <div class="section-header">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <span class="badge badge-blue" style="padding:5px 12px;font-size:13px">本月报销: <strong id="expMonth">¥0</strong></span>
+          <span class="badge badge-green" style="padding:5px 12px;font-size:13px">已报销: <strong id="expApproved">¥0</strong></span>
+          <span class="badge badge-yellow" style="padding:5px 12px;font-size:13px">待审批: <strong id="expPending">¥0</strong></span>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('expenseModal')">+ 新增报销</button>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>报销事项</th><th>金额</th><th>发票号</th><th>申请日期</th><th>类型</th><th>状态</th><th>备注</th><th>操作</th></tr></thead>
+            <tbody id="expenseTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- page-content end -->
+</div><!-- main end -->
+</div><!-- app end -->
+
+<!-- ===== MODALS ===== -->
+
+<!-- Todo Modal -->
+<div class="modal-overlay" id="todoModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="todoModalTitle">新建任务</span>
+      <button class="close-btn" onclick="closeModal('todoModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="todoId">
+      <div class="form-group">
+        <label class="form-label">任务内容 *</label>
+        <input class="form-control" id="todoText" placeholder="输入任务内容…">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">优先级</label>
+          <select class="form-control" id="todoPriority">
+            <option value="mid">中</option>
+            <option value="high">高</option>
+            <option value="low">低</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">截止日期</label>
+          <input type="date" class="form-control" id="todoDue">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注</label>
+        <textarea class="form-control" id="todoNote" rows="2" placeholder="可选备注…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('todoModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveTodo()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Inspiration Modal -->
+<div class="modal-overlay" id="inspModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="inspModalTitle">记录灵感</span>
+      <button class="close-btn" onclick="closeModal('inspModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="inspId">
+      <div class="form-group">
+        <label class="form-label">标题 *</label>
+        <input class="form-control" id="inspTitle" placeholder="一句话概括…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">内容</label>
+        <textarea class="form-control" id="inspContent" rows="5" placeholder="展开描述…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">标签（回车添加）</label>
+        <div class="tag-input-wrap" id="inspTagWrap" onclick="document.getElementById('inspTagInput').focus()">
+          <input id="inspTagInput" style="border:none;outline:none;font-size:12px;flex:1;min-width:80px;padding:2px 4px;background:transparent" placeholder="输入标签后按回车…" onkeydown="handleTagInput(event,'inspTags')">
+        </div>
+        <input type="hidden" id="inspTags" value="[]">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('inspModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveInspiration()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Contract Modal -->
+<div class="modal-overlay" id="contractModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="contractModalTitle">新增合同</span>
+      <button class="close-btn" onclick="closeModal('contractModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="contractId">
+      <div class="form-group">
+        <label class="form-label">合同名称 *</label>
+        <input class="form-control" id="contractName" placeholder="合同名称">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">对方单位</label>
+          <input class="form-control" id="contractParty" placeholder="签约方">
+        </div>
+        <div class="form-group">
+          <label class="form-label">合同金额（元）</label>
+          <input type="number" class="form-control" id="contractAmount" placeholder="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">签署日期</label>
+          <input type="date" class="form-control" id="contractSignDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">到期日期</label>
+          <input type="date" class="form-control" id="contractExpiry">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">状态</label>
+          <select class="form-control" id="contractStatus">
+            <option value="执行中">执行中</option>
+            <option value="待签">待签</option>
+            <option value="已完成">已完成</option>
+            <option value="已过期">已过期</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">合同编号</label>
+          <input class="form-control" id="contractNo" placeholder="可选">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注</label>
+        <textarea class="form-control" id="contractNote" rows="2" placeholder="可选备注…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('contractModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveContract()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Purchase Modal -->
+<div class="modal-overlay" id="purchaseModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="purchaseModalTitle">新增采购</span>
+      <button class="close-btn" onclick="closeModal('purchaseModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="purchaseId">
+      <div class="form-group">
+        <label class="form-label">采购名称 *</label>
+        <input class="form-control" id="purchaseName" placeholder="采购项目名称">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">供应商</label>
+          <input class="form-control" id="purchaseSupplier" placeholder="供应商名称">
+        </div>
+        <div class="form-group">
+          <label class="form-label">金额（元）</label>
+          <input type="number" class="form-control" id="purchaseAmount" placeholder="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">申请日期</label>
+          <input type="date" class="form-control" id="purchaseDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">状态</label>
+          <select class="form-control" id="purchaseStatus">
+            <option value="申请中">申请中</option>
+            <option value="审批通过">审批通过</option>
+            <option value="已到货">已到货</option>
+            <option value="已拒绝">已拒绝</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注</label>
+        <textarea class="form-control" id="purchaseNote" rows="2" placeholder="可选备注…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('purchaseModal')">取消</button>
+      <button class="btn btn-primary" onclick="savePurchase()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Expense Modal -->
+<div class="modal-overlay" id="expenseModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="expenseModalTitle">新增报销</span>
+      <button class="close-btn" onclick="closeModal('expenseModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="expenseId">
+      <div class="form-group">
+        <label class="form-label">报销事项 *</label>
+        <input class="form-control" id="expenseName" placeholder="报销事项描述">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">金额（元）</label>
+          <input type="number" class="form-control" id="expenseAmount" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">发票号</label>
+          <input class="form-control" id="expenseInvoice" placeholder="发票号/可选">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">申请日期</label>
+          <input type="date" class="form-control" id="expenseDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">类型</label>
+          <select class="form-control" id="expenseType">
+            <option value="交通">交通</option>
+            <option value="餐饮">餐饮</option>
+            <option value="住宿">住宿</option>
+            <option value="办公用品">办公用品</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">审批状态</label>
+          <select class="form-control" id="expenseStatus">
+            <option value="待审批">待审批</option>
+            <option value="已审批">已审批</option>
+            <option value="已报销">已报销</option>
+            <option value="已拒绝">已拒绝</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">备注</label>
+          <input class="form-control" id="expenseNote" placeholder="可选备注">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('expenseModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveExpense()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal (view) -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="detailTitle">详情</span>
+      <button class="close-btn" onclick="closeModal('detailModal')">×</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('detailModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">设置</span>
+      <button class="close-btn" onclick="closeModal('settingsModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Gitee 用户名</div>
+          <div class="settings-desc">你的 Gitee 账号（如 LingXngTian）</div>
+        </div>
+        <input class="settings-input" id="giteeUser" placeholder="用户名">
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">仓库名</div>
+          <div class="settings-desc">存放数据的 Gitee 仓库（如 workbench）</div>
+        </div>
+        <input class="settings-input" id="giteeRepo" placeholder="workbench">
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">私人令牌 (Token)</div>
+          <div class="settings-desc">在 Gitee 个人设置中生成，仅本机保存</div>
+        </div>
+        <input class="settings-input" id="giteeToken" type="password" placeholder="输入令牌">
+      </div>
+      <div class="settings-row" style="border-bottom:none;padding-bottom:0">
+        <div>
+          <div class="settings-label">自动备份提醒</div>
+          <div class="settings-desc">超过指定天数未备份，顶部显示提醒</div>
+        </div>
+        <select class="settings-input" id="backupInterval" style="width:auto;padding:6px 8px">
+          <option value="3">每 3 天</option>
+          <option value="7" selected>每 7 天</option>
+          <option value="14">每 14 天</option>
+          <option value="30">每 30 天</option>
+        </select>
+      </div>
+      <div style="margin-top:16px;padding:12px;background:var(--color-bg);border-radius:var(--radius-sm);font-size:12px;color:var(--color-text2)">
+        <strong>跨平台使用说明：</strong><br>
+        1. 办公电脑：填好令牌，数据编辑后自动同步到 Gitee<br>
+        2. 手机：打开 Gitee Pages 网址即可查看（无需令牌，只读模式）<br>
+        3. 令牌只存在本机浏览器中，不会上传
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-outline" onclick="exportData()">📥 导出备份</button>
+        <button class="btn btn-sm btn-outline" id="importBtn" onclick="document.getElementById('importFile').click()">📤 导入数据</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm btn-outline" id="syncTestBtn" onclick="testSync()">🔗 测试连接</button>
+        <button class="btn btn-primary btn-sm" onclick="saveSettings()">💾 保存设置</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+//  DATA LAYER
+// ============================================================
+const DB = {
+  get(key){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return[]}},
+  set(key,val){localStorage.setItem(key,JSON.stringify(val))},
+  nextId(arr){return arr.length?Math.max(...arr.map(x=>x.id||0))+1:1}
+};
+
+// ============================================================
+//  NAVIGATION
+// ============================================================
+const pageTitles={dashboard:'驾驶舱',todo:'任务待办',inspiration:'灵感收集',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
+let currentPage='dashboard';
+let todoChartInst=null, contractChartInst=null;
+
+function navigate(page,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if(el)el.classList.add('active');
+  document.getElementById('pageTitle').textContent=pageTitles[page]||page;
+  currentPage=page;
+  closeSidebar();
+  if(page==='dashboard')renderDashboard();
+  if(page==='todo')renderTodo();
+  if(page==='inspiration')renderInspiration();
+  if(page==='contract')renderContracts();
+  if(page==='purchase')renderPurchases();
+  if(page==='expense')renderExpenses();
+}
+
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('navOverlay').classList.toggle('open');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('navOverlay').classList.remove('open');
+}
+
+// ============================================================
+//  MODAL
+// ============================================================
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',function(e){if(e.target===this)closeModal(this.id)});
+});
+
+// ============================================================
+//  TOAST
+// ============================================================
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ============================================================
+//  CLOCK
+// ============================================================
+function updateClock(){
+  const now=new Date();
+  const d=now.toLocaleDateString('zh-CN',{month:'numeric',day:'numeric',weekday:'short'});
+  const t=now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('clockDisplay').textContent=d+' '+t;
+}
+setInterval(updateClock,30000);updateClock();
+
+// ============================================================
+//  DASHBOARD
+// ============================================================
+function fmt(n){return(+n||0).toLocaleString('zh-CN')}
+
+function renderDashboard(){
+  const todos=DB.get('todos');
+  const contracts=DB.get('contracts');
+  const purchases=DB.get('purchases');
+  const expenses=DB.get('expenses');
+
+  const pendingTodo=todos.filter(t=>!t.done).length;
+  const doneTodo=todos.filter(t=>t.done).length;
+  const contractSum=contracts.reduce((s,c)=>s+(+c.amount||0),0);
+  const expSum=expenses.filter(e=>e.status==='已报销').reduce((s,e)=>s+(+e.amount||0),0);
+
+  // update badge
+  const badge=document.getElementById('todoCount');
+  if(pendingTodo>0){badge.style.display='';badge.textContent=pendingTodo}else{badge.style.display='none'}
+
+  document.getElementById('dashMetrics').innerHTML=`
+    <div class="metric"><div class="metric-label">待办任务</div><div class="metric-value" style="color:var(--color-primary)">${pendingTodo}</div><div class="metric-sub">已完成 ${doneTodo} 项</div></div>
+    <div class="metric"><div class="metric-label">合同总数</div><div class="metric-value">${contracts.length}</div><div class="metric-sub">金额 ¥${fmt(contractSum)}</div></div>
+    <div class="metric"><div class="metric-label">采购记录</div><div class="metric-value">${purchases.length}</div><div class="metric-sub">申请中 ${purchases.filter(p=>p.status==='申请中').length} 项</div></div>
+    <div class="metric"><div class="metric-label">已报销金额</div><div class="metric-value" style="color:var(--color-teal)">¥${fmt(expSum)}</div><div class="metric-sub">本月报销记录 ${expenses.filter(e=>{const m=new Date().toISOString().slice(0,7);return(e.date||'').startsWith(m)}).length} 项</div></div>
+  `;
+
+  // Todo trend chart (last 7 days completions)
+  const labels=[],data=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const key=d.toISOString().slice(0,10);
+    labels.push(key.slice(5));
+    data.push(todos.filter(t=>t.doneAt&&t.doneAt.startsWith(key)).length);
+  }
+  if(todoChartInst)todoChartInst.destroy();
+  todoChartInst=new Chart(document.getElementById('todoChart'),{
+    type:'line',
+    data:{labels,datasets:[{label:'完成任务',data,borderColor:'#3b6bde',backgroundColor:'rgba(59,107,222,.08)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#3b6bde'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}}
+  });
+
+  // Contract status chart
+  const statuses=['执行中','已完成','待签','已过期'];
+  const colors=['#3b6bde','#22c55e','#f59e0b','#e24b4a'];
+  const cData=statuses.map(s=>contracts.filter(c=>c.status===s).length);
+  if(contractChartInst)contractChartInst.destroy();
+  contractChartInst=new Chart(document.getElementById('contractChart'),{
+    type:'doughnut',
+    data:{labels:statuses,datasets:[{data:cData,backgroundColor:colors,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:10,padding:8}}}}
+  });
+
+  // Recent todos
+  const recent=todos.filter(t=>!t.done).slice(0,5);
+  document.getElementById('dashRecentTodo').innerHTML=recent.length?
+    recent.map(t=>`<div class="todo-item">
+      <div class="priority-dot p-${t.priority||'mid'}"></div>
+      <div class="todo-text">${esc(t.text)}</div>
+      ${t.due?`<span class="badge badge-gray" style="font-size:11px;flex-shrink:0">${t.due}</span>`:''}
+    </div>`).join(''):
+    '<div class="empty-state" style="padding:20px"><p>暂无待办任务</p></div>';
+}
+
+// ============================================================
+//  TODO
+// ============================================================
+function renderTodo(){
+  const todos=DB.get('todos');
+  const q=(document.getElementById('todoSearch').value||'').toLowerCase();
+  const sf=document.getElementById('todoFilter').value;
+  const pf=document.getElementById('todoPriFilter').value;
+  const filtered=todos.filter(t=>{
+    if(q&&!t.text.toLowerCase().includes(q))return false;
+    if(sf==='pending'&&t.done)return false;
+    if(sf==='done'&&!t.done)return false;
+    if(pf&&t.priority!==pf)return false;
+    return true;
+  }).sort((a,b)=>{
+    const po={high:0,mid:1,low:2};
+    if(a.done!==b.done)return a.done?1:-1;
+    return(po[a.priority]||1)-(po[b.priority]||1);
+  });
+
+  const badge=document.getElementById('todoCount');
+  const pending=todos.filter(t=>!t.done).length;
+  if(pending>0){badge.style.display='';badge.textContent=pending}else{badge.style.display='none'}
+
+  if(!filtered.length){
+    document.getElementById('todoList').innerHTML='<div class="empty-state"><p>没有符合条件的任务</p></div>';
+    return;
+  }
+
+  document.getElementById('todoList').innerHTML=filtered.map(t=>`
+    <div class="todo-item ${t.done?'done':''}" id="todo-${t.id}">
+      <div class="todo-check ${t.done?'checked':''}" onclick="toggleTodo(${t.id})">
+        ${t.done?'<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5l2.5 2.5L8.5 2" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}
+      </div>
+      <div class="priority-dot p-${t.priority||'mid'}"></div>
+      <div style="flex:1;min-width:0">
+        <div class="todo-text">${esc(t.text)}</div>
+        <div class="todo-meta">${t.due?'截止 '+t.due+' · ':''} ${t.note?esc(t.note):''}</div>
+      </div>
+      <div class="todo-actions">
+        <button class="btn btn-ghost btn-sm" onclick="editTodo(${t.id})" title="编辑">✏️</button>
+        <button class="btn btn-ghost btn-sm" onclick="deleteTodo(${t.id})" title="删除" style="color:var(--color-danger)">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function saveTodo(){
+  const text=document.getElementById('todoText').value.trim();
+  if(!text){toast('请输入任务内容');return;}
+  const todos=DB.get('todos');
+  const id=+document.getElementById('todoId').value;
+  const item={
+    id:id||DB.nextId(todos),
+    text,
+    priority:document.getElementById('todoPriority').value,
+    due:document.getElementById('todoDue').value,
+    note:document.getElementById('todoNote').value,
+    done:false,
+    createdAt:new Date().toISOString()
+  };
+  if(id){const i=todos.findIndex(t=>t.id===id);if(i>-1){item.done=todos[i].done;item.doneAt=todos[i].doneAt;todos[i]=item;}else todos.push(item);}
+  else todos.push(item);
+  DB.set('todos',todos);
+  closeModal('todoModal');
+  clearTodoForm();
+  renderTodo();
+  toast('已保存');
+}
+
+function editTodo(id){
+  const t=DB.get('todos').find(x=>x.id===id);
+  if(!t)return;
+  document.getElementById('todoModalTitle').textContent='编辑任务';
+  document.getElementById('todoId').value=t.id;
+  document.getElementById('todoText').value=t.text;
+  document.getElementById('todoPriority').value=t.priority||'mid';
+  document.getElementById('todoDue').value=t.due||'';
+  document.getElementById('todoNote').value=t.note||'';
+  openModal('todoModal');
+}
+
+function clearTodoForm(){
+  ['todoId','todoText','todoDue','todoNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('todoPriority').value='mid';
+  document.getElementById('todoModalTitle').textContent='新建任务';
+}
+
+function toggleTodo(id){
+  const todos=DB.get('todos');
+  const t=todos.find(x=>x.id===id);
+  if(!t)return;
+  t.done=!t.done;
+  t.doneAt=t.done?new Date().toISOString():null;
+  DB.set('todos',todos);
+  renderTodo();
+}
+
+function deleteTodo(id){
+  if(!confirm('确认删除此任务？'))return;
+  const todos=DB.get('todos').filter(t=>t.id!==id);
+  DB.set('todos',todos);
+  renderTodo();
+  toast('已删除');
+}
+
+document.getElementById('todoModal').addEventListener('click',function(e){if(e.target===this)closeModal('todoModal')});
+
+// ============================================================
+//  INSPIRATION
+// ============================================================
+let activeInspTag='';
+
+function renderInspiration(){
+  const insps=DB.get('inspirations');
+  const q=(document.getElementById('inspSearch').value||'').toLowerCase();
+  const filtered=insps.filter(i=>{
+    if(q&&!(i.title+i.content).toLowerCase().includes(q))return false;
+    if(activeInspTag&&!(i.tags||[]).includes(activeInspTag))return false;
+    return true;
+  }).sort((a,b)=>b.createdAt>a.createdAt?1:-1);
+
+  // tags
+  const allTags=[...new Set(insps.flatMap(i=>i.tags||[]))];
+  document.getElementById('inspTagFilter').innerHTML=[
+    `<button class="tag-pill ${!activeInspTag?'active':''}" onclick="filterInspTag('')">全部</button>`,
+    ...allTags.map(t=>`<button class="tag-pill ${activeInspTag===t?'active':''}" onclick="filterInspTag('${esc(t)}')">${esc(t)}</button>`)
+  ].join('');
+
+  if(!filtered.length){
+    document.getElementById('inspList').innerHTML='<div class="empty-state" style="grid-column:1/-1"><p>暂无灵感记录，点击右上角添加</p></div>';
+    return;
+  }
+
+  const tagColors=['badge-blue','badge-purple','badge-teal','badge-green','badge-yellow'];
+  document.getElementById('inspList').innerHTML=filtered.map((x,ci)=>`
+    <div class="insp-card" onclick="viewInsp(${x.id})">
+      <div class="insp-card-title">${esc(x.title)}</div>
+      <div class="insp-card-body">${esc(x.content||'')}</div>
+      <div class="insp-card-footer">
+        <div class="insp-tags">${(x.tags||[]).map((t,i)=>`<span class="badge ${tagColors[i%tagColors.length]}">${esc(t)}</span>`).join('')}</div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editInsp(${x.id})" title="编辑">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteInsp(${x.id})" style="color:var(--color-danger)" title="删除">🗑</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--color-text3);margin-top:6px">${x.createdAt?x.createdAt.slice(0,10):''}</div>
+    </div>
+  `).join('');
+}
+
+function filterInspTag(t){activeInspTag=t;renderInspiration();}
+
+function handleTagInput(e,hiddenId){
+  if(e.key==='Enter'||e.key===','){
+    e.preventDefault();
+    const val=e.target.value.trim();
+    if(!val)return;
+    const tags=JSON.parse(document.getElementById(hiddenId).value||'[]');
+    if(!tags.includes(val)){
+      tags.push(val);
+      document.getElementById(hiddenId).value=JSON.stringify(tags);
+      const chip=document.createElement('span');
+      chip.className='tag-chip';
+      chip.innerHTML=`${esc(val)}<span class="rm" onclick="removeTag(this,'${hiddenId}','${esc(val)}')">×</span>`;
+      const inputEl=document.getElementById(hiddenId.replace('Tags','TagInput'));
+      document.getElementById(hiddenId.replace('Tags','TagWrap')).insertBefore(chip,inputEl);
+    }
+    e.target.value='';
+  }
+}
+
+function removeTag(el,hiddenId,val){
+  el.parentElement.remove();
+  const tags=JSON.parse(document.getElementById(hiddenId).value||'[]').filter(t=>t!==val);
+  document.getElementById(hiddenId).value=JSON.stringify(tags);
+}
+
+function clearInspForm(){
+  ['inspId','inspTitle','inspContent'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('inspTags').value='[]';
+  const wrap=document.getElementById('inspTagWrap');
+  wrap.querySelectorAll('.tag-chip').forEach(c=>c.remove());
+  document.getElementById('inspModalTitle').textContent='记录灵感';
+}
+
+function saveInspiration(){
+  const title=document.getElementById('inspTitle').value.trim();
+  if(!title){toast('请输入标题');return;}
+  const insps=DB.get('inspirations');
+  const id=+document.getElementById('inspId').value;
+  const item={
+    id:id||DB.nextId(insps),
+    title,
+    content:document.getElementById('inspContent').value,
+    tags:JSON.parse(document.getElementById('inspTags').value||'[]'),
+    createdAt:new Date().toISOString()
+  };
+  if(id){const i=insps.findIndex(x=>x.id===id);if(i>-1)insps[i]=item;else insps.push(item);}
+  else insps.push(item);
+  DB.set('inspirations',insps);
+  closeModal('inspModal');
+  clearInspForm();
+  renderInspiration();
+  toast('已保存');
+}
+
+function editInsp(id){
+  const x=DB.get('inspirations').find(i=>i.id===id);
+  if(!x)return;
+  document.getElementById('inspModalTitle').textContent='编辑灵感';
+  document.getElementById('inspId').value=x.id;
+  document.getElementById('inspTitle').value=x.title;
+  document.getElementById('inspContent').value=x.content||'';
+  document.getElementById('inspTags').value=JSON.stringify(x.tags||[]);
+  const wrap=document.getElementById('inspTagWrap');
+  wrap.querySelectorAll('.tag-chip').forEach(c=>c.remove());
+  const inputEl=document.getElementById('inspTagInput');
+  (x.tags||[]).forEach(t=>{
+    const chip=document.createElement('span');
+    chip.className='tag-chip';
+    chip.innerHTML=`${esc(t)}<span class="rm" onclick="removeTag(this,'inspTags','${esc(t)}')">×</span>`;
+    wrap.insertBefore(chip,inputEl);
+  });
+  openModal('inspModal');
+}
+
+function deleteInsp(id){
+  if(!confirm('确认删除？'))return;
+  DB.set('inspirations',DB.get('inspirations').filter(i=>i.id!==id));
+  renderInspiration();toast('已删除');
+}
+
+function viewInsp(id){
+  const x=DB.get('inspirations').find(i=>i.id===id);
+  if(!x)return;
+  document.getElementById('detailTitle').textContent=x.title;
+  document.getElementById('detailBody').innerHTML=`
+    <div style="white-space:pre-wrap;font-size:13.5px;line-height:1.7;margin-bottom:12px">${esc(x.content||'（无内容）')}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">${(x.tags||[]).map(t=>`<span class="badge badge-blue">${esc(t)}</span>`).join('')}</div>
+    <div style="font-size:12px;color:var(--color-text3);margin-top:10px">${x.createdAt?x.createdAt.slice(0,10):''}</div>
+  `;
+  openModal('detailModal');
+}
+
+// ============================================================
+//  CONTRACT
+// ============================================================
+const contractStatusBadge={执行中:'badge-blue',已完成:'badge-green',已过期:'badge-red',待签:'badge-yellow'};
+
+function renderContracts(){
+  const contracts=DB.get('contracts');
+  const q=(document.getElementById('contractSearch').value||'').toLowerCase();
+  const sf=document.getElementById('contractStatusFilter').value;
+  const filtered=contracts.filter(c=>{
+    if(q&&!(c.name+(c.party||'')).toLowerCase().includes(q))return false;
+    if(sf&&c.status!==sf)return false;
+    return true;
+  });
+
+  if(!filtered.length){
+    document.getElementById('contractTable').innerHTML=`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--color-text3)">暂无合同记录</td></tr>`;
+    return;
+  }
+
+  document.getElementById('contractTable').innerHTML=filtered.map(c=>`
+    <tr>
+      <td><span style="font-weight:500">${esc(c.name)}</span>${c.no?`<div style="font-size:11px;color:var(--color-text3)">${esc(c.no)}</div>`:''}</td>
+      <td>${esc(c.party||'—')}</td>
+      <td style="font-weight:500">¥${fmt(c.amount)}</td>
+      <td style="color:var(--color-text2)">${c.signDate||'—'}</td>
+      <td style="color:var(--color-text2)">${c.expiry||'—'}</td>
+      <td><span class="badge ${contractStatusBadge[c.status]||'badge-gray'}">${c.status}</span></td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm" onclick="editContract(${c.id})">✏️</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteContract(${c.id})">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function saveContract(){
+  const name=document.getElementById('contractName').value.trim();
+  if(!name){toast('请输入合同名称');return;}
+  const contracts=DB.get('contracts');
+  const id=+document.getElementById('contractId').value;
+  const item={
+    id:id||DB.nextId(contracts),
+    name,
+    party:document.getElementById('contractParty').value,
+    amount:document.getElementById('contractAmount').value,
+    signDate:document.getElementById('contractSignDate').value,
+    expiry:document.getElementById('contractExpiry').value,
+    status:document.getElementById('contractStatus').value,
+    no:document.getElementById('contractNo').value,
+    note:document.getElementById('contractNote').value,
+    createdAt:new Date().toISOString()
+  };
+  if(id){const i=contracts.findIndex(c=>c.id===id);if(i>-1)contracts[i]=item;else contracts.push(item);}
+  else contracts.push(item);
+  DB.set('contracts',contracts);
+  closeModal('contractModal');
+  clearContractForm();
+  renderContracts();
+  toast('已保存');
+}
+
+function editContract(id){
+  const c=DB.get('contracts').find(x=>x.id===id);
+  if(!c)return;
+  document.getElementById('contractModalTitle').textContent='编辑合同';
+  document.getElementById('contractId').value=c.id;
+  document.getElementById('contractName').value=c.name;
+  document.getElementById('contractParty').value=c.party||'';
+  document.getElementById('contractAmount').value=c.amount||'';
+  document.getElementById('contractSignDate').value=c.signDate||'';
+  document.getElementById('contractExpiry').value=c.expiry||'';
+  document.getElementById('contractStatus').value=c.status;
+  document.getElementById('contractNo').value=c.no||'';
+  document.getElementById('contractNote').value=c.note||'';
+  openModal('contractModal');
+}
+
+function clearContractForm(){
+  ['contractId','contractName','contractParty','contractAmount','contractSignDate','contractExpiry','contractNo','contractNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('contractStatus').value='执行中';
+  document.getElementById('contractModalTitle').textContent='新增合同';
+}
+
+function deleteContract(id){
+  if(!confirm('确认删除？'))return;
+  DB.set('contracts',DB.get('contracts').filter(c=>c.id!==id));
+  renderContracts();toast('已删除');
+}
+
+// ============================================================
+//  PURCHASE
+// ============================================================
+const purchaseStatusBadge={申请中:'badge-yellow',审批通过:'badge-blue',已到货:'badge-green',已拒绝:'badge-red'};
+
+function renderPurchases(){
+  const purchases=DB.get('purchases');
+  const q=(document.getElementById('purchaseSearch').value||'').toLowerCase();
+  const sf=document.getElementById('purchaseStatusFilter').value;
+  const filtered=purchases.filter(p=>{
+    if(q&&!(p.name+(p.supplier||'')).toLowerCase().includes(q))return false;
+    if(sf&&p.status!==sf)return false;
+    return true;
+  });
+
+  if(!filtered.length){
+    document.getElementById('purchaseTable').innerHTML=`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--color-text3)">暂无采购记录</td></tr>`;
+    return;
+  }
+
+  document.getElementById('purchaseTable').innerHTML=filtered.map(p=>`
+    <tr>
+      <td><span style="font-weight:500">${esc(p.name)}</span></td>
+      <td>${esc(p.supplier||'—')}</td>
+      <td style="font-weight:500">¥${fmt(p.amount)}</td>
+      <td style="color:var(--color-text2)">${p.date||'—'}</td>
+      <td><span class="badge ${purchaseStatusBadge[p.status]||'badge-gray'}">${p.status}</span></td>
+      <td style="color:var(--color-text2);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.note||'—')}</td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm" onclick="editPurchase(${p.id})">✏️</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deletePurchase(${p.id})">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function savePurchase(){
+  const name=document.getElementById('purchaseName').value.trim();
+  if(!name){toast('请输入采购名称');return;}
+  const purchases=DB.get('purchases');
+  const id=+document.getElementById('purchaseId').value;
+  const item={
+    id:id||DB.nextId(purchases),
+    name,
+    supplier:document.getElementById('purchaseSupplier').value,
+    amount:document.getElementById('purchaseAmount').value,
+    date:document.getElementById('purchaseDate').value,
+    status:document.getElementById('purchaseStatus').value,
+    note:document.getElementById('purchaseNote').value,
+    createdAt:new Date().toISOString()
+  };
+  if(id){const i=purchases.findIndex(p=>p.id===id);if(i>-1)purchases[i]=item;else purchases.push(item);}
+  else purchases.push(item);
+  DB.set('purchases',purchases);
+  closeModal('purchaseModal');
+  clearPurchaseForm();
+  renderPurchases();
+  toast('已保存');
+}
+
+function editPurchase(id){
+  const p=DB.get('purchases').find(x=>x.id===id);
+  if(!p)return;
+  document.getElementById('purchaseModalTitle').textContent='编辑采购';
+  document.getElementById('purchaseId').value=p.id;
+  document.getElementById('purchaseName').value=p.name;
+  document.getElementById('purchaseSupplier').value=p.supplier||'';
+  document.getElementById('purchaseAmount').value=p.amount||'';
+  document.getElementById('purchaseDate').value=p.date||'';
+  document.getElementById('purchaseStatus').value=p.status;
+  document.getElementById('purchaseNote').value=p.note||'';
+  openModal('purchaseModal');
+}
+
+function clearPurchaseForm(){
+  ['purchaseId','purchaseName','purchaseSupplier','purchaseAmount','purchaseDate','purchaseNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('purchaseStatus').value='申请中';
+  document.getElementById('purchaseModalTitle').textContent='新增采购';
+}
+
+function deletePurchase(id){
+  if(!confirm('确认删除？'))return;
+  DB.set('purchases',DB.get('purchases').filter(p=>p.id!==id));
+  renderPurchases();toast('已删除');
+}
+
+// ============================================================
+//  EXPENSE
+// ============================================================
+const expenseStatusBadge={待审批:'badge-yellow',已审批:'badge-blue',已报销:'badge-green',已拒绝:'badge-red'};
+
+function renderExpenses(){
+  const expenses=DB.get('expenses');
+  const now=new Date().toISOString().slice(0,7);
+  const monthExp=expenses.filter(e=>e.date&&e.date.startsWith(now));
+  const monthSum=monthExp.reduce((s,e)=>s+(+e.amount||0),0);
+  const approvedSum=expenses.filter(e=>e.status==='已报销').reduce((s,e)=>s+(+e.amount||0),0);
+  const pendingSum=expenses.filter(e=>e.status==='待审批').reduce((s,e)=>s+(+e.amount||0),0);
+
+  document.getElementById('expMonth').textContent='¥'+fmt(monthSum);
+  document.getElementById('expApproved').textContent='¥'+fmt(approvedSum);
+  document.getElementById('expPending').textContent='¥'+fmt(pendingSum);
+
+  if(!expenses.length){
+    document.getElementById('expenseTable').innerHTML=`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--color-text3)">暂无报销记录</td></tr>`;
+    return;
+  }
+
+  document.getElementById('expenseTable').innerHTML=[...expenses].reverse().map(e=>`
+    <tr>
+      <td><span style="font-weight:500">${esc(e.name)}</span></td>
+      <td style="font-weight:500">¥${fmt(e.amount)}</td>
+      <td style="color:var(--color-text2)">${esc(e.invoice||'—')}</td>
+      <td style="color:var(--color-text2)">${e.date||'—'}</td>
+      <td><span class="badge badge-gray">${esc(e.type||'')}</span></td>
+      <td><span class="badge ${expenseStatusBadge[e.status]||'badge-gray'}">${e.status}</span></td>
+      <td style="color:var(--color-text2)">${esc(e.note||'—')}</td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm" onclick="editExpense(${e.id})">✏️</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteExpense(${e.id})">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function saveExpense(){
+  const name=document.getElementById('expenseName').value.trim();
+  if(!name){toast('请输入报销事项');return;}
+  const expenses=DB.get('expenses');
+  const id=+document.getElementById('expenseId').value;
+  const item={
+    id:id||DB.nextId(expenses),
+    name,
+    amount:document.getElementById('expenseAmount').value,
+    invoice:document.getElementById('expenseInvoice').value,
+    date:document.getElementById('expenseDate').value,
+    type:document.getElementById('expenseType').value,
+    status:document.getElementById('expenseStatus').value,
+    note:document.getElementById('expenseNote').value,
+    createdAt:new Date().toISOString()
+  };
+  if(id){const i=expenses.findIndex(e=>e.id===id);if(i>-1)expenses[i]=item;else expenses.push(item);}
+  else expenses.push(item);
+  DB.set('expenses',expenses);
+  closeModal('expenseModal');
+  clearExpenseForm();
+  renderExpenses();
+  toast('已保存');
+}
+
+function editExpense(id){
+  const e=DB.get('expenses').find(x=>x.id===id);
+  if(!e)return;
+  document.getElementById('expenseModalTitle').textContent='编辑报销';
+  document.getElementById('expenseId').value=e.id;
+  document.getElementById('expenseName').value=e.name;
+  document.getElementById('expenseAmount').value=e.amount||'';
+  document.getElementById('expenseInvoice').value=e.invoice||'';
+  document.getElementById('expenseDate').value=e.date||'';
+  document.getElementById('expenseType').value=e.type||'其他';
+  document.getElementById('expenseStatus').value=e.status;
+  document.getElementById('expenseNote').value=e.note||'';
+  openModal('expenseModal');
+}
+
+function clearExpenseForm(){
+  ['expenseId','expenseName','expenseAmount','expenseInvoice','expenseDate','expenseNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('expenseType').value='交通';
+  document.getElementById('expenseStatus').value='待审批';
+  document.getElementById('expenseModalTitle').textContent='新增报销';
+}
+
+function deleteExpense(id){
+  if(!confirm('确认删除？'))return;
+  DB.set('expenses',DB.get('expenses').filter(e=>e.id!==id));
+  renderExpenses();toast('已删除');
+}
+
+// ============================================================
+//  EXPORT / IMPORT DATA
+// ============================================================
+function dumpData(){
+  return {
+    todos:DB.get('todos'),
+    inspirations:DB.get('inspirations'),
+    contracts:DB.get('contracts'),
+    purchases:DB.get('purchases'),
+    expenses:DB.get('expenses'),
+    exportedAt:new Date().toISOString()
+  };
+}
+
+function exportData(){
+  const data=dumpData();
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='workbench_'+(new Date().toISOString().slice(0,10))+'.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  // mark last backup
+  localStorage.setItem('wb_last_backup',new Date().toISOString());
+  hideBackupBanner();
+  toast('数据已导出 ✓');
+}
+
+function importData(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const data=JSON.parse(ev.target.result);
+      let imported=0;
+      ['todos','inspirations','contracts','purchases','expenses'].forEach(k=>{
+        if(Array.isArray(data[k])){DB.set(k,data[k]);imported+=data[k].length;}
+      });
+      toast('已导入 '+imported+' 条数据');
+      renderCurrentPage();
+    }catch(ex){toast('导入失败：文件格式不正确');}
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+// ============================================================
+//  BACKUP REMINDER
+// ============================================================
+function getBackupInterval(){
+  return parseInt(localStorage.getItem('wb_backup_interval')||'7');
+}
+
+function checkBackup(){
+  const last=localStorage.getItem('wb_last_backup');
+  const interval=getBackupInterval();
+  if(!last){
+    // first time - set initial backup date
+    localStorage.setItem('wb_last_backup',new Date().toISOString());
+    return;
+  }
+  const days=Math.floor((Date.now()-new Date(last).getTime())/(86400000));
+  if(days>=interval){
+    document.getElementById('backupDays').textContent=days;
+    document.getElementById('backupBanner').classList.add('show');
+  }
+}
+
+function hideBackupBanner(){
+  document.getElementById('backupBanner').classList.remove('show');
+}
+
+function doBackup(){
+  exportData();
+}
+
+function dismissBackup(){
+  localStorage.setItem('wb_last_backup',new Date().toISOString());
+  hideBackupBanner();
+}
+
+// ============================================================
+//  GITEE SYNC ENGINE
+// ============================================================
+const GITEE={
+  getConfig(){
+    return {
+      user:localStorage.getItem('wb_gitee_user')||'',
+      repo:localStorage.getItem('wb_gitee_repo')||'',
+      token:localStorage.getItem('wb_gitee_token')||''
+    };
+  },
+
+  isConfigured(){
+    const c=this.getConfig();
+    return !!(c.user&&c.repo&&c.token);
+  },
+
+  setSyncStatus(status,label){
+    const dot=document.getElementById('syncDot');
+    const lbl=document.getElementById('syncLabel');
+    dot.className='sync-dot sync-'+status;
+    lbl.textContent=label;
+  },
+
+  // get default branch
+  async _getDefaultBranch(){
+    const cfg=this.getConfig();
+    try{
+      const resp=await fetch(
+        `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}?access_token=${cfg.token}`
+      );
+      if(resp.ok){
+        const info=await resp.json();
+        return info.default_branch||'master';
+      }
+    }catch(e){}
+    return 'master';
+  },
+
+  // push data to Gitee (needs token)
+  async push(){
+    const cfg=this.getConfig();
+    if(!this.isConfigured()){this.setSyncStatus('error','未配置');return false;}
+
+    this.setSyncStatus('loading','同步中…');
+    try{
+      const data=JSON.stringify(dumpData(),null,0);
+      // base64 encode (utf8-safe via percent-encoding roundtrip)
+      const content=btoa(unescape(encodeURIComponent(data)));
+
+      const branch=await this._getDefaultBranch();
+      console.log('Gitee push: using branch',branch);
+
+      // first try to get existing file SHA
+      let sha='';
+      try{
+        const getResp=await fetch(
+          `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}/contents/data.json?access_token=${cfg.token}&ref=${branch}`
+        );
+        if(getResp.ok){
+          const info=await getResp.json();
+          sha=info.sha||'';
+        }
+      }catch(e){/* file may not exist yet */}
+
+      const body={access_token:cfg.token,content,message:'workbench auto-sync '+new Date().toLocaleString('zh-CN'),branch};
+      if(sha)body.sha=sha;
+
+      // POST for create, PUT for update
+      const method=sha?'PUT':'POST';
+      const resp=await fetch(
+        `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}/contents/data.json`,
+        {method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}
+      );
+
+      if(!resp.ok){
+        const errText=await resp.text().catch(()=>'');
+        console.error('Gitee push failed:',resp.status,errText);
+        this.setSyncStatus('error','推送失败('+resp.status+')');
+        return false;
+      }
+
+      console.log('Gitee push: success on branch',branch);
+      this.setSyncStatus('ok','已同步');
+      // store branch for pull reference
+      localStorage.setItem('wb_gitee_branch',branch);
+      return true;
+    }catch(e){
+      console.error('Gitee push error:',e);
+      this.setSyncStatus('error','同步失败');
+      return false;
+    }
+  },
+
+  // pull data from Gitee
+  async pull(){
+    const cfg=this.getConfig();
+    const savedBranch=localStorage.getItem('wb_gitee_branch')||'';
+
+    // try branches in order: saved > main > master
+    const branches=[];
+    if(savedBranch)branches.push(savedBranch);
+    branches.push('main','master');
+
+    // strategy 1: use API with token if available
+    if(cfg.token){
+      for(const b of branches){
+        try{
+          const resp=await fetch(
+            `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}/contents/data.json?access_token=${cfg.token}&ref=${b}&_t=${Date.now()}`
+          );
+          if(resp.ok){
+            const json=await resp.json();
+            const decoded=decodeURIComponent(escape(atob(json.content)));
+            const data=JSON.parse(decoded);
+            return this._mergeData(data);
+          }
+          if(resp.status===404)continue; // try next branch
+          if(resp.status===401){this.setSyncStatus('error','令牌无效');return false;}
+        }catch(e){continue;}
+      }
+      // all branches tried, maybe file doesn't exist yet
+      this.setSyncStatus('ok','云端暂无数据');
+      return false;
+    }
+
+    // strategy 2: no token — try raw URL, then API with auth error hint
+    if(!cfg.user||!cfg.repo){
+      this.setSyncStatus('ok','仅本地');
+      return false;
+    }
+
+    for(const b of branches){
+      try{
+        const resp=await fetch(
+          `https://gitee.com/${cfg.user}/${cfg.repo}/raw/${b}/data.json?_t=${Date.now()}`
+        );
+        if(resp.ok){
+          const data=await resp.json();
+          return this._mergeData(data);
+        }
+        if(resp.status===404)continue; // try next branch
+        if(resp.status===403){
+          this.setSyncStatus('error','仓库为私有，需令牌');
+          return false;
+        }
+      }catch(e){continue;}
+    }
+
+    // raw URL all failed — maybe private repo, suggest using token
+    this.setSyncStatus('error','拉取失败，需令牌');
+    return false;
+  },
+
+  _mergeData(data){
+    if(data&&data.todos!==undefined){
+      ['todos','inspirations','contracts','purchases','expenses'].forEach(k=>{
+        if(Array.isArray(data[k])){
+          const local=DB.get(k);
+          // merge: cloud items take priority, preserve local-only items
+          const localMap={};
+          local.forEach(item=>{localMap[item.id]=item;});
+          data[k].forEach(item=>{localMap[item.id]=item;}); // cloud overwrites
+          DB.set(k,Object.values(localMap));
+        }
+      });
+      this.setSyncStatus('ok','已同步');
+      toast('从云端加载了数据');
+      return true;
+    }
+    this.setSyncStatus('ok','云端无数据');
+    return false;
+  },
+
+  // test connection
+  async test(){
+    const cfg=this.getConfig();
+    if(!cfg.user||!cfg.repo){return'请先填写用户名和仓库名';}
+    if(!cfg.token){return'请填写私人令牌';}
+    try{
+      const resp=await fetch(
+        `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}?access_token=${cfg.token}`
+      );
+      if(resp.ok)return'ok';
+      if(resp.status===404)return'仓库不存在，请检查用户名和仓库名';
+      if(resp.status===401)return'令牌无效，请检查 Token';
+      return'连接失败 (HTTP '+resp.status+')';
+    }catch(e){
+      return'网络错误，请检查网络连接';
+    }
+  }
+};
+
+// ============================================================
+//  AUTO SYNC ON SAVE (debounced)
+// ============================================================
+let _syncTimer=null;
+function triggerSync(){
+  if(!GITEE.isConfigured())return;
+  clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(()=>{GITEE.push();},1500);
+}
+
+// override DB.set to auto-sync
+const _origDBSet=DB.set;
+DB.set=function(key,val){
+  _origDBSet(key,val);
+  // only sync for main data keys
+  if(['todos','inspirations','contracts','purchases','expenses'].includes(key)){
+    triggerSync();
+  }
+};
+
+// ============================================================
+//  SETTINGS
+// ============================================================
+function loadSettings(){
+  const cfg=GITEE.getConfig();
+  document.getElementById('giteeUser').value=cfg.user;
+  document.getElementById('giteeRepo').value=cfg.repo;
+  document.getElementById('giteeToken').value=cfg.token;
+  document.getElementById('backupInterval').value=getBackupInterval();
+
+  // update sync status
+  if(GITEE.isConfigured()){
+    GITEE.setSyncStatus('ok','已配置');
+  }else if(cfg.user&&cfg.repo){
+    GITEE.setSyncStatus('ok','只读模式');
+  }else{
+    GITEE.setSyncStatus('ok','仅本地');
+  }
+}
+
+function saveSettings(){
+  const user=document.getElementById('giteeUser').value.trim();
+  const repo=document.getElementById('giteeRepo').value.trim();
+  const token=document.getElementById('giteeToken').value.trim();
+  const interval=document.getElementById('backupInterval').value;
+
+  localStorage.setItem('wb_gitee_user',user);
+  localStorage.setItem('wb_gitee_repo',repo);
+  if(token)localStorage.setItem('wb_gitee_token',token);
+  localStorage.setItem('wb_backup_interval',interval);
+
+  closeModal('settingsModal');
+  loadSettings();
+
+  // if newly configured, do an initial push
+  if(GITEE.isConfigured()){
+    toast('设置已保存，正在同步数据…');
+    GITEE.push().then(()=>{renderCurrentPage();});
+  }else{
+    toast('设置已保存');
+  }
+}
+
+async function testSync(){
+  const result=await GITEE.test();
+  if(result==='ok'){
+    toast('✓ 连接成功！Gitee 仓库可正常访问');
+  }else{
+    toast('✗ '+result);
+  }
+}
+
+// ============================================================
+//  RENDER CURRENT PAGE
+// ============================================================
+function renderCurrentPage(){
+  if(currentPage==='dashboard')renderDashboard();
+  if(currentPage==='todo')renderTodo();
+  if(currentPage==='inspiration')renderInspiration();
+  if(currentPage==='contract')renderContracts();
+  if(currentPage==='purchase')renderPurchases();
+  if(currentPage==='expense')renderExpenses();
+}
+
+// ============================================================
+//  XSS escape
+// ============================================================
+function esc(s){
+  if(!s)return'';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+loadSettings();
+checkBackup();
+// try to pull data from cloud on startup
+(async function(){
+  if(GITEE.getConfig().user&&GITEE.getConfig().repo){
+    await GITEE.pull();
+  }
+  renderDashboard();
+})();
+</script>
+</body>
+</html>
