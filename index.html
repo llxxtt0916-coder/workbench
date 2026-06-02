@@ -837,6 +837,8 @@ tr:hover td{background:#fafcff}
         <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
       </div>
       <div style="display:flex;gap:8px">
+        <button class="btn btn-sm btn-outline" id="syncPushBtn" onclick="manualPush()">⬆️ 推送数据</button>
+        <button class="btn btn-sm btn-outline" id="syncPullBtn" onclick="manualPull()">⬇️ 拉取数据</button>
         <button class="btn btn-sm btn-outline" id="syncTestBtn" onclick="testSync()">🔗 测试连接</button>
         <button class="btn btn-sm btn-outline" onclick="deployHTML()">🚀 更新网页到仓库</button>
         <button class="btn btn-primary btn-sm" onclick="saveSettings()">💾 保存设置</button>
@@ -2094,6 +2096,45 @@ async function testSync(){
     toast('✓ 连接成功！Gitee 仓库可正常访问');
   }else{
     toast('✗ '+result);
+  }
+}
+
+async function manualPush(){
+  if(!GITEE.isConfigured()){
+    toast('✗ 请先在设置中填写 Gitee 用户名、仓库和令牌');
+    return;
+  }
+  const btn=document.getElementById('syncPushBtn');
+  btn.disabled=true; btn.textContent='⏳ 推送中…';
+  toast('正在推送数据到云端…');
+  const result=await GITEE.push();
+  btn.disabled=false; btn.textContent='⬆️ 推送数据';
+  if(result==='ok'){
+    GITEE.setSyncStatus('ok','已同步');
+    toast('✓ 数据已推送到云端');
+    renderCurrentPage();
+  }else{
+    toast('✗ 推送失败：'+result);
+  }
+}
+
+async function manualPull(){
+  if(!GITEE.getConfig().user||!GITEE.getConfig().repo){
+    toast('✗ 请先在设置中填写 Gitee 用户名和仓库');
+    return;
+  }
+  const btn=document.getElementById('syncPullBtn');
+  btn.disabled=true; btn.textContent='⏳ 拉取中…';
+  toast('正在从云端拉取数据…');
+  const result=await GITEE.pull();
+  btn.disabled=false; btn.textContent='⬇️ 拉取数据';
+  if(result==='ok'){
+    repairData(); // 拉取后自动修复旧数据格式
+    GITEE.setSyncStatus('ok','已同步');
+    toast('✓ 数据已从云端拉取');
+    renderCurrentPage();
+  }else{
+    toast('✗ 拉取失败：'+result);
   }
 }
 
