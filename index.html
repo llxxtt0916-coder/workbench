@@ -1544,7 +1544,7 @@ function renderTodo(){
   updateTodoFilterCount(filtered.length);
 
   if(!filtered.length){
-    document.getElementById('todoTabContent').innerHTML='<div class="empty-state"><p>暂无符合筛选的'+TYPE_LABELS[activeTodoTab]+'记录（共'+todos.length+'条数据，当前标签'+todos.filter(t=>t.type===activeTodoTab).length+'条）</p></div>';
+    document.getElementById('todoTabContent').innerHTML='<div class="empty-state"><p>暂无符合筛选的'+TYPE_LABELS[activeTodoTab]+'记录（共'+todos.length+'条数据，当前标签'+todos.filter(t=>t.type===activeTodoTab).length+'条）</p><button class="btn btn-primary" style="margin-top:12px" onclick="resetTodoFilter()">🔄 重置所有筛选条件</button></div>';
     renderReminders();
     return;
   }
