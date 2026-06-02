@@ -235,6 +235,18 @@ tr:hover td{background:#fafcff}
 .settings-desc{font-size:11.5px;color:var(--color-text3);margin-top:2px}
 .settings-input{width:200px;padding:6px 10px;border:1px solid var(--color-border);border-radius:var(--radius-sm);font-size:13px}
 .settings-input:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px rgba(59,107,222,.1)}
+
+/* smart input */
+.smart-textarea{width:100%;min-height:120px;padding:12px;border:2px solid var(--color-border);border-radius:var(--radius);font-size:13px;font-family:inherit;resize:vertical;line-height:1.6;box-sizing:border-box}
+.smart-textarea:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px rgba(59,107,222,.1)}
+.cat-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--color-border);background:var(--color-bg);transition:all .2s}
+.cat-badge.active{border-color:var(--color-primary);background:rgba(59,107,222,.08);color:var(--color-primary)}
+.cat-badge:hover{border-color:var(--color-primary)}
+.cat-row{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.preview-card{background:var(--color-bg);border-radius:var(--radius);padding:14px;margin-top:12px;font-size:12.5px;line-height:1.7}
+.preview-card .field{display:flex;gap:8px;margin-bottom:6px}
+.preview-card .field-label{color:var(--color-text3);min-width:50px;flex-shrink:0}
+.preview-card .field-value{color:var(--color-text);word-break:break-all}
 </style>
 </head>
 <body>
@@ -302,6 +314,7 @@ tr:hover td{background:#fafcff}
     <div class="topbar-right">
       <span class="sync-dot sync-ok" id="syncDot" title="同步状态" style="margin-right:4px"></span>
       <span style="font-size:11px;color:var(--color-text3);margin-right:8px" id="syncLabel">就绪</span>
+      <div class="avatar" title="智能录入" onclick="openModal('smartModal')" style="background:linear-gradient(135deg,#a855f7,#6366f1);margin-right:6px">✨</div>
       <div class="avatar" title="导出数据 &amp; 设置" onclick="openModal('settingsModal')">⚙</div>
     </div>
   </header>
@@ -773,6 +786,7 @@ tr:hover td{background:#fafcff}
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-sm btn-outline" id="syncTestBtn" onclick="testSync()">🔗 测试连接</button>
+        <button class="btn btn-sm btn-outline" onclick="deployHTML()">🚀 更新网页到仓库</button>
         <button class="btn btn-primary btn-sm" onclick="saveSettings()">💾 保存设置</button>
       </div>
     </div>
@@ -781,6 +795,36 @@ tr:hover td{background:#fafcff}
 
 <div class="toast" id="toast"></div>
 
+<!-- Smart Input Modal -->
+<div class="modal-overlay" id="smartModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <span class="modal-title">✨ 智能录入</span>
+      <button class="close-btn" onclick="closeModal('smartModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <textarea class="smart-textarea" id="smartInput" placeholder="粘贴一段文字，自动识别类型和字段……&#10;&#10;例如：&#10;• "今天下午3点前完成季度报告" → 任务&#10;• "想到一个优化用户体验的新方案" → 灵感&#10;• "与XX公司签署合同，金额50万" → 合同&#10;• "采购办公设备，供应商报价3000元" → 采购&#10;• "出差餐费128元，发票号12345" → 报销" oninput="smartAnalyze()"></textarea>
+
+      <div class="cat-row" id="catRow">
+        <span class="cat-badge" data-cat="todo" onclick="smartSetCat('todo')">✅ 任务</span>
+        <span class="cat-badge" data-cat="inspiration" onclick="smartSetCat('inspiration')">💡 灵感</span>
+        <span class="cat-badge" data-cat="contract" onclick="smartSetCat('contract')">📄 合同</span>
+        <span class="cat-badge" data-cat="purchase" onclick="smartSetCat('purchase')">🛒 采购</span>
+        <span class="cat-badge" data-cat="expense" onclick="smartSetCat('expense')">💰 报销</span>
+      </div>
+
+      <div class="preview-card" id="previewCard" style="display:none">
+        <div style="font-weight:600;margin-bottom:8px;color:var(--color-text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">📋 识别预览</div>
+        <div id="previewFields"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm btn-outline" onclick="document.getElementById('smartInput').value='';closePreview();">清空</button>
+      <button class="btn btn-primary btn-sm" id="smartSaveBtn" onclick="smartSave()" disabled>确认录入</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============================================================
 //  DATA LAYER
@@ -788,8 +832,70 @@ tr:hover td{background:#fafcff}
 const DB = {
   get(key){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return[]}},
   set(key,val){localStorage.setItem(key,JSON.stringify(val))},
-  nextId(arr){return arr.length?Math.max(...arr.map(x=>x.id||0))+1:1}
+  nextId(arr){return arr.length?Math.max(0,...arr.map(x=>typeof x.id==='number'?x.id:0))+1:1}
 };
+
+// 自动修复第一版智能录入产生的非数字 ID 和字段名问题
+function repairData(){
+  const keys=['todos','inspirations','contracts','purchases','expenses'];
+  let repaired=false;
+
+  keys.forEach(key=>{
+    const records=DB.get(key);
+    if(!records.length)return;
+
+    const hasNonNumeric=records.some(r=>typeof r.id!=='number');
+    if(!hasNonNumeric)return;
+
+    const fixed=records.map((r,idx)=>{
+      let rec={...r};
+      rec.id=idx+1;
+
+      switch(key){
+        case 'todos':
+          if(rec.title&&!rec.text){rec.text=rec.title;delete rec.title;}
+          rec.text=rec.text||'未命名任务';
+          rec.priority=rec.priority||'medium';
+          rec.due=rec.due||'';
+          rec.note=rec.note||'';
+          rec.done=!!rec.done;
+          rec.createdAt=rec.createdAt||'';
+          break;
+        case 'inspirations':
+          if(!rec.title&&rec.content)rec.title=String(rec.content).slice(0,30);
+          rec.title=rec.title||'未命名灵感';
+          rec.content=rec.content||'';
+          rec.tags=Array.isArray(rec.tags)?rec.tags:['想法'];
+          rec.createdAt=rec.createdAt||'';
+          break;
+        case 'contracts':
+          rec.name=rec.name||'';rec.party=rec.party||'';
+          rec.amount=rec.amount||0;rec.date=rec.date||'';
+          rec.expiry=rec.expiry||'';rec.status=rec.status||'执行中';
+          rec.note=rec.note||'';rec.createdAt=rec.createdAt||'';
+          break;
+        case 'purchases':
+          rec.name=rec.name||'';rec.supplier=rec.supplier||'';
+          rec.amount=rec.amount||0;rec.date=rec.date||'';
+          rec.status=rec.status||'申请中';rec.note=rec.note||'';
+          rec.createdAt=rec.createdAt||'';
+          break;
+        case 'expenses':
+          rec.name=rec.name||'';rec.amount=rec.amount||0;
+          rec.date=rec.date||'';rec.invoice=rec.invoice||'';
+          rec.type=rec.type||'其他';rec.status=rec.status||'待报销';
+          rec.note=rec.note||'';rec.createdAt=rec.createdAt||'';
+          break;
+      }
+      return rec;
+    });
+
+    DB.set(key,fixed);
+    repaired=true;
+  });
+
+  if(repaired)console.log('✅ 历史数据已自动修复（非数字ID→数字ID）');
+}
 
 // ============================================================
 //  NAVIGATION
@@ -1673,18 +1779,25 @@ const GITEE={
 
   _mergeData(data){
     if(data&&data.todos!==undefined){
+      let itemsMerged=0;
       ['todos','inspirations','contracts','purchases','expenses'].forEach(k=>{
         if(Array.isArray(data[k])){
           const local=DB.get(k);
-          // merge: cloud items take priority, preserve local-only items
           const localMap={};
           local.forEach(item=>{localMap[item.id]=item;});
-          data[k].forEach(item=>{localMap[item.id]=item;}); // cloud overwrites
-          DB.set(k,Object.values(localMap));
+          // cloud overwrites local items with same id
+          data[k].forEach(item=>{localMap[item.id]=item;});
+          const merged=Object.values(localMap);
+          // safety: never wipe local data with empty cloud data
+          if(merged.length===0&&local.length>0){
+            console.log('Merge: keeping local data for',k,'(cloud is empty, local has',local.length,'items)');
+            return; // skip this key, keep local
+          }
+          DB.set(k,merged);
+          itemsMerged+=merged.length;
         }
       });
-      this.setSyncStatus('ok','已同步');
-      toast('从云端加载了数据');
+      this.setSyncStatus('ok','已同步 ('+itemsMerged+'条)');
       return true;
     }
     this.setSyncStatus('ok','云端无数据');
@@ -1782,6 +1895,346 @@ async function testSync(){
   }
 }
 
+// deploy current HTML to Gitee
+async function deployHTML(){
+  const cfg=GITEE.getConfig();
+  if(!cfg.user||!cfg.repo||!cfg.token){
+    toast('✗ 请先填写用户名、仓库名和令牌');
+    return;
+  }
+
+  const btn=document.getElementById('syncTestBtn');
+  btn.disabled=true;
+  btn.textContent='⏳ 部署中…';
+  toast('正在推送网页到 Gitee…');
+
+  try{
+    const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+    const encoded=btoa(unescape(encodeURIComponent(html)));
+    const branch=localStorage.getItem('wb_gitee_branch')||'master';
+
+    // get existing SHA
+    let sha='';
+    try{
+      const getResp=await fetch(
+        `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}/contents/index.html?access_token=${cfg.token}&ref=${branch}`
+      );
+      if(getResp.ok){
+        const info=await getResp.json();
+        sha=info.sha||'';
+      }
+    }catch(e){}
+
+    const body={access_token:cfg.token,content:encoded,message:'Update workbench: '+new Date().toLocaleString('zh-CN'),branch};
+    if(sha)body.sha=sha;
+
+    const method=sha?'PUT':'POST';
+    const resp=await fetch(
+      `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}/contents/index.html`,
+      {method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}
+    );
+
+    if(resp.ok){
+      toast('✓ 网页已更新到 Gitee 仓库！');
+    }else{
+      const err=await resp.text().catch(()=>'');
+      toast('✗ 部署失败 ('+resp.status+')');
+      console.error('Deploy error:',err);
+    }
+  }catch(e){
+    toast('✗ 网络错误，部署失败');
+    console.error('Deploy error:',e);
+  }finally{
+    btn.disabled=false;
+    btn.textContent='🔗 测试连接';
+  }
+}
+
+// ============================================================
+//  SMART INPUT — classify & extract
+// ============================================================
+let _smartDetected='';
+
+// keyword-based classifier: returns {cat, score}
+const SMART_RULES = {
+  todo: {
+    keywords: ['完成','处理','提交','跟进','做','办','准备','安排','写','发','开会','报告','方案','审批','确认','检查','整改','整理','收集','汇总','填报','回复','联系','通知','落实'],
+    score: 0
+  },
+  inspiration: {
+    keywords: ['想法','灵感','创意','思路','可以试试','想到','建议','优化','改进','新方案','启发','点子','突然','或许','不妨','探讨','思考','反思','感悟','心得'],
+    score: 0
+  },
+  contract: {
+    keywords: ['合同','签署','甲方','乙方','协议','条款','履约','违约责任','标的','价款','生效','终止','续签','签订','签合同','签协议','法务','盖章'],
+    score: 0
+  },
+  purchase: {
+    keywords: ['采购','购买','供应商','报价','招标','竞标','供货','验收','入库','货比三家','下单','订单','选购','询价','比价'],
+    score: 0
+  },
+  expense: {
+    keywords: ['报销','发票','费用','出差','餐费','交通','住宿','招待','差旅','发票号','报账','支出','花销','垫付','票据','凭据','车票','机票','酒店'],
+    score: 0
+  }
+};
+
+function smartClassify(text){
+  const t=text.toLowerCase().replace(/\s+/g,'');
+  // reset
+  Object.values(SMART_RULES).forEach(r=>r.score=0);
+  // score each category
+  Object.entries(SMART_RULES).forEach(([cat,rule])=>{
+    rule.keywords.forEach(kw=>{
+      if(t.includes(kw))rule.score+=1;
+      // extra weight for first sentence
+      if(t.split(/[。！？\n]/)[0]?.includes(kw))rule.score+=1;
+    });
+    // bonus: amounts + contract keywords
+    if(cat==='contract'&&/[\d,.]+万/.test(t))rule.score+=1;
+    if(cat==='expense'&&/[\d,.]+[元块]/.test(t))rule.score+=1;
+    if(cat==='purchase'&&/[\d,.]+[元块]/.test(t))rule.score+=1;
+  });
+
+  // find best
+  let best='todo',bestScore=0;
+  Object.entries(SMART_RULES).forEach(([cat,rule])=>{
+    if(rule.score>bestScore){best=cat;bestScore=rule.score;}
+  });
+
+  // if nothing detected, default to inspiration
+  if(bestScore===0)best='inspiration';
+
+  return {cat:best,score:bestScore};
+}
+
+function smartExtract(text,cat){
+  const result={};
+  const firstLine=text.split(/[。！？\n]/)[0]?.trim()||text.trim().slice(0,40);
+
+  // amount
+  const amtMatch=text.match(/([\d,]+\.?\d*)\s*[万元块]/);
+  if(amtMatch)result.amount=parseFloat(amtMatch[1].replace(/,/g,''));
+
+  // date
+  const dateMatch=text.match(/(\d{4}[年/-]\d{1,2}[月/-]\d{1,2})/);
+  if(dateMatch)result.date=dateMatch[1];
+
+  // name / title
+  switch(cat){
+    case 'todo':
+      result.title=firstLine.replace(/^(完成|处理|提交|跟进|做|办|准备|安排|写|发|请|需要|要|记得)/,'').slice(0,60)||firstLine.slice(0,60);
+      if(result.date)result.deadline=result.date;
+      break;
+    case 'inspiration':
+      result.content=text.slice(0,200);
+      // auto tags
+      const tags=[];
+      ['工作','生活','技术','产品','管理','学习','阅读'].forEach(t=>{if(text.includes(t))tags.push(t);});
+      result.tags=tags.length?tags:['想法'];
+      break;
+    case 'contract':
+      result.name=firstLine.replace(/^(合同[：:]?\s*|签署|签订|签)/,'').slice(0,60)||firstLine.slice(0,60);
+      // try extract party
+      const partyMatch=text.match(/(?:甲方|乙方|对方|合作方)[：:]*\s*(\S{2,20})/);
+      if(partyMatch)result.party=partyMatch[1];
+      break;
+    case 'purchase':
+      result.name=firstLine.replace(/^(采购|购买|选购)/,'').slice(0,60)||firstLine.slice(0,60);
+      const supplierMatch=text.match(/(?:供应商|商家|厂家)[：:]*\s*(\S{2,20})/);
+      if(supplierMatch)result.supplier=supplierMatch[1];
+      break;
+    case 'expense':
+      result.name=firstLine.replace(/^(报销|费用|支出)/,'').slice(0,60)||firstLine.slice(0,60);
+      const invoiceMatch=text.match(/发票[号編编]?[：:]*\s*(\S{4,20})/);
+      if(invoiceMatch)result.invoice=invoiceMatch[1];
+      // type detection
+      if(/餐|吃|饭/.test(text))result.type='餐饮';
+      else if(/交通|打车|车票|机票|高铁|火车/.test(text))result.type='交通';
+      else if(/住宿|酒店|宾馆/.test(text))result.type='住宿';
+      else if(/办公|文具|耗材|设备/.test(text))result.type='办公';
+      else if(/招待|宴请|请客/.test(text))result.type='招待';
+      else result.type='其他';
+      break;
+  }
+
+  return result;
+}
+
+function smartAnalyze(){
+  const text=document.getElementById('smartInput').value.trim();
+  const previewCard=document.getElementById('previewCard');
+  const previewFields=document.getElementById('previewFields');
+  const saveBtn=document.getElementById('smartSaveBtn');
+
+  if(!text||text.length<3){
+    previewCard.style.display='none';
+    saveBtn.disabled=true;
+    _smartDetected=JSON.stringify({cat:'',fields:{}});
+    return;
+  }
+
+  const cls=smartClassify(text);
+  const fields=smartExtract(text,cls.cat);
+
+  _smartDetected=JSON.stringify({cat:cls.cat,fields});
+
+  // highlight the detected category
+  document.querySelectorAll('#catRow .cat-badge').forEach(b=>b.classList.remove('active'));
+  const activeBadge=document.querySelector(`#catRow .cat-badge[data-cat="${cls.cat}"]`);
+  if(activeBadge)activeBadge.classList.add('active');
+
+  // build preview
+  const catNames={todo:'任务待办',inspiration:'灵感记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
+  const catEmoji={todo:'✅',inspiration:'💡',contract:'📄',purchase:'🛒',expense:'💰'};
+
+  let html=`<div class="field"><span class="field-label">类型</span><span class="field-value">${catEmoji[cls.cat]} ${catNames[cls.cat]}</span></div>`;
+
+  Object.entries(fields).forEach(([k,v])=>{
+    if(v===undefined||v===null)return;
+    const labels={title:'标题',content:'内容',tags:'标签',name:'名称',amount:'金额',date:'日期',deadline:'截止日期',party:'对方',supplier:'供应商',invoice:'发票号',type:'类型'};
+    let display=v;
+    if(k==='amount')display='¥'+v.toLocaleString();
+    if(k==='tags')display=Array.isArray(v)?v.join(' · '):v;
+    html+=`<div class="field"><span class="field-label">${labels[k]||k}</span><span class="field-value">${esc(String(display))}</span></div>`;
+  });
+
+  previewFields.innerHTML=html;
+  previewCard.style.display='block';
+  saveBtn.disabled=false;
+}
+
+function smartSetCat(cat){
+  const text=document.getElementById('smartInput').value.trim();
+  if(!text)return;
+  const fields=smartExtract(text,cat);
+  _smartDetected=JSON.stringify({cat,fields});
+
+  document.querySelectorAll('#catRow .cat-badge').forEach(b=>b.classList.remove('active'));
+  const target=document.querySelector(`#catRow .cat-badge[data-cat="${cat}"]`);
+  if(target)target.classList.add('active');
+
+  // rebuild preview
+  const previewFields=document.getElementById('previewFields');
+  const catNames={todo:'任务待办',inspiration:'灵感记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
+  const catEmoji={todo:'✅',inspiration:'💡',contract:'📄',purchase:'🛒',expense:'💰'};
+
+  let html=`<div class="field"><span class="field-label">类型</span><span class="field-value">${catEmoji[cat]} ${catNames[cat]} <span style="font-size:10px;color:var(--color-text3)">(手动)</span></span></div>`;
+
+  Object.entries(fields).forEach(([k,v])=>{
+    if(v===undefined||v===null)return;
+    const labels={title:'标题',content:'内容',tags:'标签',name:'名称',amount:'金额',date:'日期',deadline:'截止日期',party:'对方',supplier:'供应商',invoice:'发票号',type:'类型'};
+    let display=v;
+    if(k==='amount')display='¥'+v.toLocaleString();
+    if(k==='tags')display=Array.isArray(v)?v.join(' · '):v;
+    html+=`<div class="field"><span class="field-label">${labels[k]||k}</span><span class="field-value">${esc(String(display))}</span></div>`;
+  });
+
+  previewFields.innerHTML=html;
+  document.getElementById('previewCard').style.display='block';
+  document.getElementById('smartSaveBtn').disabled=false;
+}
+
+function closePreview(){
+  document.getElementById('previewCard').style.display='none';
+  document.getElementById('smartSaveBtn').disabled=true;
+  _smartDetected=JSON.stringify({cat:'',fields:{}});
+  document.querySelectorAll('#catRow .cat-badge').forEach(b=>b.classList.remove('active'));
+}
+
+function smartSave(){
+  let data;
+  try{data=JSON.parse(_smartDetected);}catch(e){toast('请先输入内容');return;}
+  if(!data.cat||!data.fields){toast('请先输入内容');return;}
+
+  const f=data.fields;
+  const now=new Date().toISOString().slice(0,10);
+  let record;
+
+  switch(data.cat){
+    case 'todo':{
+      const todos=DB.get('todos');
+      record={
+        id:DB.nextId(todos),
+        text:f.title||'未命名任务',
+        priority:f.title&&/急|紧急|尽快|马上|立即/.test(f.title)?'high':'medium',
+        due:f.deadline||'',
+        note:'',
+        done:false,
+        createdAt:now
+      };
+      DB.set('todos',[...todos,record]);
+      break;
+    }
+    case 'inspiration':{
+      const insps=DB.get('inspirations');
+      const title=f.content?f.content.slice(0,30):'未命名灵感';
+      record={
+        id:DB.nextId(insps),
+        title:title,
+        content:f.content||'',
+        tags:Array.isArray(f.tags)?f.tags:['想法'],
+        createdAt:now
+      };
+      DB.set('inspirations',[...insps,record]);
+      break;
+    }
+    case 'contract':{
+      const contracts=DB.get('contracts');
+      record={
+        id:DB.nextId(contracts),
+        name:f.name||'未命名合同',
+        party:f.party||'',
+        amount:f.amount||0,
+        status:'执行中',
+        signDate:f.date||now,
+        expiry:'',
+        no:'',
+        note:'',
+        createdAt:now
+      };
+      DB.set('contracts',[...contracts,record]);
+      break;
+    }
+    case 'purchase':{
+      const purchases=DB.get('purchases');
+      record={
+        id:DB.nextId(purchases),
+        name:f.name||'未命名采购',
+        supplier:f.supplier||'',
+        amount:f.amount||0,
+        status:'待审批',
+        date:f.date||now,
+        note:'',
+        createdAt:now
+      };
+      DB.set('purchases',[...purchases,record]);
+      break;
+    }
+    case 'expense':{
+      const expenses=DB.get('expenses');
+      record={
+        id:DB.nextId(expenses),
+        name:f.name||'未命名报销',
+        type:f.type||'其他',
+        amount:f.amount||0,
+        invoice:f.invoice||'',
+        date:f.date||now,
+        status:'待审批',
+        note:'',
+        createdAt:now
+      };
+      DB.set('expenses',[...expenses,record]);
+      break;
+    }
+  }
+
+  document.getElementById('smartInput').value='';
+  closePreview();
+  closeModal('smartModal');
+  toast('✓ 已录入到 '+{todo:'任务待办',inspiration:'灵感记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账'}[data.cat]);
+}
+
 // ============================================================
 //  RENDER CURRENT PAGE
 // ============================================================
@@ -1807,10 +2260,12 @@ function esc(s){
 // ============================================================
 loadSettings();
 checkBackup();
+repairData(); // 自动修复第一版智能录入产生的旧格式数据
 // try to pull data from cloud on startup
 (async function(){
   if(GITEE.getConfig().user&&GITEE.getConfig().repo){
     await GITEE.pull();
+    repairData(); // 拉取云端数据后也跑一次修复
   }
   renderDashboard();
 })();
