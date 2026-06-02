@@ -170,6 +170,20 @@ tr:hover td{background:#fafcff}
 .subtask-date{font-size:10px;color:var(--color-text3);flex-shrink:0}
 .subtask-add{display:flex;gap:6px;margin-top:4px}
 .subtask-input{flex:1;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:4px 8px;font-size:12px;color:var(--color-text)}
+/* Reminder banner */
+.reminder-banner{background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #f59e0b;border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;font-size:13px}
+.reminder-banner.danger{background:linear-gradient(135deg,#fee2e2,#fecaca);border-color:var(--color-danger)}
+.reminder-icon{font-size:16px;flex-shrink:0;line-height:1.2}
+.reminder-text{flex:1;line-height:1.5;font-size:12.5px}
+.reminder-text strong{color:#92400e}
+.reminder-banner.danger .reminder-text strong{color:#991b1b}
+.reminder-close{background:none;border:none;cursor:pointer;font-size:14px;color:var(--color-text3);flex-shrink:0;padding:0 2px}
+.reminder-list{margin-top:4px}
+.reminder-item{padding:2px 0;display:flex;align-items:center;gap:6px}
+.reminder-item a{color:var(--color-primary);text-decoration:none;font-weight:500;cursor:pointer}
+.reminder-item a:hover{text-decoration:underline}
+.reminder-days{font-size:11px;color:var(--color-text3);flex-shrink:0}
+
 .subtask-input:focus{border-color:var(--color-primary);outline:none}
 /* Multi-select dropdown */
 .multi-select{padding:6px 8px;border:1px solid var(--color-border);border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:12.5px;color:var(--color-text);background:#fff;min-height:32px;flex-wrap:wrap;user-select:none}
@@ -410,6 +424,10 @@ tr:hover td{background:#fafcff}
         <div class="card-header"><span class="card-title">最近任务</span><button class="btn btn-sm btn-outline" onclick="navigate('todo',document.querySelector('.nav-item:nth-child(2)'))">查看全部</button></div>
         <div id="dashRecentTodo"></div>
       </div>
+      <div class="card" style="margin-top:16px;display:none" id="dashReminderCard">
+        <div class="card-header"><span class="card-title">⏰ 截止提醒</span><button class="btn btn-sm btn-outline" onclick="navigate('todo',document.querySelector('.nav-item:nth-child(2)'))">查看详情</button></div>
+        <div id="dashReminders"></div>
+      </div>
     </div>
 
     <!-- ====== TODO PAGE ====== -->
@@ -423,6 +441,7 @@ tr:hover td{background:#fafcff}
         </div>
         <button class="btn btn-primary btn-sm" onclick="openModal('todoModal')">+ 新建工作</button>
       </div>
+      <div id="reminderBanner" style="display:none"></div>
       <div class="todo-tab-content" id="todoTabContent"></div>
     </div>
 
@@ -1144,6 +1163,26 @@ function renderDashboard(){
       ${t.deadline?`<span class="badge badge-gray" style="font-size:11px;flex-shrink:0">${t.deadline}</span>`:''}
     </div>`).join(''):
     '<div class="empty-state" style="padding:20px"><p>暂无待办工作</p></div>';
+  // Deadline reminders on dashboard
+  const dashReminders=checkDeadlineReminders().slice(0,4);
+  const rCard=document.getElementById('dashReminderCard');
+  const rDiv=document.getElementById('dashReminders');
+  if(rDiv&&rCard){
+    if(dashReminders.length){
+      rCard.style.display='';
+      rDiv.innerHTML=dashReminders.map(r=>{
+        const diff=Math.ceil((new Date(r.deadline)-new Date())/86400000);
+        const days=r.urgency==='today'?'今天到期':'还剩'+diff+'天';
+        return '<div class="todo-item" style="border-left:3px solid '+(r.urgency==='today'?'var(--color-danger)':'var(--color-warning)')+';padding-left:10px;cursor:pointer" onclick="navigate(\'todo\',document.querySelector(\'.nav-item:nth-child(2)\'));setTimeout(()=>switchTodoTab(\''+r.type+'\'),100)">'
+          +'<div class="priority-dot" style="background:'+(PRIORITY_COLOR[r.priority]||PRIORITY_COLOR.mid)+'"></div>'
+          +'<div class="todo-text">'+esc(r.name)+'</div>'
+          +'<span class="badge" style="font-size:10px;flex-shrink:0;background:'+(r.urgency==='today'?'#fee2e2':'#fef3c7')+';color:'+(r.urgency==='today'?'#991b1b':'#92400e')+'">'+days+'</span>'
+          +'</div>';
+      }).join('');
+    }else{
+      rCard.style.display='none';
+    }
+  }
 }
 
 // ============================================================
@@ -1242,6 +1281,7 @@ function renderTodo(){
       </div>
     </div>`;
   }).join('');
+  renderReminders();
 }
 
 function renderSubtasks(t){
@@ -1334,6 +1374,51 @@ function restoreTodo(id){
   DB.set('todos',todos);
   toast('已恢复到'+TYPE_LABELS[t.type]);
   renderTodo();
+}
+
+function checkDeadlineReminders(){
+  const todos=DB.get('todos');
+  const now=new Date();
+  const today=now.toISOString().slice(0,10);
+  const in3Days=new Date(now.getTime()+3*86400000).toISOString().slice(0,10);
+  const reminders=[];
+  todos.forEach(t=>{
+    if(!t.deadline)return;
+    if(t.type==='record')return;
+    if(t.status==='已完成'||t.status==='已取消')return;
+    if(t.deadline===today){
+      reminders.push(Object.assign({},t,{urgency:'today'}));
+    }else if(t.deadline<=in3Days&&t.deadline>today){
+      reminders.push(Object.assign({},t,{urgency:'soon'}));
+    }
+  });
+  reminders.sort((a,b)=>{
+    if(a.urgency==='today'&&b.urgency!=='today')return -1;
+    if(a.urgency!=='today'&&b.urgency==='today')return 1;
+    return a.deadline.localeCompare(b.deadline);
+  });
+  return reminders;
+}
+
+function renderReminders(){
+  const reminders=checkDeadlineReminders();
+  const banner=document.getElementById('reminderBanner');
+  if(!banner)return;
+  if(!reminders||!reminders.length){
+    banner.style.display='none';
+    return;
+  }
+  const hasToday=reminders.some(r=>r.urgency==='today');
+  let html=`<div class="reminder-icon">${hasToday?'🚨':'⏰'}</div><div class="reminder-text"><strong>${hasToday?'今日到期！':'即将到期提醒'}</strong><div class="reminder-list">`;
+  reminders.forEach(r=>{
+    const diff=Math.ceil((new Date(r.deadline)-new Date())/86400000);
+    const days=diff===0?'今天到期':'还剩 '+diff+' 天';
+    html+=`<div class="reminder-item"><a onclick="navigate('todo');setTimeout(()=>switchTodoTab('${r.type}'),100)">${esc(r.name)}</a><span class="reminder-days">${days} | 截止: ${r.deadline}</span></div>`;
+  });
+  html+=`</div></div><button class="reminder-close" onclick="document.getElementById('reminderBanner').style.display='none'">×</button>`;
+  banner.className='reminder-banner'+(hasToday?' danger':'');
+  banner.innerHTML=html;
+  banner.style.display='';
 }
 
 function saveTodo(){
@@ -2685,6 +2770,18 @@ repairData(); // 自动修复第一版智能录入产生的旧格式数据
     repairData(); // 拉取云端数据后也跑一次修复
   }
   renderDashboard();
+  // 每小时检查一次截止提醒
+  setInterval(()=>{
+    if(currentPage==='dashboard')renderDashboard();
+    if(currentPage==='todo')renderTodo();
+  },3600000);
+  // 切回标签页时刷新提醒
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden){
+      if(currentPage==='dashboard')renderDashboard();
+      if(currentPage==='todo')renderTodo();
+    }
+  });
 })();
 </script>
 </body>
