@@ -171,6 +171,30 @@ tr:hover td{background:#fafcff}
 .subtask-add{display:flex;gap:6px;margin-top:4px}
 .subtask-input{flex:1;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:4px 8px;font-size:12px;color:var(--color-text)}
 .subtask-input:focus{border-color:var(--color-primary);outline:none}
+/* Multi-select dropdown */
+.multi-select{padding:6px 8px;border:1px solid var(--color-border);border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:12.5px;color:var(--color-text);background:#fff;min-height:32px;flex-wrap:wrap;user-select:none}
+.multi-select-placeholder{color:var(--color-text3);font-size:12px}
+.multi-select-arrow{font-size:10px;color:var(--color-text3);flex-shrink:0}
+.multi-select-tag{display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:99px;font-size:11px;background:var(--color-bg);border:1px solid var(--color-border)}
+.multi-select-tag .tag-close{cursor:pointer;font-size:12px;line-height:1;color:var(--color-text3);margin-left:1px}
+.multi-select-tag .tag-close:hover{color:var(--color-danger)}
+.multi-dropdown{display:none;position:absolute;top:100%;left:0;right:0;z-index:100;background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-sm);box-shadow:0 4px 12px rgba(0,0,0,.1);max-height:220px;overflow-y:auto;margin-top:2px}
+.multi-dropdown.open{display:block}
+.multi-dropdown-list{padding:4px 0}
+.multi-dropdown-item{padding:6px 10px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .1s;color:var(--color-text)}
+.multi-dropdown-item:hover{background:var(--color-bg)}
+.multi-dropdown-item input[type=checkbox]{margin:0;accent-color:var(--color-primary)}
+.multi-dropdown-add{display:flex;gap:4px;padding:6px 8px;border-top:1px solid var(--color-border)}
+.multi-dropdown-add .subtask-input{flex:1;font-size:11px;padding:3px 6px}
+/* Blocker badge */
+.blocker-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:11px;background:#fef2f2;color:#991b1b;cursor:pointer}
+.blocker-badge:hover{background:#fee2e2}
+/* Status select inline */
+.status-select{font-size:11px;padding:2px 6px;border-radius:99px;border:1px solid var(--color-border);background:#fff;color:var(--color-text);cursor:pointer;margin-left:4px}
+.status-select:focus{outline:none;border-color:var(--color-primary)}
+/* Restore btn */
+.restore-btn{font-size:10px;padding:2px 8px;border-radius:99px;border:1px solid var(--color-primary);background:transparent;color:var(--color-primary);cursor:pointer;transition:all .15s}
+.restore-btn:hover{background:var(--color-primary);color:#fff}
 /* Keep legacy items */
 .todo-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);transition:background .1s}
 .todo-item:hover{background:#fafcff}
@@ -311,7 +335,7 @@ tr:hover td{background:#fafcff}
     <div class="nav-section">工作</div>
     <div class="nav-item" onclick="navigate('todo',this)">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-      任务待办
+      工作记录
       <span class="nav-badge" id="todoCount" style="display:none">0</span>
     </div>
     <div class="nav-item" onclick="navigate('inspiration',this)">
@@ -529,13 +553,33 @@ tr:hover td{background:#fafcff}
         </div>
       </div>
       <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">类别</label>
-          <input class="form-control" id="todoCategory" placeholder="如：报告、会议、审批…">
+        <div class="form-group" style="position:relative">
+          <label class="form-label">类别（可多选）</label>
+          <div class="multi-select" id="todoCategorySelect" onclick="toggleMultiSelect('todoCategorySelect')">
+            <span class="multi-select-placeholder" id="todoCategoryPlaceholder">选择类别…</span>
+            <span class="multi-select-arrow">▾</span>
+          </div>
+          <div class="multi-dropdown" id="todoCategoryDropdown">
+            <div class="multi-dropdown-list" id="todoCategoryList"></div>
+            <div class="multi-dropdown-add">
+              <input class="subtask-input" id="todoCategoryNew" placeholder="新增类别…" onkeydown="if(event.key==='Enter')addMultiOption('todoCategory')">
+              <button class="btn btn-ghost btn-sm" onclick="addMultiOption('todoCategory')">+ 新增</button>
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">来源</label>
-          <input class="form-control" id="todoSource" placeholder="如：上级交办、自研…">
+        <div class="form-group" style="position:relative">
+          <label class="form-label">来源（可多选）</label>
+          <div class="multi-select" id="todoSourceSelect" onclick="toggleMultiSelect('todoSourceSelect')">
+            <span class="multi-select-placeholder" id="todoSourcePlaceholder">选择来源…</span>
+            <span class="multi-select-arrow">▾</span>
+          </div>
+          <div class="multi-dropdown" id="todoSourceDropdown">
+            <div class="multi-dropdown-list" id="todoSourceList"></div>
+            <div class="multi-dropdown-add">
+              <input class="subtask-input" id="todoSourceNew" placeholder="新增来源…" onkeydown="if(event.key==='Enter')addMultiOption('todoSource')">
+              <button class="btn btn-ghost btn-sm" onclick="addMultiOption('todoSource')">+ 新增</button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="form-row">
@@ -553,8 +597,8 @@ tr:hover td{background:#fafcff}
         <textarea class="form-control" id="todoContent" rows="3" placeholder="详细描述…"></textarea>
       </div>
       <div class="form-group">
-        <label class="form-label">办结情况</label>
-        <input class="form-control" id="todoStatus" placeholder="如：已办结、进行中…">
+        <label class="form-label">堵点卡点</label>
+        <textarea class="form-control" id="todoBlocker" rows="2" placeholder="当前遇到的困难、阻碍…"></textarea>
       </div>
     </div>
     <div class="modal-footer">
@@ -913,15 +957,17 @@ function repairData(){
             rec={
               id:idx+1,
               type:rec.done?'record':'pending',
+              _prevType:rec.done?'pending':'',
               name:rec.text||'未命名工作',
-              category:'',
-              source:'',
+              category:[],
+              source:[],
               priority:rec.priority||'medium',
               content:rec.note||'',
               issueDate:'',
               deadline:rec.due||'',
               completeDate:rec.doneAt?rec.doneAt.slice(0,10):'',
-              status:rec.done?'已办结':'',
+              blocker:'',
+              status:rec.done?'已完成':'未开始',
               subtasks:[],
               createdAt:rec.createdAt||''
             };
@@ -929,15 +975,16 @@ function repairData(){
             // Fix new-format records with non-numeric IDs
             rec.type=rec.type||'pending';
             rec.name=rec.name||'未命名工作';
-            rec.category=rec.category||'';
-            rec.source=rec.source||'';
+            rec.category=Array.isArray(rec.category)?rec.category:rec.category?[rec.category]:[];
+            rec.source=Array.isArray(rec.source)?rec.source:rec.source?[rec.source]:[];
             rec.priority=rec.priority||'medium';
             rec.content=rec.content||'';
             rec.issueDate=rec.issueDate||'';
             rec.deadline=rec.deadline||'';
             rec.completeDate=rec.completeDate||'';
-            rec.status=rec.status||'';
-            rec.subtasks=Array.isArray(rec.subtasks)?rec.subtasks:[];
+            rec.blocker=rec.blocker||'';
+            rec.status=rec.status||'未开始';
+            rec.subtasks=Array.isArray(rec.subtasks)?rec.subtasks.map(s=>({...s,addTime:s.addTime||s.date||'',completeTime:s.completeTime||''})):[];
             rec.createdAt=rec.createdAt||'';
             rec.id=idx+1;
           }
@@ -981,7 +1028,7 @@ function repairData(){
 // ============================================================
 //  NAVIGATION
 // ============================================================
-const pageTitles={dashboard:'驾驶舱',todo:'任务待办',inspiration:'灵感收集',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
+const pageTitles={dashboard:'驾驶舱',todo:'工作记录',inspiration:'灵感收集',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
 let currentPage='dashboard';
 let todoChartInst=null, contractChartInst=null;
 
@@ -1145,17 +1192,25 @@ function renderTodo(){
     const isRecord=activeTodoTab==='record';
     const sd=(t.subtasks||[]).filter(s=>s.done).length;
     const st=(t.subtasks||[]).length;
+    const cats=(t.category||[]).filter(Boolean);
+    const srcs=(t.source||[]).filter(Boolean);
+    const status=t.status||'未开始';
+    const statusOpts=['未开始','进行中','已完成','已取消'];
+    const isTerminal=status==='已完成'||status==='已取消';
     return `
     <div class="todo-card" id="todo-${t.id}">
       <div class="todo-card-header">
-        ${!isRecord?`<div class="todo-check" onclick="completeTodo(${t.id})" title="标记完成"></div>`:''}
         <div class="priority-dot" style="background:${PRIORITY_COLOR[t.priority]||PRIORITY_COLOR['mid']}"></div>
         <div class="todo-card-title">${esc(t.name)}</div>
-        <div style="display:flex;gap:3px;flex-shrink:0">
-          ${t.category?`<span class="tag tag-cat">${esc(t.category)}</span>`:''}
-          ${t.source?`<span class="tag tag-src">${esc(t.source)}</span>`:''}
+        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap">
+          <select class="status-select" onchange="changeTodoStatus(${t.id},this.value)">
+            ${statusOpts.map(s=>`<option value="${s}" ${status===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+          ${cats.map(c=>`<span class="tag tag-cat">${esc(c)}</span>`).join('')}
+          ${srcs.map(s=>`<span class="tag tag-src">${esc(s)}</span>`).join('')}
         </div>
         <div class="todo-card-actions">
+          ${isRecord?`<button class="restore-btn" onclick="restoreTodo(${t.id})" title="恢复到原类别">↩ 恢复</button>`:''}
           <button class="btn btn-ghost btn-sm" onclick="editTodo(${t.id})" title="编辑">✏️</button>
           <button class="btn btn-ghost btn-sm" onclick="deleteTodo(${t.id})" title="删除" style="color:var(--color-danger)">🗑</button>
         </div>
@@ -1164,9 +1219,10 @@ function renderTodo(){
         ${t.issueDate?`<span>📥 下发: ${t.issueDate}</span>`:''}
         ${t.deadline?`<span>⏰ 截止: ${t.deadline}</span>`:''}
         ${t.completeDate?`<span>✅ 完成: ${t.completeDate}</span>`:''}
-        ${t.status?`<span>📋 ${esc(t.status)}</span>`:''}
+        ${t.blocker?`<span class="blocker-badge" title="堵点卡点：${esc(t.blocker)}">⚠️ 堵点</span>`:''}
       </div>
       ${t.content?`<div class="todo-card-body">${esc(t.content)}</div>`:''}
+      ${t.blocker?`<div class="todo-card-body" style="background:#fef2f2;color:#991b1b">🚧 <strong>堵点卡点：</strong>${esc(t.blocker)}</div>`:''}
       ${st>0?`
       <div class="todo-subtask-bar" onclick="toggleSubtasks(${t.id})">
         <span class="subtask-progress"><span class="subtask-done-bar" style="width:${st?(sd/st*100):0}%"></span></span>
@@ -1196,7 +1252,8 @@ function renderSubtasks(t){
         ${s.done?'<svg width="8" height="8" viewBox="0 0 10 10"><path d="M1.5 5l2.5 2.5L8.5 2" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}
       </div>
       <span class="subtask-text">${esc(s.text)}</span>
-      ${s.date?`<span class="subtask-date">${s.date}</span>`:''}
+      <span class="subtask-date">添加: ${s.addTime||s.date||''}</span>
+      ${s.done&&s.completeTime?`<span class="subtask-date" style="color:var(--color-success)">✓ ${s.completeTime}</span>`:''}
       <button class="btn btn-ghost btn-sm" onclick="deleteSubtask(${t.id},${i})" style="color:var(--color-danger);font-size:10px;padding:0 4px">×</button>
     </div>
   `).join('');
@@ -1218,7 +1275,7 @@ function addSubtask(todoId){
   const t=todos.find(x=>x.id===todoId);
   if(!t)return;
   if(!t.subtasks)t.subtasks=[];
-  t.subtasks.push({text,done:false,date:new Date().toISOString().slice(0,10)});
+  t.subtasks.push({text,done:false,addTime:new Date().toISOString().slice(0,10),completeTime:''});
   DB.set('todos',todos);
   input.value='';
   renderTodo();
@@ -1229,6 +1286,11 @@ function toggleSubtask(todoId,idx){
   const t=todos.find(x=>x.id===todoId);
   if(!t||!t.subtasks)return;
   t.subtasks[idx].done=!t.subtasks[idx].done;
+  if(t.subtasks[idx].done){
+    t.subtasks[idx].completeTime=new Date().toISOString().slice(0,10);
+  }else{
+    t.subtasks[idx].completeTime='';
+  }
   DB.set('todos',todos);
   renderTodo();
 }
@@ -1242,24 +1304,36 @@ function deleteSubtask(todoId,idx){
   renderTodo();
 }
 
-function completeTodo(id){
+function changeTodoStatus(id,newStatus){
   const todos=DB.get('todos');
   const t=todos.find(x=>x.id===id);
   if(!t)return;
   const now=new Date().toISOString().slice(0,10);
-  if(t.type==='pending'||t.type==='key'){
+  t.status=newStatus;
+  if(newStatus==='已完成'||newStatus==='已取消'){
+    // 移到记录前记住原始类型
+    t._prevType=t.type;
     t.type='record';
     t.completeDate=now;
-    if(!t.status)t.status='已办结';
-    DB.set('todos',todos);
-    renderTodo();
     toast('已移入工作记录');
-  }else if(t.type==='recurring'){
-    t.completeDate=now;
-    DB.set('todos',todos);
-    renderTodo();
-    toast('周期工作已完成（本次）');
+  }else if(t.type==='record'){
+    // 如果当前在记录里，恢复时不改变类型（由 restoreTodo 处理）
   }
+  DB.set('todos',todos);
+  renderTodo();
+}
+
+function restoreTodo(id){
+  const todos=DB.get('todos');
+  const t=todos.find(x=>x.id===id);
+  if(!t)return;
+  if(t.type!=='record'){toast('该记录不在工作记录中');return;}
+  t.type=t._prevType||'pending';
+  t.status='进行中';
+  t.completeDate='';
+  DB.set('todos',todos);
+  toast('已恢复到'+TYPE_LABELS[t.type]);
+  renderTodo();
 }
 
 function saveTodo(){
@@ -1272,13 +1346,14 @@ function saveTodo(){
     id:id||DB.nextId(todos),
     type:document.getElementById('todoType').value||'pending',
     name,
-    category:document.getElementById('todoCategory').value,
-    source:document.getElementById('todoSource').value,
+    category:getMultiSelected('todoCategory'),
+    source:getMultiSelected('todoSource'),
     priority:document.getElementById('todoPriority').value,
     content:document.getElementById('todoContent').value,
     issueDate:document.getElementById('todoIssueDate').value,
     deadline:document.getElementById('todoDeadline').value,
-    status:document.getElementById('todoStatus').value,
+    blocker:document.getElementById('todoBlocker').value,
+    status:'未开始',
     completeDate:'',
     subtasks:[],
     createdAt:now
@@ -1288,6 +1363,8 @@ function saveTodo(){
     if(i>-1){
       item.subtasks=todos[i].subtasks||[];
       item.completeDate=todos[i].completeDate||'';
+      item.status=todos[i].status||'未开始';
+      item._prevType=todos[i]._prevType;
       if(todos[i].type==='record')item.type='record';
       todos[i]=item;
     }else{todos.push(item);}
@@ -1307,20 +1384,22 @@ function editTodo(id){
   document.getElementById('todoName').value=t.name||'';
   document.getElementById('todoType').value=(t.type==='record')?'pending':(t.type||'pending');
   document.getElementById('todoPriority').value=t.priority||'mid';
-  document.getElementById('todoCategory').value=t.category||'';
-  document.getElementById('todoSource').value=t.source||'';
+  setMultiSelected('todoCategory',t.category||[]);
+  setMultiSelected('todoSource',t.source||[]);
   document.getElementById('todoContent').value=t.content||'';
   document.getElementById('todoIssueDate').value=t.issueDate||'';
   document.getElementById('todoDeadline').value=t.deadline||'';
-  document.getElementById('todoStatus').value=t.status||'';
+  document.getElementById('todoBlocker').value=t.blocker||'';
   openModal('todoModal');
 }
 
 function clearTodoForm(){
-  ['todoId','todoName','todoCategory','todoSource','todoContent','todoIssueDate','todoDeadline','todoStatus'].forEach(id=>document.getElementById(id).value='');
+  ['todoId','todoName','todoContent','todoIssueDate','todoDeadline','todoBlocker'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('todoPriority').value='mid';
   document.getElementById('todoType').value='pending';
   document.getElementById('todoModalTitle').textContent='新建工作';
+  setMultiSelected('todoCategory',[]);
+  setMultiSelected('todoSource',[]);
 }
 
 function deleteTodo(id){
@@ -1332,6 +1411,94 @@ function deleteTodo(id){
 }
 
 document.getElementById('todoModal').addEventListener('click',function(e){if(e.target===this)closeModal('todoModal')});
+
+// ============================================================
+//  MULTI-SELECT
+// ============================================================
+const OPTIONS_STORE={};
+
+function getOptionStore(name){
+  const defaults={todoCategory:'["报告","会议","审批","调研","培训","材料"]',todoSource:'["上级交办","自研","协作","会议部署","文件要求","其他来源"]'};
+  if(!OPTIONS_STORE[name]){
+    OPTIONS_STORE[name]=JSON.parse(localStorage.getItem('wb_opts_'+name)||(defaults[name]||'[]'));
+  }
+  return OPTIONS_STORE[name];
+}
+function saveOptionStore(name){
+  localStorage.setItem('wb_opts_'+name,JSON.stringify(OPTIONS_STORE[name]));
+}
+
+function renderMultiOptions(name){
+  const opts=getOptionStore(name);
+  const list=document.getElementById(name+'List');
+  const sel=getMultiSelected(name);
+  list.innerHTML=opts.map(o=>`
+    <div class="multi-dropdown-item" onclick="event.stopPropagation();toggleMultiOption('${name}',this.querySelector('span').textContent)">
+      <input type="checkbox" ${sel.includes(o)?'checked':''} tabindex="-1">
+      <span>${esc(o)}</span>
+    </div>
+  `).join('');
+}
+
+function getMultiSelected(name){
+  const el=document.getElementById(name+'Placeholder');
+  return el.dataset.selected?JSON.parse(el.dataset.selected):[];
+}
+
+function setMultiSelected(name,ary){
+  const el=document.getElementById(name+'Placeholder');
+  const arySanitized=Array.isArray(ary)?ary.filter(Boolean):[];
+  el.dataset.selected=JSON.stringify(arySanitized);
+  if(arySanitized.length){
+    el.className='';el.innerHTML=arySanitized.map(v=>`<span class="multi-select-tag">${esc(v)}<span class="tag-close" onclick="event.stopPropagation();removeMultiOption('${name}',this.parentElement.textContent.slice(0,-1))">×</span></span>`).join('');
+  }else{
+    el.className='multi-select-placeholder';el.textContent=name==='todoCategory'?'选择类别…':'选择来源…';
+  }
+  renderMultiOptions(name);
+}
+
+function toggleMultiOption(name,value){
+  const sel=getMultiSelected(name);
+  const idx=sel.indexOf(value);
+  if(idx>-1)sel.splice(idx,1);else sel.push(value);
+  setMultiSelected(name,sel);
+}
+
+function removeMultiOption(name,value){
+  const sel=getMultiSelected(name).filter(v=>v!==value);
+  setMultiSelected(name,sel);
+}
+
+function addMultiOption(name){
+  const input=document.getElementById(name+'New');
+  const val=input.value.trim();
+  if(!val)return;
+  const opts=getOptionStore(name);
+  if(!opts.includes(val)){
+    opts.push(val);
+    saveOptionStore(name);
+    renderMultiOptions(name);
+    // auto-select the new option
+    const sel=getMultiSelected(name);
+    sel.push(val);
+    setMultiSelected(name,sel);
+  }
+  input.value='';
+  document.getElementById(name+'Dropdown').classList.add('open');
+}
+
+function toggleMultiSelect(id){
+  const dropdown=document.getElementById(id.replace('Select','Dropdown'));
+  dropdown.classList.toggle('open');
+  renderMultiOptions(id.replace('Select',''));
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.multi-select')&&!e.target.closest('.multi-dropdown')){
+    document.querySelectorAll('.multi-dropdown.open').forEach(d=>d.classList.remove('open'));
+  }
+});
 
 
 // ============================================================
@@ -2328,7 +2495,7 @@ function smartAnalyze(){
   if(activeBadge)activeBadge.classList.add('active');
 
   // build preview
-  const catNames={todo:'任务待办',inspiration:'灵感记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
+  const catNames={todo:'工作记录',inspiration:'灵感记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
   const catEmoji={todo:'✅',inspiration:'💡',contract:'📄',purchase:'🛒',expense:'💰'};
 
   let html=`<div class="field"><span class="field-label">类型</span><span class="field-value">${catEmoji[cls.cat]} ${catNames[cls.cat]}</span></div>`;
@@ -2359,7 +2526,7 @@ function smartSetCat(cat){
 
   // rebuild preview
   const previewFields=document.getElementById('previewFields');
-  const catNames={todo:'任务待办',inspiration:'灵感记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
+  const catNames={todo:'工作记录',inspiration:'灵感记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
   const catEmoji={todo:'✅',inspiration:'💡',contract:'📄',purchase:'🛒',expense:'💰'};
 
   let html=`<div class="field"><span class="field-label">类型</span><span class="field-value">${catEmoji[cat]} ${catNames[cat]} <span style="font-size:10px;color:var(--color-text3)">(手动)</span></span></div>`;
@@ -2401,14 +2568,15 @@ function smartSave(){
         id:DB.nextId(todos),
         type:'pending',
         name:f.title||'未命名工作',
-        category:'',
-        source:'',
+        category:[],
+        source:[],
         priority:f.title&&/急|紧急|尽快|马上|立即/.test(f.title)?'high':'medium',
         content:f.content||'',
         issueDate:now,
         deadline:f.deadline||'',
         completeDate:'',
-        status:'',
+        blocker:'',
+        status:'未开始',
         subtasks:[],
         createdAt:now
       };
@@ -2481,7 +2649,7 @@ function smartSave(){
   document.getElementById('smartInput').value='';
   closePreview();
   closeModal('smartModal');
-  toast('✓ 已录入到 '+{todo:'任务待办',inspiration:'灵感记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账'}[data.cat]);
+  toast('✓ 已录入到 '+{todo:'工作记录',inspiration:'灵感记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账'}[data.cat]);
 }
 
 // ============================================================
