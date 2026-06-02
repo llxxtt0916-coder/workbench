@@ -135,12 +135,49 @@ tr:hover td{background:#fafcff}
 .tag-pill{padding:4px 12px;border-radius:99px;font-size:12px;cursor:pointer;border:1px solid var(--color-border);background:transparent;color:var(--color-text2);transition:all .15s}
 .tag-pill:hover,.tag-pill.active{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
 
-/* ===== TODO ===== */
+/* ===== TODO V2 ===== */
+.todo-tab{flex:1;padding:8px 6px;font-size:12px;color:var(--color-text2);cursor:pointer;border:none;background:transparent;border-radius:var(--radius-sm);transition:all .15s;text-align:center;white-space:nowrap;position:relative}
+.todo-tab:hover{color:var(--color-text)}
+.todo-tab.active{background:#fff;color:var(--color-primary);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.tab-count{margin-left:3px;font-size:10px;color:var(--color-text3)}
+.todo-tab.active .tab-count{color:var(--color-primary)}
+.todo-tab-content{margin-top:12px}
+/* Card */
+.todo-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;transition:box-shadow .15s}
+.todo-card:hover{box-shadow:var(--shadow)}
+.todo-card-header{display:flex;align-items:flex-start;gap:10px}
+.todo-card-title{font-size:14px;font-weight:500;flex:1;min-width:0;line-height:1.4}
+.todo-card-actions{display:none;gap:2px;flex-shrink:0}
+.todo-card:hover .todo-card-actions{display:flex}
+.todo-card-meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--color-text3);margin-top:8px;margin-left:28px}
+.todo-card-body{font-size:12.5px;color:var(--color-text2);line-height:1.6;margin-top:8px;margin-left:28px;padding:8px 10px;background:var(--color-bg);border-radius:var(--radius-sm)}
+/* Tags */
+.tag{display:inline-flex;align-items:center;padding:1px 6px;border-radius:99px;font-size:10px;font-weight:500;flex-shrink:0;white-space:nowrap}
+.tag-cat{background:#eff6ff;color:#1d4ed8}
+.tag-src{background:#fef3c7;color:#92400e}
+/* Subtask bar */
+.todo-subtask-bar{display:flex;align-items:center;gap:8px;padding:6px 0 0 28px;font-size:11px;color:var(--color-text3);cursor:pointer;margin-top:6px;border-top:1px dashed var(--color-border);transition:color .15s}
+.todo-subtask-bar:hover{color:var(--color-primary)}
+.todo-subtask-bar.no-subtask{color:var(--color-text3);opacity:.6}
+.todo-subtask-bar.no-subtask:hover{color:var(--color-primary);opacity:1}
+.subtask-progress{width:60px;height:4px;border-radius:2px;background:#e5e7eb;overflow:hidden;flex-shrink:0}
+.subtask-done-bar{height:100%;border-radius:2px;background:var(--color-primary);transition:width .3s}
+.expand-icon{font-size:10px;transition:transform .2s;flex-shrink:0}
+.todo-subtask-list{padding:8px 0 4px 28px;border-top:1px dashed var(--color-border)}
+.subtask-row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px}
+.subtask-row.done .subtask-text{text-decoration:line-through;color:var(--color-text3)}
+.subtask-text{flex:1;min-width:0;font-size:12.5px}
+.subtask-date{font-size:10px;color:var(--color-text3);flex-shrink:0}
+.subtask-add{display:flex;gap:6px;margin-top:4px}
+.subtask-input{flex:1;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:4px 8px;font-size:12px;color:var(--color-text)}
+.subtask-input:focus{border-color:var(--color-primary);outline:none}
+/* Keep legacy items */
 .todo-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);transition:background .1s}
 .todo-item:hover{background:#fafcff}
 .todo-item.done .todo-text{text-decoration:line-through;color:var(--color-text3)}
-.todo-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--color-border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all .15s}
+.todo-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--color-border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
 .todo-check.checked{background:var(--color-primary);border-color:var(--color-primary)}
+.todo-check.mini{width:14px;height:14px;border-radius:3px}
 .todo-text{font-size:13.5px;line-height:1.5;flex:1}
 .todo-meta{font-size:11px;color:var(--color-text3);margin-top:2px}
 .todo-actions{display:none;gap:4px}
@@ -354,28 +391,15 @@ tr:hover td{background:#fafcff}
     <!-- ====== TODO PAGE ====== -->
     <div class="page" id="page-todo">
       <div class="section-header">
-        <div class="search-wrap">
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="#9ca3af"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-          <input class="search-input" id="todoSearch" placeholder="搜索任务…" oninput="renderTodo()">
+        <div style="display:flex;gap:2px;background:var(--color-bg2);padding:3px;border-radius:var(--radius);flex:1;max-width:420px;min-width:0">
+          <button class="todo-tab active" data-tab="pending" onclick="switchTodoTab('pending')">待办<span class="tab-count" id="tabCount-pending">0</span></button>
+          <button class="todo-tab" data-tab="key" onclick="switchTodoTab('key')">重点<span class="tab-count" id="tabCount-key">0</span></button>
+          <button class="todo-tab" data-tab="recurring" onclick="switchTodoTab('recurring')">周期<span class="tab-count" id="tabCount-recurring">0</span></button>
+          <button class="todo-tab" data-tab="record" onclick="switchTodoTab('record')">记录<span class="tab-count" id="tabCount-record">0</span></button>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <select class="form-control btn-sm" id="todoFilter" style="width:auto;padding:5px 8px" onchange="renderTodo()">
-            <option value="">全部</option>
-            <option value="pending">待完成</option>
-            <option value="done">已完成</option>
-          </select>
-          <select class="form-control btn-sm" id="todoPriFilter" style="width:auto;padding:5px 8px" onchange="renderTodo()">
-            <option value="">全部优先级</option>
-            <option value="high">高</option>
-            <option value="mid">中</option>
-            <option value="low">低</option>
-          </select>
-          <button class="btn btn-primary btn-sm" onclick="openModal('todoModal')">+ 新建任务</button>
-        </div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('todoModal')">+ 新建工作</button>
       </div>
-      <div class="card" style="padding:8px 0">
-        <div id="todoList"></div>
-      </div>
+      <div class="todo-tab-content" id="todoTabContent"></div>
     </div>
 
     <!-- ====== INSPIRATION PAGE ====== -->
@@ -473,20 +497,28 @@ tr:hover td{background:#fafcff}
 
 <!-- ===== MODALS ===== -->
 
-<!-- Todo Modal -->
+<!-- Todo Modal V2 -->
 <div class="modal-overlay" id="todoModal">
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title" id="todoModalTitle">新建任务</span>
+      <span class="modal-title" id="todoModalTitle">新建工作</span>
       <button class="close-btn" onclick="closeModal('todoModal')">×</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="todoId">
       <div class="form-group">
-        <label class="form-label">任务内容 *</label>
-        <input class="form-control" id="todoText" placeholder="输入任务内容…">
+        <label class="form-label">名称 *</label>
+        <input class="form-control" id="todoName" placeholder="输入工作名称…">
       </div>
       <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">类型</label>
+          <select class="form-control" id="todoType">
+            <option value="pending">待办工作</option>
+            <option value="key">重点工作</option>
+            <option value="recurring">周期工作</option>
+          </select>
+        </div>
         <div class="form-group">
           <label class="form-label">优先级</label>
           <select class="form-control" id="todoPriority">
@@ -495,14 +527,34 @@ tr:hover td{background:#fafcff}
             <option value="low">低</option>
           </select>
         </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">类别</label>
+          <input class="form-control" id="todoCategory" placeholder="如：报告、会议、审批…">
+        </div>
+        <div class="form-group">
+          <label class="form-label">来源</label>
+          <input class="form-control" id="todoSource" placeholder="如：上级交办、自研…">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">下发日期</label>
+          <input type="date" class="form-control" id="todoIssueDate">
+        </div>
         <div class="form-group">
           <label class="form-label">截止日期</label>
-          <input type="date" class="form-control" id="todoDue">
+          <input type="date" class="form-control" id="todoDeadline">
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">备注</label>
-        <textarea class="form-control" id="todoNote" rows="2" placeholder="可选备注…"></textarea>
+        <label class="form-label">内容</label>
+        <textarea class="form-control" id="todoContent" rows="3" placeholder="详细描述…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">办结情况</label>
+        <input class="form-control" id="todoStatus" placeholder="如：已办结、进行中…">
       </div>
     </div>
     <div class="modal-footer">
@@ -845,7 +897,8 @@ function repairData(){
     if(!records.length)return;
 
     const hasNonNumeric=records.some(r=>typeof r.id!=='number');
-    if(!hasNonNumeric)return;
+    const hasOldTodoFormat=key==='todos'&&records.some(r=>r.text&&!r.name);
+    if(!hasNonNumeric&&!hasOldTodoFormat)return;
 
     const fixed=records.map((r,idx)=>{
       let rec={...r};
@@ -853,13 +906,39 @@ function repairData(){
 
       switch(key){
         case 'todos':
-          if(rec.title&&!rec.text){rec.text=rec.title;delete rec.title;}
-          rec.text=rec.text||'未命名任务';
-          rec.priority=rec.priority||'medium';
-          rec.due=rec.due||'';
-          rec.note=rec.note||'';
-          rec.done=!!rec.done;
-          rec.createdAt=rec.createdAt||'';
+          // Migrate old format {text,due,note,done,doneAt} → new format {type,name,...}
+          if(rec.text&&!rec.name){
+            rec={
+              id:idx+1,
+              type:rec.done?'record':'pending',
+              name:rec.text||'未命名工作',
+              category:'',
+              source:'',
+              priority:rec.priority||'medium',
+              content:rec.note||'',
+              issueDate:'',
+              deadline:rec.due||'',
+              completeDate:rec.doneAt?rec.doneAt.slice(0,10):'',
+              status:rec.done?'已办结':'',
+              subtasks:[],
+              createdAt:rec.createdAt||''
+            };
+          }else{
+            // Fix new-format records with non-numeric IDs
+            rec.type=rec.type||'pending';
+            rec.name=rec.name||'未命名工作';
+            rec.category=rec.category||'';
+            rec.source=rec.source||'';
+            rec.priority=rec.priority||'medium';
+            rec.content=rec.content||'';
+            rec.issueDate=rec.issueDate||'';
+            rec.deadline=rec.deadline||'';
+            rec.completeDate=rec.completeDate||'';
+            rec.status=rec.status||'';
+            rec.subtasks=Array.isArray(rec.subtasks)?rec.subtasks:[];
+            rec.createdAt=rec.createdAt||'';
+            rec.id=idx+1;
+          }
           break;
         case 'inspirations':
           if(!rec.title&&rec.content)rec.title=String(rec.content).slice(0,30);
@@ -894,7 +973,7 @@ function repairData(){
     repaired=true;
   });
 
-  if(repaired)console.log('✅ 历史数据已自动修复（非数字ID→数字ID）');
+  if(repaired)console.log('✅ 历史数据已自动修复（格式迁移+ID修复）');
 }
 
 // ============================================================
@@ -969,17 +1048,13 @@ function renderDashboard(){
   const purchases=DB.get('purchases');
   const expenses=DB.get('expenses');
 
-  const pendingTodo=todos.filter(t=>!t.done).length;
-  const doneTodo=todos.filter(t=>t.done).length;
+  const pendingTodo=todos.filter(t=>t.type==='pending').length;
+  const doneTodo=todos.filter(t=>t.type==='record').length;
   const contractSum=contracts.reduce((s,c)=>s+(+c.amount||0),0);
   const expSum=expenses.filter(e=>e.status==='已报销').reduce((s,e)=>s+(+e.amount||0),0);
 
-  // update badge
-  const badge=document.getElementById('todoCount');
-  if(pendingTodo>0){badge.style.display='';badge.textContent=pendingTodo}else{badge.style.display='none'}
-
   document.getElementById('dashMetrics').innerHTML=`
-    <div class="metric"><div class="metric-label">待办任务</div><div class="metric-value" style="color:var(--color-primary)">${pendingTodo}</div><div class="metric-sub">已完成 ${doneTodo} 项</div></div>
+    <div class="metric"><div class="metric-label">待办工作</div><div class="metric-value" style="color:var(--color-primary)">${pendingTodo}</div><div class="metric-sub">已完成 ${doneTodo} 项</div></div>
     <div class="metric"><div class="metric-label">合同总数</div><div class="metric-value">${contracts.length}</div><div class="metric-sub">金额 ¥${fmt(contractSum)}</div></div>
     <div class="metric"><div class="metric-label">采购记录</div><div class="metric-value">${purchases.length}</div><div class="metric-sub">申请中 ${purchases.filter(p=>p.status==='申请中').length} 项</div></div>
     <div class="metric"><div class="metric-label">已报销金额</div><div class="metric-value" style="color:var(--color-teal)">¥${fmt(expSum)}</div><div class="metric-sub">本月报销记录 ${expenses.filter(e=>{const m=new Date().toISOString().slice(0,7);return(e.date||'').startsWith(m)}).length} 项</div></div>
@@ -991,12 +1066,12 @@ function renderDashboard(){
     const d=new Date();d.setDate(d.getDate()-i);
     const key=d.toISOString().slice(0,10);
     labels.push(key.slice(5));
-    data.push(todos.filter(t=>t.doneAt&&t.doneAt.startsWith(key)).length);
+    data.push(todos.filter(t=>t.completeDate&&t.completeDate===key).length);
   }
   if(todoChartInst)todoChartInst.destroy();
   todoChartInst=new Chart(document.getElementById('todoChart'),{
     type:'line',
-    data:{labels,datasets:[{label:'完成任务',data,borderColor:'#3b6bde',backgroundColor:'rgba(59,107,222,.08)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#3b6bde'}]},
+    data:{labels,datasets:[{label:'完成工作',data,borderColor:'#3b6bde',backgroundColor:'rgba(59,107,222,.08)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#3b6bde'}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}}
   });
 
@@ -1011,80 +1086,210 @@ function renderDashboard(){
     options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:10,padding:8}}}}
   });
 
-  // Recent todos
-  const recent=todos.filter(t=>!t.done).slice(0,5);
+  // Recent pending todos
+  const recent=todos.filter(t=>t.type==='pending').slice(0,5);
   document.getElementById('dashRecentTodo').innerHTML=recent.length?
     recent.map(t=>`<div class="todo-item">
-      <div class="priority-dot p-${t.priority||'mid'}"></div>
-      <div class="todo-text">${esc(t.text)}</div>
-      ${t.due?`<span class="badge badge-gray" style="font-size:11px;flex-shrink:0">${t.due}</span>`:''}
+      <div class="priority-dot" style="background:${PRIORITY_COLOR[t.priority]||PRIORITY_COLOR['mid']}"></div>
+      <div class="todo-text">${esc(t.name)}</div>
+      ${t.deadline?`<span class="badge badge-gray" style="font-size:11px;flex-shrink:0">${t.deadline}</span>`:''}
     </div>`).join(''):
-    '<div class="empty-state" style="padding:20px"><p>暂无待办任务</p></div>';
+    '<div class="empty-state" style="padding:20px"><p>暂无待办工作</p></div>';
 }
 
 // ============================================================
-//  TODO
+//  TODO V2 - 4板块：待办/重点/周期/记录
 // ============================================================
+let activeTodoTab='pending';
+const TODO_TYPES=['pending','key','recurring','record'];
+const TYPE_LABELS={pending:'待办工作',key:'重点工作',recurring:'周期工作',record:'工作记录'};
+const PRIORITY_MAP={high:0,mid:1,low:2};
+const PRIORITY_LABEL={high:'高',mid:'中',low:'低'};
+const PRIORITY_COLOR={high:'var(--color-danger)',mid:'var(--color-warning)',low:'var(--color-text3)'};
+
+function switchTodoTab(tab){
+  activeTodoTab=tab;
+  document.querySelectorAll('.todo-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  renderTodo();
+}
+
 function renderTodo(){
   const todos=DB.get('todos');
-  const q=(document.getElementById('todoSearch').value||'').toLowerCase();
-  const sf=document.getElementById('todoFilter').value;
-  const pf=document.getElementById('todoPriFilter').value;
-  const filtered=todos.filter(t=>{
-    if(q&&!t.text.toLowerCase().includes(q))return false;
-    if(sf==='pending'&&t.done)return false;
-    if(sf==='done'&&!t.done)return false;
-    if(pf&&t.priority!==pf)return false;
-    return true;
-  }).sort((a,b)=>{
-    const po={high:0,mid:1,low:2};
-    if(a.done!==b.done)return a.done?1:-1;
-    return(po[a.priority]||1)-(po[b.priority]||1);
+  // update tab counts + sidebar badge
+  let pendingCount=0;
+  TODO_TYPES.forEach(type=>{
+    const count=todos.filter(t=>t.type===type).length;
+    const el=document.getElementById('tabCount-'+type);
+    if(el)el.textContent=count;
+    if(type==='pending')pendingCount=count;
   });
-
   const badge=document.getElementById('todoCount');
-  const pending=todos.filter(t=>!t.done).length;
-  if(pending>0){badge.style.display='';badge.textContent=pending}else{badge.style.display='none'}
+  if(pendingCount>0){badge.style.display='';badge.textContent=pendingCount}else{badge.style.display='none'}
 
+  const filtered=todos.filter(t=>t.type===activeTodoTab);
   if(!filtered.length){
-    document.getElementById('todoList').innerHTML='<div class="empty-state"><p>没有符合条件的任务</p></div>';
+    document.getElementById('todoTabContent').innerHTML='<div class="empty-state"><p>暂无'+TYPE_LABELS[activeTodoTab]+'记录</p></div>';
     return;
   }
 
-  document.getElementById('todoList').innerHTML=filtered.map(t=>`
-    <div class="todo-item ${t.done?'done':''}" id="todo-${t.id}">
-      <div class="todo-check ${t.done?'checked':''}" onclick="toggleTodo(${t.id})">
-        ${t.done?'<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 5l2.5 2.5L8.5 2" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}
+  filtered.sort((a,b)=>{
+    if(activeTodoTab==='record'){
+      return(b.completeDate||'').localeCompare(a.completeDate||'');
+    }
+    return(PRIORITY_MAP[a.priority]||1)-(PRIORITY_MAP[b.priority]||1);
+  });
+
+  document.getElementById('todoTabContent').innerHTML=filtered.map(t=>{
+    const isRecord=activeTodoTab==='record';
+    const sd=(t.subtasks||[]).filter(s=>s.done).length;
+    const st=(t.subtasks||[]).length;
+    return `
+    <div class="todo-card" id="todo-${t.id}">
+      <div class="todo-card-header">
+        ${!isRecord?`<div class="todo-check" onclick="completeTodo(${t.id})" title="标记完成"></div>`:''}
+        <div class="priority-dot" style="background:${PRIORITY_COLOR[t.priority]||PRIORITY_COLOR['mid']}"></div>
+        <div class="todo-card-title">${esc(t.name)}</div>
+        <div style="display:flex;gap:3px;flex-shrink:0">
+          ${t.category?`<span class="tag tag-cat">${esc(t.category)}</span>`:''}
+          ${t.source?`<span class="tag tag-src">${esc(t.source)}</span>`:''}
+        </div>
+        <div class="todo-card-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editTodo(${t.id})" title="编辑">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteTodo(${t.id})" title="删除" style="color:var(--color-danger)">🗑</button>
+        </div>
       </div>
-      <div class="priority-dot p-${t.priority||'mid'}"></div>
-      <div style="flex:1;min-width:0">
-        <div class="todo-text">${esc(t.text)}</div>
-        <div class="todo-meta">${t.due?'截止 '+t.due+' · ':''} ${t.note?esc(t.note):''}</div>
+      <div class="todo-card-meta">
+        ${t.issueDate?`<span>📥 下发: ${t.issueDate}</span>`:''}
+        ${t.deadline?`<span>⏰ 截止: ${t.deadline}</span>`:''}
+        ${t.completeDate?`<span>✅ 完成: ${t.completeDate}</span>`:''}
+        ${t.status?`<span>📋 ${esc(t.status)}</span>`:''}
       </div>
-      <div class="todo-actions">
-        <button class="btn btn-ghost btn-sm" onclick="editTodo(${t.id})" title="编辑">✏️</button>
-        <button class="btn btn-ghost btn-sm" onclick="deleteTodo(${t.id})" title="删除" style="color:var(--color-danger)">🗑</button>
+      ${t.content?`<div class="todo-card-body">${esc(t.content)}</div>`:''}
+      ${st>0?`
+      <div class="todo-subtask-bar" onclick="toggleSubtasks(${t.id})">
+        <span class="subtask-progress"><span class="subtask-done-bar" style="width:${st?(sd/st*100):0}%"></span></span>
+        <span>子任务 ${sd}/${st}</span>
+        <span class="expand-icon" id="expandIcon-${t.id}">▸</span>
+      </div>`:`
+      <div class="todo-subtask-bar no-subtask" onclick="toggleSubtasks(${t.id})">
+        <span>+ 添加子任务追踪进度</span>
+        <span class="expand-icon" id="expandIcon-${t.id}">▸</span>
+      </div>`}
+      <div class="todo-subtask-list" id="subtaskList-${t.id}" style="display:none">
+        ${renderSubtasks(t)}
+        <div class="subtask-add">
+          <input class="subtask-input" id="subtaskInput-${t.id}" placeholder="输入子任务…" onkeydown="if(event.key==='Enter')addSubtask(${t.id})">
+          <button class="btn btn-ghost btn-sm" onclick="addSubtask(${t.id})">添加</button>
+        </div>
       </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSubtasks(t){
+  if(!t.subtasks||!t.subtasks.length)return '<div class="empty-state" style="padding:6px"><p style="font-size:11px">暂无子任务</p></div>';
+  return t.subtasks.map((s,i)=>`
+    <div class="subtask-row ${s.done?'done':''}">
+      <div class="todo-check mini ${s.done?'checked':''}" onclick="toggleSubtask(${t.id},${i})">
+        ${s.done?'<svg width="8" height="8" viewBox="0 0 10 10"><path d="M1.5 5l2.5 2.5L8.5 2" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}
+      </div>
+      <span class="subtask-text">${esc(s.text)}</span>
+      ${s.date?`<span class="subtask-date">${s.date}</span>`:''}
+      <button class="btn btn-ghost btn-sm" onclick="deleteSubtask(${t.id},${i})" style="color:var(--color-danger);font-size:10px;padding:0 4px">×</button>
     </div>
   `).join('');
 }
 
+function toggleSubtasks(id){
+  const list=document.getElementById('subtaskList-'+id);
+  const icon=document.getElementById('expandIcon-'+id);
+  if(!list||!icon)return;
+  if(list.style.display==='none'){list.style.display='block';icon.textContent='▾';}
+  else{list.style.display='none';icon.textContent='▸';}
+}
+
+function addSubtask(todoId){
+  const input=document.getElementById('subtaskInput-'+todoId);
+  const text=input.value.trim();
+  if(!text)return;
+  const todos=DB.get('todos');
+  const t=todos.find(x=>x.id===todoId);
+  if(!t)return;
+  if(!t.subtasks)t.subtasks=[];
+  t.subtasks.push({text,done:false,date:new Date().toISOString().slice(0,10)});
+  DB.set('todos',todos);
+  input.value='';
+  renderTodo();
+}
+
+function toggleSubtask(todoId,idx){
+  const todos=DB.get('todos');
+  const t=todos.find(x=>x.id===todoId);
+  if(!t||!t.subtasks)return;
+  t.subtasks[idx].done=!t.subtasks[idx].done;
+  DB.set('todos',todos);
+  renderTodo();
+}
+
+function deleteSubtask(todoId,idx){
+  const todos=DB.get('todos');
+  const t=todos.find(x=>x.id===todoId);
+  if(!t||!t.subtasks)return;
+  t.subtasks.splice(idx,1);
+  DB.set('todos',todos);
+  renderTodo();
+}
+
+function completeTodo(id){
+  const todos=DB.get('todos');
+  const t=todos.find(x=>x.id===id);
+  if(!t)return;
+  const now=new Date().toISOString().slice(0,10);
+  if(t.type==='pending'||t.type==='key'){
+    t.type='record';
+    t.completeDate=now;
+    if(!t.status)t.status='已办结';
+    DB.set('todos',todos);
+    renderTodo();
+    toast('已移入工作记录');
+  }else if(t.type==='recurring'){
+    t.completeDate=now;
+    DB.set('todos',todos);
+    renderTodo();
+    toast('周期工作已完成（本次）');
+  }
+}
+
 function saveTodo(){
-  const text=document.getElementById('todoText').value.trim();
-  if(!text){toast('请输入任务内容');return;}
+  const name=document.getElementById('todoName').value.trim();
+  if(!name){toast('请输入工作名称');return;}
   const todos=DB.get('todos');
   const id=+document.getElementById('todoId').value;
+  const now=new Date().toISOString().slice(0,10);
   const item={
     id:id||DB.nextId(todos),
-    text,
+    type:document.getElementById('todoType').value||'pending',
+    name,
+    category:document.getElementById('todoCategory').value,
+    source:document.getElementById('todoSource').value,
     priority:document.getElementById('todoPriority').value,
-    due:document.getElementById('todoDue').value,
-    note:document.getElementById('todoNote').value,
-    done:false,
-    createdAt:new Date().toISOString()
+    content:document.getElementById('todoContent').value,
+    issueDate:document.getElementById('todoIssueDate').value,
+    deadline:document.getElementById('todoDeadline').value,
+    status:document.getElementById('todoStatus').value,
+    completeDate:'',
+    subtasks:[],
+    createdAt:now
   };
-  if(id){const i=todos.findIndex(t=>t.id===id);if(i>-1){item.done=todos[i].done;item.doneAt=todos[i].doneAt;todos[i]=item;}else todos.push(item);}
-  else todos.push(item);
+  if(id){
+    const i=todos.findIndex(t=>t.id===id);
+    if(i>-1){
+      item.subtasks=todos[i].subtasks||[];
+      item.completeDate=todos[i].completeDate||'';
+      if(todos[i].type==='record')item.type='record';
+      todos[i]=item;
+    }else{todos.push(item);}
+  }else{todos.push(item);}
   DB.set('todos',todos);
   closeModal('todoModal');
   clearTodoForm();
@@ -1095,33 +1300,29 @@ function saveTodo(){
 function editTodo(id){
   const t=DB.get('todos').find(x=>x.id===id);
   if(!t)return;
-  document.getElementById('todoModalTitle').textContent='编辑任务';
+  document.getElementById('todoModalTitle').textContent='编辑工作';
   document.getElementById('todoId').value=t.id;
-  document.getElementById('todoText').value=t.text;
+  document.getElementById('todoName').value=t.name||'';
+  document.getElementById('todoType').value=(t.type==='record')?'pending':(t.type||'pending');
   document.getElementById('todoPriority').value=t.priority||'mid';
-  document.getElementById('todoDue').value=t.due||'';
-  document.getElementById('todoNote').value=t.note||'';
+  document.getElementById('todoCategory').value=t.category||'';
+  document.getElementById('todoSource').value=t.source||'';
+  document.getElementById('todoContent').value=t.content||'';
+  document.getElementById('todoIssueDate').value=t.issueDate||'';
+  document.getElementById('todoDeadline').value=t.deadline||'';
+  document.getElementById('todoStatus').value=t.status||'';
   openModal('todoModal');
 }
 
 function clearTodoForm(){
-  ['todoId','todoText','todoDue','todoNote'].forEach(id=>document.getElementById(id).value='');
+  ['todoId','todoName','todoCategory','todoSource','todoContent','todoIssueDate','todoDeadline','todoStatus'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('todoPriority').value='mid';
-  document.getElementById('todoModalTitle').textContent='新建任务';
-}
-
-function toggleTodo(id){
-  const todos=DB.get('todos');
-  const t=todos.find(x=>x.id===id);
-  if(!t)return;
-  t.done=!t.done;
-  t.doneAt=t.done?new Date().toISOString():null;
-  DB.set('todos',todos);
-  renderTodo();
+  document.getElementById('todoType').value='pending';
+  document.getElementById('todoModalTitle').textContent='新建工作';
 }
 
 function deleteTodo(id){
-  if(!confirm('确认删除此任务？'))return;
+  if(!confirm('确认删除此工作记录？'))return;
   const todos=DB.get('todos').filter(t=>t.id!==id);
   DB.set('todos',todos);
   renderTodo();
@@ -1129,6 +1330,7 @@ function deleteTodo(id){
 }
 
 document.getElementById('todoModal').addEventListener('click',function(e){if(e.target===this)closeModal('todoModal')});
+
 
 // ============================================================
 //  INSPIRATION
@@ -2156,11 +2358,17 @@ function smartSave(){
       const todos=DB.get('todos');
       record={
         id:DB.nextId(todos),
-        text:f.title||'未命名任务',
+        type:'pending',
+        name:f.title||'未命名工作',
+        category:'',
+        source:'',
         priority:f.title&&/急|紧急|尽快|马上|立即/.test(f.title)?'high':'medium',
-        due:f.deadline||'',
-        note:'',
-        done:false,
+        content:f.content||'',
+        issueDate:now,
+        deadline:f.deadline||'',
+        completeDate:'',
+        status:'',
+        subtasks:[],
         createdAt:now
       };
       DB.set('todos',[...todos,record]);
