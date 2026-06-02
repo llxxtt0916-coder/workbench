@@ -2843,16 +2843,33 @@ function parseInvoiceText(text){
     if(codeM)info.supplierCode=codeM[1];
   }
 
-  // 兜底A：供应商名称 —— 全文最后一个"名称"对应的一般是销售方
+  // 兜底A：供应商名称 —— 全文找"名称：XXX"，排除"项目名称"/"服务名称"等表头干扰
   if(!info.supplier){
     const allNames=[...fullLine.matchAll(/名[\s]*称[：:\s]*(\S+)/g)];
-    if(allNames.length>0){
-      let name=allNames[allNames.length-1][1];
-      if(name.length<=60){
+    // 过滤掉"项目名称"、"服务名称"、"货物名称"、"品名"等表头
+    const validNames=allNames.filter(a=>{
+      const ctx=fullLine.substring(Math.max(0,a.index-8),a.index).replace(/\s/g,'');
+      return !/(?:项目|服务|货物|产[品名]|计量|规格)/.test(ctx);
+    });
+    if(validNames.length>0){
+      let name=validNames[validNames.length-1][1];
+      // 二次验证：name中有实际公司后缀才认为是有效名称
+      const isCompanyLike=name.match(new RegExp('(?:'+bizSuffix+'|'+bizSuffixBracket+'[)）]?|'+bizSuffixBracket+')'));
+      if(isCompanyLike&&name.length<=60){
         name=name.replace(/[）)]?\s*统一社会信用代码.*$/,'')
                  .replace(/[）)]?\s*纳税人识别号.*$/,'')
                  .replace(/[）)]?\s*识别号.*$/,'');
         info.supplier=name;
+      }
+    }
+    // 兜底A2：用后缀正则直接在全文搜索实体名（不依赖"名称"标签）
+    if(!info.supplier){
+      let nm=fullLine.match(new RegExp('([^\\s,，]{3,60}(?:'+bizSuffix+')(?:[（(](?:'+bizSuffixBracket+')[)）])?'));
+      if(nm){
+        const name=nm[1].replace(/^(?:销[售货]方|售方|卖方)/,'');
+        if(!name.match(/密码区|货物|项目|规格|单位|数量|单价|金额|税率/)){
+          info.supplier=name;
+        }
       }
     }
   }
@@ -2871,7 +2888,7 @@ function parseInvoiceText(text){
 
   // ===== 4. 金额 —— 优先价税合计小写金额 =====
   let amtStr=null;
-  // 方式1：价税合计/小写 后面的 ¥XXX.XX
+  // 方式1：价税合计/小写 后面的 ¥XXX.XX（多种变体）
   const jshjPatterns=[
     /价税合计[^0-9¥￥]*[¥￥]\s*([0-9,]+\.[0-9]{2})/,
     /价税合[^0-9¥￥]*[¥￥]\s*([0-9,]+\.[0-9]{2})/,
@@ -2882,6 +2899,22 @@ function parseInvoiceText(text){
     const m=fullLine.match(p);
     if(m){amtStr=m[1];break;}
   }
+  // 方式1b：价税合计后直接找数字（OCR可能漏掉¥符号）
+  if(!amtStr){
+    const jshjNoYuan=fullLine.match(/价税合[计]?[\s\S]{0,60}?([0-9,]+\.[0-9]{2})/);
+    if(jshjNoYuan){
+      const val=parseFloat(jshjNoYuan[1].replace(/,/g,''));
+      amtStr=val.toFixed(2);
+    }
+  }
+  // 方式1c：小写/合计 后面找数字（不依赖¥）
+  if(!amtStr){
+    const xiaoXie=fullLine.match(/(?:小写|合计)[\s\S]{0,40}?([0-9,]+\.[0-9]{2})/);
+    if(xiaoXie){
+      const val=parseFloat(xiaoXie[1].replace(/,/g,''));
+      amtStr=val.toFixed(2);
+    }
+  }
   // 方式2：取 ¥ 符号后的金额最大值（价税合计通常是最大的¥金额）
   if(!amtStr){
     const allAmt=[...fullLine.matchAll(/[¥￥]\s*([0-9,]+\.[0-9]{2})/g)];
@@ -2891,9 +2924,26 @@ function parseInvoiceText(text){
       amtStr=amts[0].raw;
     }
   }
-  // 方式3：数字.XX格式取最大
+  // 方式2b：同样在原始文本（未去空格）中查找¥金额取最大值
+  if(!amtStr){
+    const rawAmt=[...text.matchAll(/[¥￥]\s*([0-9,]+\.[0-9]{2})/g)];
+    if(rawAmt.length>0){
+      const amts=rawAmt.map(a=>({raw:a[1],val:parseFloat(a[1].replace(/,/g,''))})).filter(a=>a.val>0);
+      amts.sort((a,b)=>b.val-a.val);
+      amtStr=amts[0].raw;
+    }
+  }
+  // 方式3：数字.XX格式取最大（排除年份20xx等明显非金额）
   if(!amtStr){
     const all=[...fullLine.matchAll(/([0-9,]+\.[0-9]{2})/g)];
+    if(all.length){
+      const nums=all.map(a=>parseFloat(a[1].replace(/,/g,''))).filter(n=>n>0);
+      if(nums.length)amtStr=Math.max(...nums).toFixed(2);
+    }
+  }
+  // 方式3b：同样在原始文本中搜索
+  if(!amtStr){
+    const all=[...text.matchAll(/([0-9,]+\.[0-9]{2})/g)];
     if(all.length){
       const nums=all.map(a=>parseFloat(a[1].replace(/,/g,''))).filter(n=>n>0);
       if(nums.length)amtStr=Math.max(...nums).toFixed(2);
@@ -2904,21 +2954,34 @@ function parseInvoiceText(text){
   // ===== 5. 发票内容 —— 提取项目名称 =====
   const contentItems=[];
   
-  // 方式1：匹配 *类别*项目名 格式（增值税发票星号分隔）
-  // 使用 exec 循环而非 match/g，更可靠
-  const starPat=/\*[^*\n]{1,20}\*([^*\n]{1,60})/g;
+  // 方式1：匹配 *类别*项目名 格式（在 fullLine 上搜索，不限于单行）
+  const starPat=/[*×xX]\s*([^*×xX\n]{1,30})\s*[*×xX]\s*([^*×xX\n]{1,80})/g;
   let starMatch;
-  while((starMatch=starPat.exec(normText))!==null){
-    let name=starMatch[1].trim();
+  while((starMatch=starPat.exec(fullLine))!==null){
+    let name=starMatch[2].trim();
     // 清理尾部可能粘连的数字、符号、表格字段名
-    name=name.replace(/[\s\d.,，。;；:：¥￥%/（）()*\-]+$/,'').trim();
-    name=name.replace(/(?:规格型号|单位|数量|单价|金额|税率|税额|合计|价税|备注|密码区|机器编号)/g,'').trim();
-    if(name.length>=1&&name.length<=60&&!contentItems.includes(name)){
+    name=name.replace(/[\s\d.,，。;；:：¥￥%/（）()*×xX\-]+$/,'').trim();
+    name=name.replace(/(?:规格型号|单位|数量|单价|金额|税率|税额|合计|价税|备注|密码区|机器编号|商品编码|享受税收|优惠政策)/g,'').trim();
+    if(name.length>=2&&name.length<=60&&!contentItems.includes(name)){
       contentItems.push(name);
     }
   }
   
-  // 方式2：在"项目名称/货物或应税"和"金额/税率"之间的表格区域提取
+  // 方式1b：如果方式1没找到，尝试在原始文本中搜索（可能需要更宽松的星号）
+  if(contentItems.length===0){
+    const starPat2=/[*×xX]\s*([^*×xX\n]{1,30})\s*[*×xX]\s*([^*×xX\n]{1,80})/g;
+    let sm2;
+    while((sm2=starPat2.exec(text))!==null){
+      let name=sm2[2].trim();
+      name=name.replace(/[\s\d.,，。;；:：¥￥%/（）()*×xX\-]+$/,'').trim();
+      name=name.replace(/(?:规格型号|单位|数量|单价|金额|税率|税额|合计|价税|备注|密码区|机器编号|商品编码|享受税收|优惠政策)/g,'').trim();
+      if(name.length>=2&&name.length<=60&&!contentItems.includes(name)){
+        contentItems.push(name);
+      }
+    }
+  }
+  
+  // 方式2：在"项目名称/货物或应税"和"金额/税率/合计"之间的表格区域提取
   if(contentItems.length===0){
     const contentSec=findBetween(normText,
       /货物或应税|服务名称|项目名称|品名/,
@@ -2926,10 +2989,22 @@ function parseInvoiceText(text){
     if(contentSec){
       const clines=contentSec.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
       for(const l of clines){
-        if(l.match(/货物|应税|服务名称|项目名称|品名|规格|型号|单位|数量|单价|金额|税率|税额|密码区|机器编号/))continue;
+        if(l.match(/货物|应税|服务名称|项目名称|品名|规格|型号|单位|数量|单价|金额|税率|税额|密码区|机器编号|商品编码|享受税收|优惠政策/))continue;
         if(l.match(/^[\d.,，。¥￥%*\s]+$/))continue;
-        const cleaned=l.replace(/规格型号|单位|数量|单价|金额|税率|税额|密码区/g,' ')
-                       .replace(/[*\d.,，。;；:：\s¥￥%]+/g,' ').replace(/\s+/g,' ').trim();
+        if(l.match(/\*[^*]{2,}\*/)){
+          const inner=l.match(/\*[^*]{2,}\*/g);
+          if(inner){
+            for(const m of inner){
+              const name=m.replace(/^\*|\*$/g,'').replace(/[\s\d.,，。;；:：¥￥%/（）()]+/g,' ').trim();
+              if(name.length>=2&&name.length<=60&&!contentItems.includes(name)){
+                contentItems.push(name);
+              }
+            }
+          }
+          continue;
+        }
+        const cleaned=l.replace(/规格型号|单位|数量|单价|金额|税率|税额|密码区|商品编码|享受税收|优惠政策/g,' ')
+                       .replace(/[*\d.,，。;；:：\s¥￥%×xX]+/g,' ').replace(/\s+/g,' ').trim();
         if(cleaned.length>=2&&cleaned.length<=60){
           const words=cleaned.split(/\s+/).filter(w=>w.length>=2);
           for(const w of words){
@@ -2940,7 +3015,23 @@ function parseInvoiceText(text){
     }
   }
   
+  // 方式3：全文查找 *xxx* 包裹的内容（最宽松的后备）
+  if(contentItems.length===0){
+    const allStars=[...fullLine.matchAll(/\*([^*\n]{2,50})\*/g)];
+    for(const m of allStars){
+      let name=m[1].replace(/[\s\d.,，。;；:：¥￥%/（）()\-]+/g,' ').replace(/\s+/g,' ').trim();
+      name=name.replace(/(?:规格型号|单位|数量|单价|金额|税率|税额|合计|价税|备注|商品编码|享受税收|优惠政策)/g,'').trim();
+      if(name.length>=2&&name.length<=60&&!contentItems.includes(name)){
+        contentItems.push(name);
+      }
+    }
+  }
+  
   if(contentItems.length)info.content=contentItems.join('、');
+
+  // 保留原始OCR文本用于调试
+  info._rawText=text;
+  info._normText=normText;
 
   return info;
 }
@@ -2958,6 +3049,10 @@ function showOcrResult(info,rawText){
   html+='<button class="btn btn-primary btn-sm" onclick="fillExpenseFormFromOcr()">✓ 使用识别结果</button>';
   html+='<button class="btn btn-outline btn-sm" onclick="resetInvoiceUpload()">重新上传</button>';
   html+='</div>';
+  // 折叠展示原始OCR文本，方便调试
+  html+='<details style="margin-top:8px;font-size:11px;opacity:0.7"><summary>查看原始OCR文本</summary>';
+  html+='<pre style="white-space:pre-wrap;word-break:break-all;max-height:200px;overflow:auto;background:var(--color-bg);padding:6px;border-radius:4px;margin-top:4px">'+esc(rawText||'')+'</pre>';
+  html+='</details>';
   resultBox.innerHTML=html;
   resultBox.style.display='block';
   window.__ocrInfo=info;
