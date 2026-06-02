@@ -1536,15 +1536,15 @@ function renderTodo(){
     if(type==='pending')pendingCount=count;
   });
   const badge=document.getElementById('todoCount');
-  if(pendingCount>0){badge.style.display='';badge.textContent=pendingCount}else{badge.style.display='none'}
+  if(badge){if(pendingCount>0){badge.style.display='';badge.textContent=pendingCount}else{badge.style.display='none'}}
 
   let filtered=todos.filter(t=>t.type===activeTodoTab);
   // Apply extra filters from filter panel
-  filtered=applyTodoFilters(filtered);
+  try{filtered=applyTodoFilters(filtered);}catch(e){console.error('applyTodoFilters error:',e);}
   updateTodoFilterCount(filtered.length);
 
   if(!filtered.length){
-    document.getElementById('todoTabContent').innerHTML='<div class="empty-state"><p>暂无符合筛选的'+TYPE_LABELS[activeTodoTab]+'记录</p></div>';
+    document.getElementById('todoTabContent').innerHTML='<div class="empty-state"><p>暂无符合筛选的'+TYPE_LABELS[activeTodoTab]+'记录（共'+todos.length+'条数据，当前标签'+todos.filter(t=>t.type===activeTodoTab).length+'条）</p></div>';
     renderReminders();
     return;
   }
@@ -2060,6 +2060,7 @@ function renderMultiOptions(name){
 
 function getMultiSelected(name){
   const el=document.getElementById(name+'Placeholder');
+  if(!el||!el.dataset)return[];
   return el.dataset.selected?JSON.parse(el.dataset.selected):[];
 }
 
