@@ -193,13 +193,24 @@ tr:hover td{background:#fafcff}
 .deadline-wrap .form-control{flex:1}
 .deadline-clear{font-size:11px;color:var(--color-text3);cursor:pointer;background:none;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:4px 10px;flex-shrink:0;white-space:nowrap}
 .deadline-clear:hover{background:var(--color-bg);color:var(--color-danger);border-color:var(--color-danger)}
-/* Filter bar */
-.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:2px;padding:10px 12px;background:var(--color-bg);border-radius:var(--radius-sm);font-size:12px}
-.filter-bar select,.filter-bar input{font-size:12px;padding:4px 6px;border:1px solid var(--color-border);border-radius:4px;color:var(--color-text);background:#fff;min-width:70px}
-.filter-bar .filter-tag{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:99px;font-size:11px;background:var(--color-primary-light);color:var(--color-primary);cursor:pointer}
-.filter-bar .filter-tag.active{background:var(--color-primary);color:#fff}
-.filter-bar .filter-clear{font-size:11px;color:var(--color-text3);cursor:pointer;background:none;border:none;padding:2px 4px}
-.filter-bar .filter-clear:hover{color:var(--color-danger)}
+/* Filter panel (enterprise grid style) */
+.filter-panel{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius);padding:14px 16px 10px;margin-bottom:12px;font-size:12.5px}
+.filter-panel.collapsed .filter-grid,
+.filter-panel.collapsed .filter-actions-bottom{display:none}
+.filter-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 16px}
+@media(max-width:900px){.filter-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:500px){.filter-grid{grid-template-columns:1fr}}
+.filter-item{display:flex;align-items:center;gap:6px}
+.filter-item label{font-size:12.5px;color:var(--color-text2);white-space:nowrap;min-width:48px;text-align:right;flex-shrink:0}
+.filter-item input,.filter-item select{flex:1;font-size:12.5px;padding:5px 8px;border:1px solid var(--color-border);border-radius:4px;color:var(--color-text);background:#fff;min-width:0}
+.filter-range{display:flex;align-items:center;gap:4px;flex:1}
+.filter-range input{flex:1;min-width:0}
+.filter-range .range-sep{color:var(--color-text3);font-size:12px}
+.filter-actions-bottom{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--color-border)}
+.filter-toggle{font-size:12px;color:var(--color-primary);cursor:pointer;background:none;border:none;display:inline-flex;align-items:center;gap:3px}
+.filter-toggle:hover{text-decoration:underline}
+.filter-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:99px;background:var(--color-primary);color:#fff;font-size:10px;padding:0 5px;margin-left:2px}
+.section-header-right{display:flex;align-items:center;gap:8px}
 /* Export dropdown */
 .export-wrap{position:relative}
 .export-dropdown{position:absolute;right:0;top:100%;z-index:30;background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-sm);box-shadow:var(--shadow-md);min-width:130px;display:none;margin-top:2px}
@@ -481,22 +492,106 @@ tr:hover td{background:#fafcff}
         </div>
         <button class="btn btn-primary btn-sm" onclick="openModal('todoModal')">+ 新建工作</button>
       </div>
-      <div class="filter-bar" id="todoFilterBar">
-        <span style="color:var(--color-text3);flex-shrink:0">筛选:</span>
-        <select id="filterYear" onchange="renderTodo()"><option value="">全部年份</option></select>
-        <select id="filterMonth" onchange="renderTodo()"><option value="">全部月份</option></select>
-        <select id="filterDay" onchange="renderTodo()" style="min-width:60px"><option value="">全部日期</option></select>
-        <span style="color:var(--color-text3);margin:0 2px">|</span>
-        <span id="filterCatTags"></span>
-        <span style="color:var(--color-text3);margin:0 2px">|</span>
-        <span id="filterSrcTags"></span>
-        <button class="filter-clear" onclick="clearTodoFilters()" title="清除筛选">✕ 清空</button>
-        <div style="margin-left:auto" class="export-wrap">
-          <button class="btn btn-sm btn-outline" onclick="document.getElementById('exportDropdown').classList.toggle('open');event.stopPropagation()">📥 导出 ▾</button>
-          <div class="export-dropdown" id="exportDropdown">
-            <button onclick="exportTodos('all');document.getElementById('exportDropdown').classList.remove('open')">导出全部数据</button>
-            <button onclick="exportTodos('current');document.getElementById('exportDropdown').classList.remove('open')">导出当前筛选结果</button>
-            <button onclick="exportTodos('page');document.getElementById('exportDropdown').classList.remove('open')">导出当前页面</button>
+      <div class="filter-panel" id="todoFilterPanel">
+        <div class="filter-grid">
+          <div class="filter-item">
+            <label>名称</label>
+            <input id="todoF_name" placeholder="名称关键词..." oninput="applyTodoFilter()">
+          </div>
+          <div class="filter-item">
+            <label>类型</label>
+            <select id="todoF_type" onchange="applyTodoFilter()">
+              <option value="">全部类型</option>
+              <option value="pending">待办工作</option>
+              <option value="key">重点工作</option>
+              <option value="recurring">周期工作</option>
+              <option value="record">已完成</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label>状态</label>
+            <select id="todoF_status" onchange="applyTodoFilter()">
+              <option value="">全部状态</option>
+              <option value="进行中">进行中</option>
+              <option value="已完成">已完成</option>
+              <option value="已取消">已取消</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label>优先级</label>
+            <select id="todoF_priority" onchange="applyTodoFilter()">
+              <option value="">全部</option>
+              <option value="high">高</option>
+              <option value="mid">中</option>
+              <option value="low">低</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label>类别</label>
+            <div style="flex:1;position:relative">
+              <div class="multi-select" id="todoF_catSelect" onclick="toggleMultiSelect('todoF_catSelect')" style="font-size:12px;padding:4px 6px">
+                <span class="multi-select-placeholder" id="todoF_catPlaceholder">选择类别</span><span class="multi-select-arrow">▾</span>
+              </div>
+              <div class="multi-dropdown" id="todoF_catDropdown">
+                <div class="multi-dropdown-list" id="todoF_catList"></div>
+                <div class="multi-dropdown-add">
+                  <input class="subtask-input" id="todoF_catNew" placeholder="新增类别..." onkeydown="if(event.key==='Enter')addMultiOption('todoF_cat')">
+                  <button class="btn btn-ghost btn-sm" onclick="addMultiOption('todoF_cat')">+ 新增</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="filter-item">
+            <label>来源</label>
+            <div style="flex:1;position:relative">
+              <div class="multi-select" id="todoF_srcSelect" onclick="toggleMultiSelect('todoF_srcSelect')" style="font-size:12px;padding:4px 6px">
+                <span class="multi-select-placeholder" id="todoF_srcPlaceholder">选择来源</span><span class="multi-select-arrow">▾</span>
+              </div>
+              <div class="multi-dropdown" id="todoF_srcDropdown">
+                <div class="multi-dropdown-list" id="todoF_srcList"></div>
+                <div class="multi-dropdown-add">
+                  <input class="subtask-input" id="todoF_srcNew" placeholder="新增来源..." onkeydown="if(event.key==='Enter')addMultiOption('todoF_src')">
+                  <button class="btn btn-ghost btn-sm" onclick="addMultiOption('todoF_src')">+ 新增</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="filter-item">
+            <label>下发日期</label>
+            <div class="filter-range">
+              <input type="date" id="todoF_issueFrom" onchange="applyTodoFilter()">
+              <span class="range-sep">至</span>
+              <input type="date" id="todoF_issueTo" onchange="applyTodoFilter()">
+            </div>
+          </div>
+          <div class="filter-item">
+            <label>截止日期</label>
+            <div class="filter-range">
+              <input type="date" id="todoF_deadlineFrom" onchange="applyTodoFilter()">
+              <span class="range-sep">至</span>
+              <input type="date" id="todoF_deadlineTo" onchange="applyTodoFilter()">
+            </div>
+          </div>
+          <div class="filter-item">
+            <label>完成日期</label>
+            <div class="filter-range">
+              <input type="date" id="todoF_doneFrom" onchange="applyTodoFilter()">
+              <span class="range-sep">至</span>
+              <input type="date" id="todoF_doneTo" onchange="applyTodoFilter()">
+            </div>
+          </div>
+        </div>
+        <div class="filter-actions-bottom">
+          <span style="flex:1;color:var(--color-text3);font-size:11px" id="todoFilterCount"></span>
+          <button class="btn btn-sm btn-outline" onclick="resetTodoFilter()">重置</button>
+          <button class="btn btn-sm btn-outline" onclick="toggleFilterPanel('todo')">收起筛选 ▲</button>
+          <div class="export-wrap">
+            <button class="btn btn-sm btn-outline" onclick="document.getElementById('exportDropdown').classList.toggle('open');event.stopPropagation()">📥 导出 ▾</button>
+            <div class="export-dropdown" id="exportDropdown">
+              <button onclick="exportTodos('all');document.getElementById('exportDropdown').classList.remove('open')">导出全部数据</button>
+              <button onclick="exportTodos('current');document.getElementById('exportDropdown').classList.remove('open')">导出当前筛选结果</button>
+              <button onclick="exportTodos('page');document.getElementById('exportDropdown').classList.remove('open')">导出当前页面</button>
+            </div>
           </div>
         </div>
       </div>
@@ -520,19 +615,60 @@ tr:hover td{background:#fafcff}
     <!-- ====== CONTRACT PAGE ====== -->
     <div class="page" id="page-contract">
       <div class="section-header">
-        <div class="search-wrap">
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="#9ca3af"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-          <input class="search-input" id="contractSearch" placeholder="搜索合同…" oninput="renderContracts()">
-        </div>
-        <div style="display:flex;gap:6px">
-          <select class="form-control btn-sm" id="contractStatusFilter" style="width:auto;padding:5px 8px" onchange="renderContracts()">
-            <option value="">全部状态</option>
-            <option value="执行中">执行中</option>
-            <option value="已完成">已完成</option>
-            <option value="已过期">已过期</option>
-            <option value="待签">待签</option>
-          </select>
+        <div class="section-header-right">
+          <button class="filter-toggle" onclick="toggleFilterPanel('contract')" id="contractFilterToggle">🔍 筛选<span class="filter-badge" id="contractFilterBadge" style="display:none">0</span></button>
           <button class="btn btn-primary btn-sm" onclick="openModal('contractModal')">+ 新增合同</button>
+        </div>
+      </div>
+      <div class="filter-panel collapsed" id="contractFilterPanel">
+        <div class="filter-grid">
+          <div class="filter-item">
+            <label>名称</label>
+            <input placeholder="合同名称/编号..." id="contractF_name" oninput="applyContractFilter()">
+          </div>
+          <div class="filter-item">
+            <label>对方单位</label>
+            <input placeholder="签约方..." id="contractF_party" oninput="applyContractFilter()">
+          </div>
+          <div class="filter-item">
+            <label>状态</label>
+            <select id="contractF_status" onchange="applyContractFilter()">
+              <option value="">全部</option>
+              <option value="执行中">执行中</option>
+              <option value="待签">待签</option>
+              <option value="已完成">已完成</option>
+              <option value="已过期">已过期</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label>金额</label>
+            <div class="filter-range">
+              <input type="number" placeholder="最低" id="contractF_amtMin" oninput="applyContractFilter()">
+              <span class="range-sep">至</span>
+              <input type="number" placeholder="最高" id="contractF_amtMax" oninput="applyContractFilter()">
+            </div>
+          </div>
+          <div class="filter-item">
+            <label>签署日期</label>
+            <div class="filter-range">
+              <input type="date" id="contractF_signFrom" onchange="applyContractFilter()">
+              <span class="range-sep">至</span>
+              <input type="date" id="contractF_signTo" onchange="applyContractFilter()">
+            </div>
+          </div>
+          <div class="filter-item">
+            <label>到期日期</label>
+            <div class="filter-range">
+              <input type="date" id="contractF_expFrom" onchange="applyContractFilter()">
+              <span class="range-sep">至</span>
+              <input type="date" id="contractF_expTo" onchange="applyContractFilter()">
+            </div>
+          </div>
+        </div>
+        <div class="filter-actions-bottom">
+          <span style="flex:1;color:var(--color-text3);font-size:11px" id="contractFilterCount"></span>
+          <button class="btn btn-sm btn-outline" onclick="resetContractFilter()">重置</button>
+          <button class="btn btn-sm btn-outline" onclick="toggleFilterPanel('contract')">收起筛选 ▲</button>
         </div>
       </div>
       <div class="card" style="padding:0">
@@ -548,19 +684,52 @@ tr:hover td{background:#fafcff}
     <!-- ====== PURCHASE PAGE ====== -->
     <div class="page" id="page-purchase">
       <div class="section-header">
-        <div class="search-wrap">
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="#9ca3af"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4-816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-          <input class="search-input" id="purchaseSearch" placeholder="搜索采购…" oninput="renderPurchases()">
-        </div>
-        <div style="display:flex;gap:6px">
-          <select class="form-control btn-sm" id="purchaseStatusFilter" style="width:auto;padding:5px 8px" onchange="renderPurchases()">
-            <option value="">全部状态</option>
-            <option value="申请中">申请中</option>
-            <option value="审批通过">审批通过</option>
-            <option value="已到货">已到货</option>
-            <option value="已拒绝">已拒绝</option>
-          </select>
+        <div class="section-header-right">
+          <button class="filter-toggle" onclick="toggleFilterPanel('purchase')" id="purchaseFilterToggle">🔍 筛选<span class="filter-badge" id="purchaseFilterBadge" style="display:none">0</span></button>
           <button class="btn btn-primary btn-sm" onclick="openModal('purchaseModal')">+ 新增采购</button>
+        </div>
+      </div>
+      <div class="filter-panel collapsed" id="purchaseFilterPanel">
+        <div class="filter-grid">
+          <div class="filter-item">
+            <label>名称</label>
+            <input placeholder="采购名称..." id="purchaseF_name" oninput="applyPurchaseFilter()">
+          </div>
+          <div class="filter-item">
+            <label>供应商</label>
+            <input placeholder="供应商名称..." id="purchaseF_supplier" oninput="applyPurchaseFilter()">
+          </div>
+          <div class="filter-item">
+            <label>状态</label>
+            <select id="purchaseF_status" onchange="applyPurchaseFilter()">
+              <option value="">全部</option>
+              <option value="申请中">申请中</option>
+              <option value="审批通过">审批通过</option>
+              <option value="已到货">已到货</option>
+              <option value="已拒绝">已拒绝</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label>金额</label>
+            <div class="filter-range">
+              <input type="number" placeholder="最低" id="purchaseF_amtMin" oninput="applyPurchaseFilter()">
+              <span class="range-sep">至</span>
+              <input type="number" placeholder="最高" id="purchaseF_amtMax" oninput="applyPurchaseFilter()">
+            </div>
+          </div>
+          <div class="filter-item">
+            <label>申请日期</label>
+            <div class="filter-range">
+              <input type="date" id="purchaseF_dateFrom" onchange="applyPurchaseFilter()">
+              <span class="range-sep">至</span>
+              <input type="date" id="purchaseF_dateTo" onchange="applyPurchaseFilter()">
+            </div>
+          </div>
+        </div>
+        <div class="filter-actions-bottom">
+          <span style="flex:1;color:var(--color-text3);font-size:11px" id="purchaseFilterCount"></span>
+          <button class="btn btn-sm btn-outline" onclick="resetPurchaseFilter()">重置</button>
+          <button class="btn btn-sm btn-outline" onclick="toggleFilterPanel('purchase')">收起筛选 ▲</button>
         </div>
       </div>
       <div class="card" style="padding:0">
@@ -581,7 +750,64 @@ tr:hover td{background:#fafcff}
           <span class="badge badge-green" style="padding:5px 12px;font-size:13px">已报销: <strong id="expApproved">¥0</strong></span>
           <span class="badge badge-yellow" style="padding:5px 12px;font-size:13px">待审批: <strong id="expPending">¥0</strong></span>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openModal('expenseModal')">+ 新增报销</button>
+        <div class="section-header-right">
+          <button class="filter-toggle" onclick="toggleFilterPanel('expense')" id="expenseFilterToggle">🔍 筛选<span class="filter-badge" id="expenseFilterBadge" style="display:none">0</span></button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('expenseModal')">+ 新增报销</button>
+        </div>
+      </div>
+      <div class="filter-panel collapsed" id="expenseFilterPanel">
+        <div class="filter-grid">
+          <div class="filter-item">
+            <label>事项名称</label>
+            <input placeholder="报销事项..." id="expenseF_name" oninput="applyExpenseFilter()">
+          </div>
+          <div class="filter-item">
+            <label>发票号</label>
+            <input placeholder="发票号..." id="expenseF_invoice" oninput="applyExpenseFilter()">
+          </div>
+          <div class="filter-item">
+            <label>状态</label>
+            <select id="expenseF_status" onchange="applyExpenseFilter()">
+              <option value="">全部</option>
+              <option value="待审批">待审批</option>
+              <option value="已审批">已审批</option>
+              <option value="已报销">已报销</option>
+              <option value="已拒绝">已拒绝</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label>类型</label>
+            <select id="expenseF_type" onchange="applyExpenseFilter()">
+              <option value="">全部</option>
+              <option value="交通">交通</option>
+              <option value="餐饮">餐饮</option>
+              <option value="住宿">住宿</option>
+              <option value="办公用品">办公用品</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label>金额</label>
+            <div class="filter-range">
+              <input type="number" placeholder="最低" id="expenseF_amtMin" oninput="applyExpenseFilter()">
+              <span class="range-sep">至</span>
+              <input type="number" placeholder="最高" id="expenseF_amtMax" oninput="applyExpenseFilter()">
+            </div>
+          </div>
+          <div class="filter-item">
+            <label>申请日期</label>
+            <div class="filter-range">
+              <input type="date" id="expenseF_dateFrom" onchange="applyExpenseFilter()">
+              <span class="range-sep">至</span>
+              <input type="date" id="expenseF_dateTo" onchange="applyExpenseFilter()">
+            </div>
+          </div>
+        </div>
+        <div class="filter-actions-bottom">
+          <span style="flex:1;color:var(--color-text3);font-size:11px" id="expenseFilterCount"></span>
+          <button class="btn btn-sm btn-outline" onclick="resetExpenseFilter()">重置</button>
+          <button class="btn btn-sm btn-outline" onclick="toggleFilterPanel('expense')">收起筛选 ▲</button>
+        </div>
       </div>
       <div class="card" style="padding:0">
         <div class="table-wrap">
@@ -1312,31 +1538,9 @@ function renderTodo(){
   if(pendingCount>0){badge.style.display='';badge.textContent=pendingCount}else{badge.style.display='none'}
 
   let filtered=todos.filter(t=>t.type===activeTodoTab);
-  // Apply filters
-  const fy=document.getElementById('filterYear')?.value||'';
-  const fm=document.getElementById('filterMonth')?.value||'';
-  const fd=document.getElementById('filterDay')?.value||'';
-  const fcats=getActiveFilterTags('filterCatTags');
-  const fsrcs=getActiveFilterTags('filterSrcTags');
-  if(fy) filtered=filtered.filter(t=>(t.issueDate||t.createdAt||t.completeDate||'').startsWith(fy));
-  if(fm){
-    const mkey=fy?fy+'-'+fm:'-'+fm;
-    filtered=filtered.filter(t=>{
-      const d=t.issueDate||t.createdAt||t.completeDate||'';
-      return d.startsWith(mkey);
-    });
-  }
-  if(fd){
-    filtered=filtered.filter(t=>{
-      const d=t.issueDate||t.createdAt||t.completeDate||'';
-      const dkey=fy&&fm?fy+'-'+fm+'-'+fd:(fy?fy+'-':fm?fm+'-':'')+fd;
-      return d.includes(fd);
-    });
-  }
-  if(fcats.length) filtered=filtered.filter(t=>fcats.some(c=>(t.category||[]).includes(c)));
-  if(fsrcs.length) filtered=filtered.filter(t=>fsrcs.some(s=>(t.source||[]).includes(s)));
-
-  initTodoFilters(todos);
+  // Apply extra filters from filter panel
+  filtered=applyTodoFilters(filtered);
+  updateTodoFilterCount(filtered.length);
 
   if(!filtered.length){
     document.getElementById('todoTabContent').innerHTML='<div class="empty-state"><p>暂无符合筛选的'+TYPE_LABELS[activeTodoTab]+'记录</p></div>';
@@ -1624,93 +1828,98 @@ function deleteTodo(id){
 document.getElementById('todoModal').addEventListener('click',function(e){if(e.target===this)closeModal('todoModal')});
 
 // ============================================================
-//  TODO FILTERS & EXPORT
+//  UNIFIED FILTER PANEL
 // ============================================================
-function initTodoFilters(todos){
-  // Populate year/month/day dropdowns
-  const dates=[];const cats=[];const srcs=[];
-  todos.forEach(t=>{
-    const d=t.issueDate||t.createdAt||t.completeDate||'';
-    if(d)dates.push(d.slice(0,7)); // YYYY-MM
-    (t.category||[]).forEach(c=>{if(c&&!cats.includes(c))cats.push(c)});
-    (t.source||[]).forEach(s=>{if(s&&!srcs.includes(s))srcs.push(s)});
-  });
-  // Year options
-  const years=[...new Set(dates.map(d=>d.slice(0,4)))].sort().reverse();
-  const fySel=document.getElementById('filterYear');
-  if(fySel&&fySel.options.length<=1){
-    const sy=fySel.value;
-    fySel.innerHTML='<option value="">全部年份</option>'+years.map(y=>`<option value="${y}" ${y===sy?'selected':''}>${y}年</option>`).join('');
+function toggleFilterPanel(section){
+  const panel=document.getElementById(section+'FilterPanel');
+  if(!panel)return;
+  const wasCollapsed=panel.classList.contains('collapsed');
+  panel.classList.toggle('collapsed');
+  const toggle=document.getElementById(section+'FilterToggle');
+  if(toggle){
+    toggle.innerHTML=wasCollapsed?'🔍 筛选<span class="filter-badge" id="'+section+'FilterBadge" style="display:none">0</span>':'展开筛选 ▼<span class="filter-badge" id="'+section+'FilterBadge" style="display:none">0</span>';
   }
-  // Month options
-  const fmSel=document.getElementById('filterMonth');
-  const months=[...new Set(dates.map(d=>d.slice(5,7)))].sort();
-  if(fmSel&&fmSel.options.length<=1){
-    const sm=fmSel.value;
-    fmSel.innerHTML='<option value="">全部月份</option>'+months.map(m=>`<option value="${m}" ${m===sm?'selected':''}>${m}月</option>`).join('');
-  }
-  // Day options (1-31)
-  const fdSel=document.getElementById('filterDay');
-  if(fdSel&&fdSel.options.length<=1){
-    const sd=fdSel.value;
-    fdSel.innerHTML='<option value="">全部日期</option>';
-    for(let i=1;i<=31;i++){const s=String(i).padStart(2,'0');fdSel.innerHTML+=`<option value="${s}" ${s===sd?'selected':''}>${i}日</option>`;}
-  }
-  // Category tags
-  renderFilterTags('filterCatTags',cats,'cat');
-  // Source tags
-  renderFilterTags('filterSrcTags',srcs,'src');
 }
 
-function renderFilterTags(containerId,items,prefix){
-  const container=document.getElementById(containerId);
-  if(!container)return;
-  const active=getActiveFilterTags(containerId);
-  let html='';
-  items.forEach(v=>{
-    html+=`<span class="filter-tag ${active.includes(v)?'active':''}" data-key="${prefix}-${v}" onclick="toggleFilterTag('${containerId}','${v}');renderTodo()">${v}</span>`;
+// ============================================================
+//  TODO FILTERS
+// ============================================================
+function applyTodoFilters(list){
+  const name=(document.getElementById('todoF_name')?.value||'').toLowerCase();
+  const status=document.getElementById('todoF_status')?.value||'';
+  const priority=document.getElementById('todoF_priority')?.value||'';
+  const cats=getMultiSelected('todoF_cat');
+  const srcs=getMultiSelected('todoF_src');
+  const issueFrom=document.getElementById('todoF_issueFrom')?.value||'';
+  const issueTo=document.getElementById('todoF_issueTo')?.value||'';
+  const dlFrom=document.getElementById('todoF_deadlineFrom')?.value||'';
+  const dlTo=document.getElementById('todoF_deadlineTo')?.value||'';
+  const doneFrom=document.getElementById('todoF_doneFrom')?.value||'';
+  const doneTo=document.getElementById('todoF_doneTo')?.value||'';
+  return list.filter(t=>{
+    if(name&&!(t.name||'').toLowerCase().includes(name))return false;
+    if(status&&t.status!==status)return false;
+    if(priority&&t.priority!==priority)return false;
+    if(cats.length&&!cats.some(c=>(t.category||[]).includes(c)))return false;
+    if(srcs.length&&!srcs.some(s=>(t.source||[]).includes(s)))return false;
+    const d=(t.issueDate||t.createdAt||'');
+    if(issueFrom&&d<issueFrom)return false;
+    if(issueTo&&d>issueTo)return false;
+    if(dlFrom&&(t.deadline||'')<dlFrom)return false;
+    if(dlTo&&(t.deadline||'')>dlTo)return false;
+    if(doneFrom&&(t.completeDate||'')<doneFrom)return false;
+    if(doneTo&&(t.completeDate||'')>doneTo)return false;
+    return true;
   });
-  container.innerHTML=html;
 }
 
-function getActiveFilterTags(containerId){
-  const container=document.getElementById(containerId);
-  if(!container||!container.dataset.active)return [];
-  return container.dataset.active.split('||').filter(Boolean);
+function getTodoFilterActiveCount(){
+  let n=0;
+  if((document.getElementById('todoF_name')?.value||''))n++;
+  if(document.getElementById('todoF_status')?.value)n++;
+  if(document.getElementById('todoF_priority')?.value)n++;
+  if(getMultiSelected('todoF_cat').length)n++;
+  if(getMultiSelected('todoF_src').length)n++;
+  if(document.getElementById('todoF_issueFrom')?.value)n++;
+  if(document.getElementById('todoF_issueTo')?.value)n++;
+  if(document.getElementById('todoF_deadlineFrom')?.value)n++;
+  if(document.getElementById('todoF_deadlineTo')?.value)n++;
+  if(document.getElementById('todoF_doneFrom')?.value)n++;
+  if(document.getElementById('todoF_doneTo')?.value)n++;
+  return n;
 }
 
-function toggleFilterTag(containerId,value){
-  const container=document.getElementById(containerId);
-  let active=getActiveFilterTags(containerId);
-  const idx=active.indexOf(value);
-  if(idx>-1)active.splice(idx,1);else active.push(value);
-  container.dataset.active=active.join('||');
+function updateTodoFilterCount(n){
+  const el=document.getElementById('todoFilterCount');
+  if(!el)return;
+  const active=getTodoFilterActiveCount();
+  el.textContent=active?`筛选到 ${n} 条 · ${active} 个条件`:'';
 }
 
-function clearTodoFilters(){
-  ['filterYear','filterMonth','filterDay'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.value='';
-  });
-  ['filterCatTags','filterSrcTags'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.dataset.active='';
-  });
+function applyTodoFilter(){
+  renderTodo();
+}
+
+function resetTodoFilter(){
+  document.getElementById('todoF_name').value='';
+  document.getElementById('todoF_status').value='';
+  document.getElementById('todoF_priority').value='';
+  setMultiSelected('todoF_cat',[]);renderMultiOptions('todoF_cat');
+  setMultiSelected('todoF_src',[]);renderMultiOptions('todoF_src');
+  document.getElementById('todoF_issueFrom').value='';
+  document.getElementById('todoF_issueTo').value='';
+  document.getElementById('todoF_deadlineFrom').value='';
+  document.getElementById('todoF_deadlineTo').value='';
+  document.getElementById('todoF_doneFrom').value='';
+  document.getElementById('todoF_doneTo').value='';
   renderTodo();
 }
 
 function getVisibleTodos(){
-  // Returns currently displayed (filtered) todos
   const todos=DB.get('todos');
-  let filtered=todos.filter(t=>t.type===activeTodoTab);
-  const fy=document.getElementById('filterYear')?.value||'';
-  const fm=document.getElementById('filterMonth')?.value||'';
-  const fd=document.getElementById('filterDay')?.value||'';
-  const fcats=getActiveFilterTags('filterCatTags');
-  const fsrcs=getActiveFilterTags('filterSrcTags');
-  if(fy) filtered=filtered.filter(t=>(t.issueDate||t.createdAt||t.completeDate||'').startsWith(fy));
-  if(fm) filtered=filtered.filter(t=>(t.issueDate||t.createdAt||t.completeDate||'').slice(5,7)===fm);
-  if(fd) filtered=filtered.filter(t=>(t.issueDate||t.createdAt||t.completeDate||'').includes(fd));
-  if(fcats.length) filtered=filtered.filter(t=>fcats.some(c=>(t.category||[]).includes(c)));
-  if(fsrcs.length) filtered=filtered.filter(t=>fsrcs.some(s=>(t.source||[]).includes(s)));
+  const typeFilter=document.getElementById('todoF_type')?.value||'';
+  let filtered=typeFilter?todos.filter(t=>t.type===typeFilter):todos.filter(t=>t.type===activeTodoTab);
+  filtered=applyTodoFilters(filtered);
   return filtered;
 }
 
@@ -1719,51 +1928,28 @@ function exportTodos(mode){
   if(mode==='all'){
     data=DB.get('todos');
   }else if(mode==='current'){
-    // Export with current filters applied
+    // Apply current filters across all tabs
     const todos=DB.get('todos');
-    let filtered=todos;
-    const fy=document.getElementById('filterYear')?.value||'';
-    const fm=document.getElementById('filterMonth')?.value||'';
-    const fd=document.getElementById('filterDay')?.value||'';
-    const fcats=getActiveFilterTags('filterCatTags');
-    const fsrcs=getActiveFilterTags('filterSrcTags');
-    if(fy||fm||fd||fcats.length||fsrcs.length){
-      filtered=todos.filter(t=>{
-        if(fy&&!(t.issueDate||t.createdAt||t.completeDate||'').startsWith(fy))return false;
-        if(fm&&(t.issueDate||t.createdAt||t.completeDate||'').slice(5,7)!==fm)return false;
-        if(fd&&!(t.issueDate||t.createdAt||t.completeDate||'').includes(fd))return false;
-        if(fcats.length&&!fcats.some(c=>(t.category||[]).includes(c)))return false;
-        if(fsrcs.length&&!fsrcs.some(s=>(t.source||[]).includes(s)))return false;
-        return true;
-      });
-    }
-    data=filtered;
+    const typeFilter=document.getElementById('todoF_type')?.value||'';
+    let filtered=typeFilter?todos.filter(t=>t.type===typeFilter):todos;
+    data=applyTodoFilters(filtered);
   }else{
-    // Export current page tab
     data=getVisibleTodos();
   }
   if(!data||!data.length){toast('没有可导出的数据');return;}
-  // Build CSV
   const headers=['类型','名称','优先级','类别','来源','下发日期','截止日期','完成日期','状态','堵点','内容','子任务'];
   const rows=[headers.join(',')];
   data.forEach(t=>{
     const typeName=TYPE_LABELS[t.type]||t.type||'';
     rows.push([
-      csvEscape(typeName),
-      csvEscape(t.name||''),
-      t.priority||'',
-      csvEscape((t.category||[]).join(';')),
-      csvEscape((t.source||[]).join(';')),
-      t.issueDate||'',
-      t.deadline||'',
-      t.completeDate||'',
-      t.status||'',
-      csvEscape(t.blocker||''),
-      csvEscape(t.content||''),
+      csvEscape(typeName),csvEscape(t.name||''),t.priority||'',
+      csvEscape((t.category||[]).join(';')),csvEscape((t.source||[]).join(';')),
+      t.issueDate||'',t.deadline||'',t.completeDate||'',
+      t.status||'',csvEscape(t.blocker||''),csvEscape(t.content||''),
       csvEscape((t.subtasks||[]).map(s=>(s.done?'✓':'☐')+' '+s.text).join('; '))
     ].join(','));
   });
-  const csv='\uFEFF'+rows.join('\n'); // BOM for Excel
+  const csv='\uFEFF'+rows.join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -1783,12 +1969,63 @@ function csvEscape(str){
 }
 
 // ============================================================
+//  CONTRACT / PURCHASE / EXPENSE FILTERS
+// ============================================================
+function applyContractFilter(){
+  renderContracts();
+  updateGenericFilterCount('contract');
+}
+function resetContractFilter(){
+  ['contractF_name','contractF_party','contractF_amtMin','contractF_amtMax','contractF_signFrom','contractF_signTo','contractF_expFrom','contractF_expTo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const s=document.getElementById('contractF_status');if(s)s.value='';
+  renderContracts();
+  updateGenericFilterCount('contract');
+}
+function applyPurchaseFilter(){
+  renderPurchases();
+  updateGenericFilterCount('purchase');
+}
+function resetPurchaseFilter(){
+  ['purchaseF_name','purchaseF_supplier','purchaseF_amtMin','purchaseF_amtMax','purchaseF_dateFrom','purchaseF_dateTo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const s=document.getElementById('purchaseF_status');if(s)s.value='';
+  renderPurchases();
+  updateGenericFilterCount('purchase');
+}
+function applyExpenseFilter(){
+  renderExpenses();
+  updateGenericFilterCount('expense');
+}
+function resetExpenseFilter(){
+  ['expenseF_name','expenseF_invoice','expenseF_amtMin','expenseF_amtMax','expenseF_dateFrom','expenseF_dateTo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['expenseF_status','expenseF_type'].forEach(id=>{const s=document.getElementById(id);if(s)s.value='';});
+  renderExpenses();
+  updateGenericFilterCount('expense');
+}
+
+function updateGenericFilterCount(section){
+  const el=document.getElementById(section+'FilterCount');
+  const badge=document.getElementById(section+'FilterBadge');
+  if(!el&&!badge)return;
+  let active=0;
+  const fields=document.querySelectorAll('#'+section+'FilterPanel input, #'+section+'FilterPanel select');
+  fields.forEach(f=>{if(f.value)active++;});
+  const multiCats=getMultiSelected(section==='todo'?'todoF_cat':section+'F_cat');
+  const multiSrcs=getMultiSelected(section==='todo'?'todoF_src':section+'F_src');
+  active+=multiCats.length+multiSrcs.length;
+  if(el)el.textContent=active?`${active} 个筛选条件生效`:'';
+  if(badge){
+    if(active>0){badge.style.display='';badge.textContent=active;}
+    else badge.style.display='none';
+  }
+}
+
+// ============================================================
 //  MULTI-SELECT
 // ============================================================
 const OPTIONS_STORE={};
 
 function getOptionStore(name){
-  const defaults={todoCategory:'["报告","会议","审批","调研","培训","材料"]',todoSource:'["上级交办","自研","协作","会议部署","文件要求","其他来源"]'};
+  const defaults={todoCategory:'["报告","会议","审批","调研","培训","材料"]',todoSource:'["上级交办","自研","协作","会议部署","文件要求","其他来源"]',todoF_cat:'["报告","会议","审批","调研","培训","材料"]',todoF_src:'["上级交办","自研","协作","会议部署","文件要求","其他来源"]'};
   if(!OPTIONS_STORE[name]){
     OPTIONS_STORE[name]=JSON.parse(localStorage.getItem('wb_opts_'+name)||(defaults[name]||'[]'));
   }
@@ -1832,11 +2069,13 @@ function toggleMultiOption(name,value){
   const idx=sel.indexOf(value);
   if(idx>-1)sel.splice(idx,1);else sel.push(value);
   setMultiSelected(name,sel);
+  if(name.startsWith('todoF_'))applyTodoFilter();
 }
 
 function removeMultiOption(name,value){
   const sel=getMultiSelected(name).filter(v=>v!==value);
   setMultiSelected(name,sel);
+  if(name.startsWith('todoF_'))applyTodoFilter();
 }
 
 function addMultiOption(name){
@@ -1855,6 +2094,7 @@ function addMultiOption(name){
   }
   input.value='';
   document.getElementById(name+'Dropdown').classList.add('open');
+  if(name.startsWith('todoF_'))applyTodoFilter();
 }
 
 function clearMultiOptions(name){
@@ -2027,11 +2267,26 @@ const contractStatusBadge={执行中:'badge-blue',已完成:'badge-green',已过
 
 function renderContracts(){
   const contracts=DB.get('contracts');
-  const q=(document.getElementById('contractSearch').value||'').toLowerCase();
-  const sf=document.getElementById('contractStatusFilter').value;
+  const q=(document.getElementById('contractF_name')?.value||'').toLowerCase();
+  const party=(document.getElementById('contractF_party')?.value||'').toLowerCase();
+  const sf=document.getElementById('contractF_status')?.value||'';
+  const amtMin=+(document.getElementById('contractF_amtMin')?.value||0);
+  const amtMax=+(document.getElementById('contractF_amtMax')?.value||0);
+  const signFrom=document.getElementById('contractF_signFrom')?.value||'';
+  const signTo=document.getElementById('contractF_signTo')?.value||'';
+  const expFrom=document.getElementById('contractF_expFrom')?.value||'';
+  const expTo=document.getElementById('contractF_expTo')?.value||'';
   const filtered=contracts.filter(c=>{
-    if(q&&!(c.name+(c.party||'')).toLowerCase().includes(q))return false;
+    if(q&&!(c.name+(c.no||'')+(c.party||'')).toLowerCase().includes(q))return false;
+    if(party&&!(c.party||'').toLowerCase().includes(party))return false;
     if(sf&&c.status!==sf)return false;
+    const amt=+(c.amount||0);
+    if(amtMin&&amt<amtMin)return false;
+    if(amtMax&&amt>amtMax)return false;
+    if(signFrom&&(c.signDate||'')<signFrom)return false;
+    if(signTo&&(c.signDate||'')>signTo)return false;
+    if(expFrom&&(c.expiry||'')<expFrom)return false;
+    if(expTo&&(c.expiry||'')>expTo)return false;
     return true;
   });
 
@@ -2056,6 +2311,7 @@ function renderContracts(){
       </td>
     </tr>
   `).join('');
+  updateGenericFilterCount('contract');
 }
 
 function saveContract(){
@@ -2119,11 +2375,22 @@ const purchaseStatusBadge={申请中:'badge-yellow',审批通过:'badge-blue',�
 
 function renderPurchases(){
   const purchases=DB.get('purchases');
-  const q=(document.getElementById('purchaseSearch').value||'').toLowerCase();
-  const sf=document.getElementById('purchaseStatusFilter').value;
+  const q=(document.getElementById('purchaseF_name')?.value||'').toLowerCase();
+  const supplier=(document.getElementById('purchaseF_supplier')?.value||'').toLowerCase();
+  const sf=document.getElementById('purchaseF_status')?.value||'';
+  const amtMin=+(document.getElementById('purchaseF_amtMin')?.value||0);
+  const amtMax=+(document.getElementById('purchaseF_amtMax')?.value||0);
+  const dateFrom=document.getElementById('purchaseF_dateFrom')?.value||'';
+  const dateTo=document.getElementById('purchaseF_dateTo')?.value||'';
   const filtered=purchases.filter(p=>{
     if(q&&!(p.name+(p.supplier||'')).toLowerCase().includes(q))return false;
+    if(supplier&&!(p.supplier||'').toLowerCase().includes(supplier))return false;
     if(sf&&p.status!==sf)return false;
+    const amt=+(p.amount||0);
+    if(amtMin&&amt<amtMin)return false;
+    if(amtMax&&amt>amtMax)return false;
+    if(dateFrom&&(p.date||'')<dateFrom)return false;
+    if(dateTo&&(p.date||'')>dateTo)return false;
     return true;
   });
 
@@ -2148,6 +2415,7 @@ function renderPurchases(){
       </td>
     </tr>
   `).join('');
+  updateGenericFilterCount('purchase');
 }
 
 function savePurchase(){
@@ -2217,12 +2485,35 @@ function renderExpenses(){
   document.getElementById('expApproved').textContent='¥'+fmt(approvedSum);
   document.getElementById('expPending').textContent='¥'+fmt(pendingSum);
 
-  if(!expenses.length){
+  // Apply filters
+  const q=(document.getElementById('expenseF_name')?.value||'').toLowerCase();
+  const invoice=(document.getElementById('expenseF_invoice')?.value||'').toLowerCase();
+  const sf=document.getElementById('expenseF_status')?.value||'';
+  const tf=document.getElementById('expenseF_type')?.value||'';
+  const amtMin=+(document.getElementById('expenseF_amtMin')?.value||0);
+  const amtMax=+(document.getElementById('expenseF_amtMax')?.value||0);
+  const dateFrom=document.getElementById('expenseF_dateFrom')?.value||'';
+  const dateTo=document.getElementById('expenseF_dateTo')?.value||'';
+
+  const filtered=expenses.filter(e=>{
+    if(q&&!(e.name||'').toLowerCase().includes(q))return false;
+    if(invoice&&!(e.invoice||'').toLowerCase().includes(invoice))return false;
+    if(sf&&e.status!==sf)return false;
+    if(tf&&e.type!==tf)return false;
+    const amt=+(e.amount||0);
+    if(amtMin&&amt<amtMin)return false;
+    if(amtMax&&amt>amtMax)return false;
+    if(dateFrom&&(e.date||'')<dateFrom)return false;
+    if(dateTo&&(e.date||'')>dateTo)return false;
+    return true;
+  });
+
+  if(!filtered.length){
     document.getElementById('expenseTable').innerHTML=`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--color-text3)">暂无报销记录</td></tr>`;
     return;
   }
 
-  document.getElementById('expenseTable').innerHTML=[...expenses].reverse().map(e=>`
+  document.getElementById('expenseTable').innerHTML=[...filtered].reverse().map(e=>`
     <tr>
       <td><span style="font-weight:500">${esc(e.name)}</span></td>
       <td style="font-weight:500">¥${fmt(e.amount)}</td>
@@ -2239,6 +2530,7 @@ function renderExpenses(){
       </td>
     </tr>
   `).join('');
+  updateGenericFilterCount('expense');
 }
 
 function saveExpense(){
