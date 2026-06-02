@@ -9,6 +9,7 @@
 <title>我的工作台</title>
 <link rel="manifest" href="manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -748,44 +749,37 @@ tr:hover td{background:#fafcff}
     <div class="page" id="page-expense">
       <div class="section-header">
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-          <span class="badge badge-blue" style="padding:5px 12px;font-size:13px">本月报销: <strong id="expMonth">¥0</strong></span>
+          <span class="badge badge-blue" style="padding:5px 12px;font-size:13px">本月支出: <strong id="expMonth">¥0</strong></span>
           <span class="badge badge-green" style="padding:5px 12px;font-size:13px">已报销: <strong id="expApproved">¥0</strong></span>
-          <span class="badge badge-yellow" style="padding:5px 12px;font-size:13px">待审批: <strong id="expPending">¥0</strong></span>
+          <span class="badge badge-yellow" style="padding:5px 12px;font-size:13px">待报销: <strong id="expPending">¥0</strong></span>
         </div>
         <div class="section-header-right">
           <button class="filter-toggle" onclick="toggleFilterPanel('expense')" id="expenseFilterToggle">🔍 筛选<span class="filter-badge" id="expenseFilterBadge" style="display:none">0</span></button>
           <button class="btn btn-primary btn-sm" onclick="openModal('expenseModal')">+ 新增报销</button>
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('invoiceUploadBtn').click()">📎 上传发票</button>
+          <input type="file" id="invoiceUploadBtn" accept="image/*,.pdf" onchange="uploadInvoiceFromBtn(this)" style="display:none" multiple>
         </div>
       </div>
       <div class="filter-panel collapsed" id="expenseFilterPanel">
         <div class="filter-grid">
           <div class="filter-item">
-            <label>事项名称</label>
-            <input placeholder="报销事项..." id="expenseF_name" oninput="applyExpenseFilter()">
+            <label>发票内容</label>
+            <input placeholder="发票内容..." id="expenseF_name" oninput="applyExpenseFilter()">
+          </div>
+          <div class="filter-item">
+            <label>供应商</label>
+            <input placeholder="供应商..." id="expenseF_supplier" oninput="applyExpenseFilter()">
           </div>
           <div class="filter-item">
             <label>发票号</label>
             <input placeholder="发票号..." id="expenseF_invoice" oninput="applyExpenseFilter()">
           </div>
           <div class="filter-item">
-            <label>状态</label>
+            <label>报销状态</label>
             <select id="expenseF_status" onchange="applyExpenseFilter()">
               <option value="">全部</option>
-              <option value="待审批">待审批</option>
-              <option value="已审批">已审批</option>
+              <option value="待报销">待报销</option>
               <option value="已报销">已报销</option>
-              <option value="已拒绝">已拒绝</option>
-            </select>
-          </div>
-          <div class="filter-item">
-            <label>类型</label>
-            <select id="expenseF_type" onchange="applyExpenseFilter()">
-              <option value="">全部</option>
-              <option value="交通">交通</option>
-              <option value="餐饮">餐饮</option>
-              <option value="住宿">住宿</option>
-              <option value="办公用品">办公用品</option>
-              <option value="其他">其他</option>
             </select>
           </div>
           <div class="filter-item">
@@ -797,7 +791,7 @@ tr:hover td{background:#fafcff}
             </div>
           </div>
           <div class="filter-item">
-            <label>申请日期</label>
+            <label>申请时间</label>
             <div class="filter-range">
               <input type="date" id="expenseF_dateFrom" onchange="applyExpenseFilter()">
               <span class="range-sep">至</span>
@@ -814,7 +808,7 @@ tr:hover td{background:#fafcff}
       <div class="card" style="padding:0">
         <div class="table-wrap">
           <table>
-            <thead><tr><th>报销事项</th><th>金额</th><th>发票号</th><th>申请日期</th><th>类型</th><th>状态</th><th>备注</th><th>操作</th></tr></thead>
+            <thead><tr><th>申请时间</th><th>供应商</th><th>发票号码</th><th>开票日期</th><th>发票内容</th><th>金额</th><th>报销状态</th><th>报销日期</th><th>操作</th></tr></thead>
             <tbody id="expenseTable"></tbody>
           </table>
         </div>
@@ -1072,59 +1066,62 @@ tr:hover td{background:#fafcff}
       <input type="hidden" id="expenseId">
       <div class="invoice-upload-area" id="invoiceUploadArea" onclick="document.getElementById('invoiceInput').click()" ondrop="handleInvoiceDrop(event)" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')">
         <div class="invoice-upload-icon">📷</div>
-        <div class="invoice-upload-text">点击或拖拽发票图片到此处</div>
-        <div class="invoice-upload-hint">支持 JPG / PNG，自动识别金额、日期等信息</div>
-        <input type="file" id="invoiceInput" accept="image/*" onchange="handleInvoiceUpload(this)" style="display:none">
+        <div class="invoice-upload-text">点击或拖拽发票图片/PDF 到此处</div>
+        <div class="invoice-upload-hint">支持 JPG / PNG / PDF，自动识别发票信息</div>
+        <input type="file" id="invoiceInput" accept="image/*,.pdf" onchange="handleInvoiceUpload(this)" style="display:none">
         <div class="invoice-ocr-loading" id="invoiceOcrLoading" style="display:none">
           <div class="invoice-ocr-spinner"></div>
           <span>正在识别发票内容…</span>
         </div>
         <div class="invoice-ocr-result" id="invoiceOcrResult" style="display:none"></div>
         <img id="invoicePreview" class="invoice-preview" onclick="event.stopPropagation()">
+        <iframe id="invoicePdfPreview" style="display:none;width:100%;height:200px;border:none;border-radius:var(--radius-sm);margin-top:10px"></iframe>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">申请时间 *</label>
+          <input type="date" class="form-control" id="expenseAppDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">金额（元） *</label>
+          <input type="number" class="form-control" id="expenseAmount" placeholder="0.00" step="0.01">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">供应商名称</label>
+          <input class="form-control" id="expenseSupplier" placeholder="如：XX科技有限公司">
+        </div>
+        <div class="form-group">
+          <label class="form-label">统一信用代码/纳税人识别号</label>
+          <input class="form-control" id="expenseSupplierCode" placeholder="18位统一信用代码">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">发票号码 *</label>
+          <input class="form-control" id="expenseInvoice" placeholder="发票号码">
+        </div>
+        <div class="form-group">
+          <label class="form-label">开票日期</label>
+          <input type="date" class="form-control" id="expenseInvoiceDate">
+        </div>
       </div>
       <div class="form-group">
-        <label class="form-label">报销事项 *</label>
-        <input class="form-control" id="expenseName" placeholder="报销事项描述">
+        <label class="form-label">发票内容 *</label>
+        <textarea class="form-control" id="expenseContent" placeholder="多条发票内容用顿号（、）隔开，如：技术服务费、咨询服务费" rows="2"></textarea>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">金额（元）</label>
-          <input type="number" class="form-control" id="expenseAmount" placeholder="0">
-        </div>
-        <div class="form-group">
-          <label class="form-label">发票号</label>
-          <input class="form-control" id="expenseInvoice" placeholder="发票号/可选">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">申请日期</label>
-          <input type="date" class="form-control" id="expenseDate">
-        </div>
-        <div class="form-group">
-          <label class="form-label">类型</label>
-          <select class="form-control" id="expenseType">
-            <option value="交通">交通</option>
-            <option value="餐饮">餐饮</option>
-            <option value="住宿">住宿</option>
-            <option value="办公用品">办公用品</option>
-            <option value="其他">其他</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">审批状态</label>
-          <select class="form-control" id="expenseStatus">
-            <option value="待审批">待审批</option>
-            <option value="已审批">已审批</option>
+          <label class="form-label">报销状态</label>
+          <select class="form-control" id="expenseStatus" onchange="onExpenseStatusChange()">
+            <option value="待报销">待报销</option>
             <option value="已报销">已报销</option>
-            <option value="已拒绝">已拒绝</option>
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">备注</label>
-          <input class="form-control" id="expenseNote" placeholder="可选备注">
+          <label class="form-label">报销日期</label>
+          <input type="date" class="form-control" id="expenseReimbDate">
         </div>
       </div>
     </div>
@@ -1247,6 +1244,8 @@ tr:hover td{background:#fafcff}
 </div>
 
 <script>
+// pdf.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 // ============================================================
 //  DATA LAYER
 // ============================================================
@@ -2017,8 +2016,8 @@ function applyExpenseFilter(){
   updateGenericFilterCount('expense');
 }
 function resetExpenseFilter(){
-  ['expenseF_name','expenseF_invoice','expenseF_amtMin','expenseF_amtMax','expenseF_dateFrom','expenseF_dateTo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  ['expenseF_status','expenseF_type'].forEach(id=>{const s=document.getElementById(id);if(s)s.value='';});
+  ['expenseF_name','expenseF_supplier','expenseF_invoice','expenseF_amtMin','expenseF_amtMax','expenseF_dateFrom','expenseF_dateTo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['expenseF_status'].forEach(id=>{const s=document.getElementById(id);if(s)s.value='';});
   renderExpenses();
   updateGenericFilterCount('expense');
 }
@@ -2497,15 +2496,15 @@ function deletePurchase(id){
 // ============================================================
 //  EXPENSE
 // ============================================================
-const expenseStatusBadge={待审批:'badge-yellow',已审批:'badge-blue',已报销:'badge-green',已拒绝:'badge-red'};
+const expenseStatusBadge={待报销:'badge-yellow',已报销:'badge-green'};
 
 function renderExpenses(){
   const expenses=DB.get('expenses');
   const now=new Date().toISOString().slice(0,7);
-  const monthExp=expenses.filter(e=>e.date&&e.date.startsWith(now));
+  const monthExp=expenses.filter(e=>e.appDate&&e.appDate.startsWith(now));
   const monthSum=monthExp.reduce((s,e)=>s+(+e.amount||0),0);
   const approvedSum=expenses.filter(e=>e.status==='已报销').reduce((s,e)=>s+(+e.amount||0),0);
-  const pendingSum=expenses.filter(e=>e.status==='待审批').reduce((s,e)=>s+(+e.amount||0),0);
+  const pendingSum=expenses.filter(e=>e.status==='待报销').reduce((s,e)=>s+(+e.amount||0),0);
 
   document.getElementById('expMonth').textContent='¥'+fmt(monthSum);
   document.getElementById('expApproved').textContent='¥'+fmt(approvedSum);
@@ -2513,41 +2512,42 @@ function renderExpenses(){
 
   // Apply filters
   const q=(document.getElementById('expenseF_name')?.value||'').toLowerCase();
+  const supplier=(document.getElementById('expenseF_supplier')?.value||'').toLowerCase();
   const invoice=(document.getElementById('expenseF_invoice')?.value||'').toLowerCase();
   const sf=document.getElementById('expenseF_status')?.value||'';
-  const tf=document.getElementById('expenseF_type')?.value||'';
   const amtMin=+(document.getElementById('expenseF_amtMin')?.value||0);
   const amtMax=+(document.getElementById('expenseF_amtMax')?.value||0);
   const dateFrom=document.getElementById('expenseF_dateFrom')?.value||'';
   const dateTo=document.getElementById('expenseF_dateTo')?.value||'';
 
   const filtered=expenses.filter(e=>{
-    if(q&&!(e.name||'').toLowerCase().includes(q))return false;
+    if(q&&!(e.content||'').toLowerCase().includes(q))return false;
+    if(supplier&&!(e.supplier||'').toLowerCase().includes(supplier))return false;
     if(invoice&&!(e.invoice||'').toLowerCase().includes(invoice))return false;
     if(sf&&e.status!==sf)return false;
-    if(tf&&e.type!==tf)return false;
     const amt=+(e.amount||0);
     if(amtMin&&amt<amtMin)return false;
     if(amtMax&&amt>amtMax)return false;
-    if(dateFrom&&(e.date||'')<dateFrom)return false;
-    if(dateTo&&(e.date||'')>dateTo)return false;
+    if(dateFrom&&(e.appDate||'')<dateFrom)return false;
+    if(dateTo&&(e.appDate||'')>dateTo)return false;
     return true;
   });
 
   if(!filtered.length){
-    document.getElementById('expenseTable').innerHTML=`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--color-text3)">暂无报销记录</td></tr>`;
+    document.getElementById('expenseTable').innerHTML=`<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--color-text3)">暂无报销记录</td></tr>`;
     return;
   }
 
   document.getElementById('expenseTable').innerHTML=[...filtered].reverse().map(e=>`
     <tr>
-      <td><span style="font-weight:500">${esc(e.name)}</span></td>
-      <td style="font-weight:500">¥${fmt(e.amount)}</td>
-      <td style="color:var(--color-text2)">${esc(e.invoice||'—')}</td>
-      <td style="color:var(--color-text2)">${e.date||'—'}</td>
-      <td><span class="badge badge-gray">${esc(e.type||'')}</span></td>
+      <td style="color:var(--color-text2);white-space:nowrap">${e.appDate||'—'}</td>
+      <td><span style="font-weight:500">${esc(e.supplier||'—')}</span></td>
+      <td style="font-family:monospace;font-size:12px">${esc(e.invoice||'—')}</td>
+      <td style="color:var(--color-text2);white-space:nowrap">${e.invoiceDate||'—'}</td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(e.content||'')}">${esc(e.content||'—')}</td>
+      <td style="font-weight:600;white-space:nowrap">¥${fmt(e.amount)}</td>
       <td><span class="badge ${expenseStatusBadge[e.status]||'badge-gray'}">${e.status}</span></td>
-      <td style="color:var(--color-text2)">${esc(e.note||'—')}</td>
+      <td style="color:var(--color-text2);white-space:nowrap">${e.reimbDate||'—'}</td>
       <td>
         <div style="display:flex;gap:4px">
           <button class="btn btn-ghost btn-sm" onclick="editExpense(${e.id})">✏️</button>
@@ -2560,19 +2560,29 @@ function renderExpenses(){
 }
 
 function saveExpense(){
-  const name=document.getElementById('expenseName').value.trim();
-  if(!name){toast('请输入报销事项');return;}
+  const appDate=document.getElementById('expenseAppDate').value.trim();
+  const content=document.getElementById('expenseContent').value.trim();
+  const invoice=document.getElementById('expenseInvoice').value.trim();
+  if(!invoice){toast('请输入发票号码');return;}
+  if(!appDate){toast('请选择申请时间');return;}
+  if(!content){toast('请输入发票内容');return;}
+  const status=document.getElementById('expenseStatus').value;
   const expenses=DB.get('expenses');
   const id=+document.getElementById('expenseId').value;
+  // 已报销时自动记录报销日期
+  let reimbDate=document.getElementById('expenseReimbDate').value;
+  if(status==='已报销'&&!reimbDate)reimbDate=new Date().toISOString().slice(0,10);
   const item={
     id:id||DB.nextId(expenses),
-    name,
-    amount:document.getElementById('expenseAmount').value,
-    invoice:document.getElementById('expenseInvoice').value,
-    date:document.getElementById('expenseDate').value,
-    type:document.getElementById('expenseType').value,
-    status:document.getElementById('expenseStatus').value,
-    note:document.getElementById('expenseNote').value,
+    appDate,
+    supplier:document.getElementById('expenseSupplier').value.trim(),
+    supplierCode:document.getElementById('expenseSupplierCode').value.trim(),
+    invoice,
+    invoiceDate:document.getElementById('expenseInvoiceDate').value,
+    content,
+    amount:+(document.getElementById('expenseAmount').value||0),
+    status,
+    reimbDate,
     createdAt:new Date().toISOString()
   };
   if(id){const i=expenses.findIndex(e=>e.id===id);if(i>-1)expenses[i]=item;else expenses.push(item);}
@@ -2589,13 +2599,15 @@ function editExpense(id){
   if(!e)return;
   document.getElementById('expenseModalTitle').textContent='编辑报销';
   document.getElementById('expenseId').value=e.id;
-  document.getElementById('expenseName').value=e.name;
+  document.getElementById('expenseAppDate').value=e.appDate||'';
   document.getElementById('expenseAmount').value=e.amount||'';
+  document.getElementById('expenseSupplier').value=e.supplier||'';
+  document.getElementById('expenseSupplierCode').value=e.supplierCode||'';
   document.getElementById('expenseInvoice').value=e.invoice||'';
-  document.getElementById('expenseDate').value=e.date||'';
-  document.getElementById('expenseType').value=e.type||'其他';
-  document.getElementById('expenseStatus').value=e.status;
-  document.getElementById('expenseNote').value=e.note||'';
+  document.getElementById('expenseInvoiceDate').value=e.invoiceDate||'';
+  document.getElementById('expenseContent').value=e.content||'';
+  document.getElementById('expenseStatus').value=e.status||'待报销';
+  document.getElementById('expenseReimbDate').value=e.reimbDate||'';
   openModal('expenseModal');
 }
 
@@ -2604,48 +2616,96 @@ function editExpense(id){
 // ============================================================
 let invoiceOcrWorker=null;
 
+// 列表页"上传发票"按钮 - 打开弹窗后触发
+function uploadInvoiceFromBtn(input){
+  const files=input.files;
+  if(!files||!files.length)return;
+  // 打开新增报销弹窗
+  clearExpenseForm();
+  openModal('expenseModal');
+  // 延迟等弹窗渲染完成后处理文件
+  setTimeout(()=>{
+    handleInvoiceFile(files[0]);
+  },300);
+}
+
 function handleInvoiceUpload(input){
   const file=input.files[0];
   if(!file)return;
-  showInvoicePreview(file);
-  recognizeInvoice(file);
+  handleInvoiceFile(file);
 }
 
 function handleInvoiceDrop(e){
   e.preventDefault();e.currentTarget.classList.remove('dragover');
   const file=e.dataTransfer.files[0];
-  if(!file||!file.type.startsWith('image/')){toast('请拖入图片文件');return;}
-  showInvoicePreview(file);
-  recognizeInvoice(file);
+  if(!file)return;
+  const isImg=file.type.startsWith('image/');
+  const isPdf=file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf');
+  if(!isImg&&!isPdf){toast('请拖入图片或PDF文件');return;}
+  handleInvoiceFile(file);
 }
 
-function showInvoicePreview(file){
-  const reader=new FileReader();
-  reader.onload=function(ev){
-    const img=document.getElementById('invoicePreview');
-    img.src=ev.target.result;
-    img.style.display='block';
-  };
-  reader.readAsDataURL(file);
+function handleInvoiceFile(file){
+  const isPdf=file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf');
+  showInvoicePreview(file,isPdf);
+  recognizeInvoice(file,isPdf);
+}
+
+function showInvoicePreview(file,isPdf){
+  if(isPdf){
+    document.getElementById('invoicePreview').style.display='none';
+    const pdfFrame=document.getElementById('invoicePdfPreview');
+    const url=URL.createObjectURL(file);
+    pdfFrame.src=url;
+    pdfFrame.style.display='block';
+  }else{
+    document.getElementById('invoicePdfPreview').style.display='none';
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      const img=document.getElementById('invoicePreview');
+      img.src=ev.target.result;
+      img.style.display='block';
+    };
+    reader.readAsDataURL(file);
+  }
   document.getElementById('invoiceUploadArea').querySelector('.invoice-upload-icon').style.display='none';
   document.getElementById('invoiceUploadArea').querySelector('.invoice-upload-text').style.display='none';
   document.getElementById('invoiceUploadArea').querySelector('.invoice-upload-hint').style.display='none';
 }
 
-async function recognizeInvoice(file){
+async function recognizeInvoice(file,isPdf){
   const loading=document.getElementById('invoiceOcrLoading');
   const resultBox=document.getElementById('invoiceOcrResult');
   loading.style.display='flex';
   resultBox.style.display='none';
   try{
-    const worker=await Tesseract.createWorker('chi_sim+eng',1,{
-      logger:m=>console.log(m)
-    });
-    const {data:{text}}=await worker.recognize(file);
-    await worker.terminate();
+    let fullText='';
+    if(isPdf){
+      // 用 pdf.js 将每页渲染为图片后 OCR
+      const arrayBuffer=await file.arrayBuffer();
+      const pdf=await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+      const worker=await Tesseract.createWorker('chi_sim+eng',1,{logger:m=>console.log(m)});
+      for(let p=1;p<=pdf.numPages&&p<=5;p++){ // 最多处理5页
+        const page=await pdf.getPage(p);
+        const viewport=page.getViewport({scale:2});
+        const canvas=document.createElement('canvas');
+        canvas.width=viewport.width;
+        canvas.height=viewport.height;
+        const ctx=canvas.getContext('2d');
+        await page.render({canvasContext:ctx,viewport}).promise;
+        const {data:{text}}=await worker.recognize(canvas);
+        fullText+=text+'\n---PAGE BREAK---\n';
+      }
+      await worker.terminate();
+    }else{
+      const worker=await Tesseract.createWorker('chi_sim+eng',1,{logger:m=>console.log(m)});
+      const {data:{text}}=await worker.recognize(file);
+      await worker.terminate();
+      fullText=text;
+    }
     loading.style.display='none';
-    const info=parseInvoiceText(text);
-    showOcrResult(info,text);
+    const info=parseInvoiceText(fullText);
+    showOcrResult(info,fullText);
   }catch(err){
     loading.style.display='none';
     resultBox.style.display='block';
@@ -2656,36 +2716,67 @@ async function recognizeInvoice(file){
 
 function parseInvoiceText(text){
   const info={};
-  // 金额：先找关键字后的数字，再找 ¥ 后的数字
   const lines=text.split('\n');
+
+  // 供应商名称
   for(const line of lines){
-    if(line.match(/金额|合计|价税合计|总金额|小计|合计金额|Total|AMOUNT/i)){
-      const m=line.match(/[0-9,]+\.?[0-9]*/);
-      if(m){
-        const n=parseFloat(m[0].replace(/,/g,''));
-        if(n>0){info.amount=n;break;}
+    if(line.match(/名称|销售方|收款方|seller/i)){
+      const m=line.match(/[:：]\s*(.{2,40}?)$/);
+      if(m&&!m[1].match(/发票|税务局|统一|代码/)){info.supplier=m[1].replace(/.*[:：]\s*/,'').trim();break;}
+    }
+  }
+  if(!info.supplier){
+    for(const line of lines){
+      if(line.match(/销售方|售方/i)){
+        const nextIdx=lines.indexOf(line)+1;
+        if(nextIdx<lines.length&&lines[nextIdx].trim().length>1){
+          const nameMatch=lines[nextIdx].match(/(.{2,20}(?:公司|中心|部门|局|处|院|所|行|厂|店|社|室))/);
+          if(nameMatch){info.supplier=nameMatch[1];break;}
+        }
       }
     }
   }
-  if(!info.amount){
-    const m=text.match(/[¥￥]\s*([0-9,]+\.?[0-9]*)/);
-    if(m){const n=parseFloat(m[1].replace(/,/g,''));if(n>0)info.amount=n;}
-  }
 
-  // 日期：支持 2024年01月02日 / 2024-01-02 / 20240102 / 01/02/2024
+  // 信用代码
   for(const line of lines){
-    // YYYY年MM月DD日 或 YYYY-MM-DD 或 YYYY/MM/DD
-    let dm=line.match(/(\d{4})[年\-/](\d{1,2})[月\-/](\d{1,2})/);
-    if(dm){info.date=dm[1]+'-'+dm[2].padStart(2,'0')+'-'+dm[3].padStart(2,'0');break;}
-    // YYYYMMDD
-    dm=line.match(/20\d{2}[01]\d[0-3]\d/);
-    if(dm){info.date=dm[0].slice(0,4)+'-'+dm[0].slice(4,6)+'-'+dm[0].slice(6,8);break;}
-    // MM/DD/YYYY 或 MM-DD-YYYY
-    dm=line.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](20\d{2})/);
-    if(dm){info.date=dm[3]+'-'+dm[1].padStart(2,'0')+'-'+dm[2].padStart(2,'0');break;}
+    if(line.match(/信用代码|纳税人识别号|纳税识别号|统一社会/i)){
+      const m=line.match(/[A-Za-z0-9]{15,20}/);
+      if(m){info.supplierCode=m[0];break;}
+    }
+  }
+  if(!info.supplierCode){
+    const m=text.match(/[0-9A-Za-z]{18}/);
+    if(m&&/[A-Z]/.test(m[0]))info.supplierCode=m[0];
+    else{
+      const m2=text.match(/[A-Za-z0-9]{15,17}/);
+      if(m2)info.supplierCode=m2[0];
+    }
   }
 
-  // 发票号：发票号码 或 No. 后跟 8 位以上数字/字母
+  // 金额
+  for(const line of lines){
+    if(line.match(/金额|合计|价税合计|总金额|小计|合计金额|Total|AMOUNT/i)){
+      const m=line.match(/[0-9,]+\.[0-9]{2}/);
+      if(m){const n=parseFloat(m[0].replace(/,/g,''));if(n>0){info.amount=n;break;}}
+    }
+  }
+  if(!info.amount){
+    const m=text.match(/[¥￥]?\s*([0-9,]+\.[0-9]{2})/g);
+    if(m){
+      const nums=m.map(s=>parseFloat(s.replace(/[¥￥,\s]/g,''))).filter(n=>n>0).sort((a,b)=>b-a);
+      if(nums.length)info.amount=nums[0];
+    }
+  }
+
+  // 开票日期
+  for(const line of lines){
+    let dm=line.match(/(\d{4})[年\-/](\d{1,2})[月\-/](\d{1,2})/);
+    if(dm){info.invoiceDate=dm[1]+'-'+dm[2].padStart(2,'0')+'-'+dm[3].padStart(2,'0');break;}
+    dm=line.match(/20\d{2}[01]\d[0-3]\d/);
+    if(dm){info.invoiceDate=dm[0].slice(0,4)+'-'+dm[0].slice(4,6)+'-'+dm[0].slice(6,8);break;}
+  }
+
+  // 发票号码
   for(const line of lines){
     if(line.match(/发票号码|发票号|No\.?|INVOICE\s*NO/i)){
       const m=line.match(/[A-Za-z0-9]{6,20}/);
@@ -2693,23 +2784,24 @@ function parseInvoiceText(text){
     }
   }
 
-  // 类型推断
-  const t=text.toLowerCase();
-  if(t.match(/餐|饮|食|饭店|餐厅|食堂|外卖|ctober|restaurant|dinner|lunch/))info.type='餐饮';
-  else if(t.match(/酒店|住宿|宾馆|入住|退房|hotel|accommodation|lodging/))info.type='住宿';
-  else if(t.match(/打车|出租|滴滴|地铁|公交|火车|高铁|机票|uber|携程|滴滴出行|transport|taxi|metro|train|flight/))info.type='交通';
-  else if(t.match(/办公|文具|用品|打印|耗材|office|stationery|supplies/))info.type='办公用品';
-  else info.type='其他';
-
-  // 报销事项：优先取发票标题/货物名称第一行有意义的内容
+  // 发票内容：提取货物/应税服务名称后的多行，用顿号连接
+  const contentItems=[];
+  let inContentSection=false;
   for(const line of lines){
     const trimmed=line.trim();
-    if(trimmed.length<2)continue;
-    if(trimmed.match(/^[0-9\s\-\.¥￥,，。]+$/))continue; // 跳过纯数字行
-    if(trimmed.match(/发票|税务局|监制|代码|号码|开票|日期|金额|税额|税率|合计|购买方|销售方|统一社会信用代码/))continue;
-    info.name=trimmed.slice(0,30);
-    break;
+    if(trimmed.match(/货物|应税|服务名称|项目名称|品名|货物或应税|名称.*单位/))inContentSection=true;
+    if(inContentSection&&trimmed.match(/金额|税率|税额|合计|价税|备注|规格|单位|数量|密码区/))inContentSection=false;
+    if(inContentSection&&trimmed.length>1&&!trimmed.match(/货物|应税|服务名称|项目名称|品名|名称.*单位|规格|型号/)){
+      // 清理特殊字符，提取项目名
+      const cleaned=trimmed.replace(/[*\d.,，。;；:：\s]+/g,'').trim();
+      if(cleaned.length>=1&&cleaned.length<=30){
+        const nameMatch=cleaned.match(/([^\d*].{0,25}[^\d*])/);
+        const name=nameMatch?nameMatch[1].trim():cleaned;
+        if(name&&!contentItems.includes(name))contentItems.push(name);
+      }
+    }
   }
+  if(contentItems.length)info.content=contentItems.join('、');
 
   return info;
 }
@@ -2717,29 +2809,30 @@ function parseInvoiceText(text){
 function showOcrResult(info,rawText){
   const resultBox=document.getElementById('invoiceOcrResult');
   let html='<strong>识别结果：</strong><br>';
-  if(info.amount)html+='<span class="ocr-label">金额：</span><b style="color:var(--color-danger)">'+info.amount+' 元</b><br>';
-  if(info.date)html+='<span class="ocr-label">日期：</span>'+info.date+'<br>';
+  if(info.supplier)html+='<span class="ocr-label">供应商：</span>'+esc(info.supplier)+'<br>';
+  if(info.supplierCode)html+='<span class="ocr-label">信用代码：</span>'+esc(info.supplierCode)+'<br>';
   if(info.invoiceNo)html+='<span class="ocr-label">发票号：</span>'+esc(info.invoiceNo)+'<br>';
-  if(info.type)html+='<span class="ocr-label">推断类型：</span>'+info.type+'<br>';
-  if(info.name)html+='<span class="ocr-label">事项：</span>'+esc(info.name)+'<br>';
+  if(info.invoiceDate)html+='<span class="ocr-label">开票日期：</span>'+info.invoiceDate+'<br>';
+  if(info.content)html+='<span class="ocr-label">发票内容：</span>'+esc(info.content)+'<br>';
+  if(info.amount)html+='<span class="ocr-label">金额：</span><b style="color:var(--color-danger)">¥'+info.amount+'</b><br>';
   html+='<div class="invoice-ocr-btns">';
   html+='<button class="btn btn-primary btn-sm" onclick="fillExpenseFormFromOcr()">✓ 使用识别结果</button>';
   html+='<button class="btn btn-outline btn-sm" onclick="resetInvoiceUpload()">重新上传</button>';
   html+='</div>';
   resultBox.innerHTML=html;
   resultBox.style.display='block';
-  // 暂存识别结果到全局变量
   window.__ocrInfo=info;
   window.__ocrRawText=rawText;
 }
 
 function fillExpenseFormFromOcr(){
   const info=window.__ocrInfo||{};
-  if(info.name)document.getElementById('expenseName').value=info.name;
-  if(info.amount)document.getElementById('expenseAmount').value=info.amount;
-  if(info.date)document.getElementById('expenseDate').value=info.date;
+  if(info.supplier)document.getElementById('expenseSupplier').value=info.supplier;
+  if(info.supplierCode)document.getElementById('expenseSupplierCode').value=info.supplierCode;
   if(info.invoiceNo)document.getElementById('expenseInvoice').value=info.invoiceNo;
-  if(info.type)document.getElementById('expenseType').value=info.type;
+  if(info.invoiceDate)document.getElementById('expenseInvoiceDate').value=info.invoiceDate;
+  if(info.content)document.getElementById('expenseContent').value=info.content;
+  if(info.amount)document.getElementById('expenseAmount').value=info.amount;
   toast('已填充识别结果，请核对后保存');
 }
 
@@ -2747,6 +2840,8 @@ function resetInvoiceUpload(){
   document.getElementById('invoiceInput').value='';
   document.getElementById('invoicePreview').src='';
   document.getElementById('invoicePreview').style.display='none';
+  const pdfFrame=document.getElementById('invoicePdfPreview');
+  pdfFrame.src='';pdfFrame.style.display='none';
   document.getElementById('invoiceOcrResult').style.display='none';
   document.getElementById('invoiceOcrLoading').style.display='none';
   const area=document.getElementById('invoiceUploadArea');
@@ -2756,10 +2851,17 @@ function resetInvoiceUpload(){
   window.__ocrInfo=null;
 }
 
+function onExpenseStatusChange(){
+  const status=document.getElementById('expenseStatus').value;
+  const reimbEl=document.getElementById('expenseReimbDate');
+  if(status==='已报销'&&!reimbEl.value){
+    reimbEl.value=new Date().toISOString().slice(0,10);
+  }
+}
+
 function clearExpenseForm(){
-  ['expenseId','expenseName','expenseAmount','expenseInvoice','expenseDate','expenseNote'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('expenseType').value='交通';
-  document.getElementById('expenseStatus').value='待审批';
+  ['expenseId','expenseAppDate','expenseAmount','expenseSupplier','expenseSupplierCode','expenseInvoice','expenseInvoiceDate','expenseContent','expenseReimbDate'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('expenseStatus').value='待报销';
   document.getElementById('expenseModalTitle').textContent='新增报销';
 }
 
