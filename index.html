@@ -490,9 +490,10 @@ tr:hover td{background:#fafcff}
           <button class="todo-tab" data-tab="recurring" onclick="switchTodoTab('recurring')">周期<span class="tab-count" id="tabCount-recurring">0</span></button>
           <button class="todo-tab" data-tab="record" onclick="switchTodoTab('record')">记录<span class="tab-count" id="tabCount-record">0</span></button>
         </div>
+        <button class="filter-toggle" onclick="toggleFilterPanel('todo')" id="todoFilterToggle">🔍 筛选<span class="filter-badge" id="todoFilterBadge" style="display:none">0</span></button>
         <button class="btn btn-primary btn-sm" onclick="openModal('todoModal')">+ 新建工作</button>
       </div>
-      <div class="filter-panel" id="todoFilterPanel">
+      <div class="filter-panel collapsed" id="todoFilterPanel">
         <div class="filter-grid">
           <div class="filter-item">
             <label>名称</label>
@@ -1833,11 +1834,13 @@ document.getElementById('todoModal').addEventListener('click',function(e){if(e.t
 function toggleFilterPanel(section){
   const panel=document.getElementById(section+'FilterPanel');
   if(!panel)return;
-  const wasCollapsed=panel.classList.contains('collapsed');
   panel.classList.toggle('collapsed');
+  const nowCollapsed=panel.classList.contains('collapsed');
   const toggle=document.getElementById(section+'FilterToggle');
   if(toggle){
-    toggle.innerHTML=wasCollapsed?'🔍 筛选<span class="filter-badge" id="'+section+'FilterBadge" style="display:none">0</span>':'展开筛选 ▼<span class="filter-badge" id="'+section+'FilterBadge" style="display:none">0</span>';
+    const badge=document.getElementById(section+'FilterBadge');
+    const badgeHTML=badge?badge.outerHTML:'';
+    toggle.innerHTML=nowCollapsed?('🔍 筛选'+badgeHTML):('收起筛选 ▲'+badgeHTML);
   }
 }
 
@@ -1890,10 +1893,14 @@ function getTodoFilterActiveCount(){
 }
 
 function updateTodoFilterCount(n){
-  const el=document.getElementById('todoFilterCount');
-  if(!el)return;
   const active=getTodoFilterActiveCount();
-  el.textContent=active?`筛选到 ${n} 条 · ${active} 个条件`:'';
+  const el=document.getElementById('todoFilterCount');
+  if(el)el.textContent=active?`筛选到 ${n} 条 · ${active} 个条件`:'';
+  const badge=document.getElementById('todoFilterBadge');
+  if(badge){
+    if(active>0){badge.style.display='';badge.textContent=active;}
+    else badge.style.display='none';
+  }
 }
 
 function applyTodoFilter(){
