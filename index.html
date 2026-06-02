@@ -1913,7 +1913,7 @@ const GITEE={
       this.setSyncStatus('ok','已同步');
       // store branch for pull reference
       localStorage.setItem('wb_gitee_branch',branch);
-      return true;
+      return 'ok';
     }catch(e){
       console.error('Gitee push error:',e);
       this.setSyncStatus('error','同步失败');
@@ -2002,10 +2002,10 @@ const GITEE={
         }
       });
       this.setSyncStatus('ok','已同步 ('+itemsMerged+'条)');
-      return true;
+      return 'ok';
     }
     this.setSyncStatus('ok','云端无数据');
-    return false;
+    return 'ok';
   },
 
   // test connection
