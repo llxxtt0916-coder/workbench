@@ -183,6 +183,16 @@ tr:hover td{background:#fafcff}
 .reminder-item a{color:var(--color-primary);text-decoration:none;font-weight:500;cursor:pointer}
 .reminder-item a:hover{text-decoration:underline}
 .reminder-days{font-size:11px;color:var(--color-text3);flex-shrink:0}
+.reminder-badge{font-size:10px;padding:0 5px;border-radius:99px;background:var(--color-primary-light);color:var(--color-primary);flex-shrink:0}
+/* Multi-select clear button */
+.multi-dropdown-clear{padding:4px 8px;border-top:1px solid var(--color-border);text-align:right}
+.multi-dropdown-clear button{font-size:11px;color:var(--color-danger);cursor:pointer;background:none;border:none;padding:2px 6px;border-radius:3px}
+.multi-dropdown-clear button:hover{background:#fee2e2}
+/* Deadline clear button */
+.deadline-wrap{display:flex;gap:6px;align-items:center}
+.deadline-wrap .form-control{flex:1}
+.deadline-clear{font-size:11px;color:var(--color-text3);cursor:pointer;background:none;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:4px 10px;flex-shrink:0;white-space:nowrap}
+.deadline-clear:hover{background:var(--color-bg);color:var(--color-danger);border-color:var(--color-danger)}
 
 .subtask-input:focus{border-color:var(--color-primary);outline:none}
 /* Multi-select dropdown */
@@ -584,6 +594,7 @@ tr:hover td{background:#fafcff}
               <input class="subtask-input" id="todoCategoryNew" placeholder="新增类别…" onkeydown="if(event.key==='Enter')addMultiOption('todoCategory')">
               <button class="btn btn-ghost btn-sm" onclick="addMultiOption('todoCategory')">+ 新增</button>
             </div>
+            <div class="multi-dropdown-clear"><button onclick="event.stopPropagation();clearMultiOptions('todoCategory')">🗑 清空备选项</button></div>
           </div>
         </div>
         <div class="form-group" style="position:relative">
@@ -598,6 +609,7 @@ tr:hover td{background:#fafcff}
               <input class="subtask-input" id="todoSourceNew" placeholder="新增来源…" onkeydown="if(event.key==='Enter')addMultiOption('todoSource')">
               <button class="btn btn-ghost btn-sm" onclick="addMultiOption('todoSource')">+ 新增</button>
             </div>
+            <div class="multi-dropdown-clear"><button onclick="event.stopPropagation();clearMultiOptions('todoSource')">🗑 清空备选项</button></div>
           </div>
         </div>
       </div>
@@ -608,7 +620,10 @@ tr:hover td{background:#fafcff}
         </div>
         <div class="form-group">
           <label class="form-label">截止日期</label>
-          <input type="date" class="form-control" id="todoDeadline">
+          <div class="deadline-wrap">
+            <input type="date" class="form-control" id="todoDeadline">
+            <button class="deadline-clear" onclick="document.getElementById('todoDeadline').value=''" type="button">✕ 清除</button>
+          </div>
         </div>
       </div>
       <div class="form-group">
@@ -1176,6 +1191,7 @@ function renderDashboard(){
         return '<div class="todo-item" style="border-left:3px solid '+(r.urgency==='today'?'var(--color-danger)':'var(--color-warning)')+';padding-left:10px;cursor:pointer" onclick="navigate(\'todo\',document.querySelector(\'.nav-item:nth-child(2)\'));setTimeout(()=>switchTodoTab(\''+r.type+'\'),100)">'
           +'<div class="priority-dot" style="background:'+(PRIORITY_COLOR[r.priority]||PRIORITY_COLOR.mid)+'"></div>'
           +'<div class="todo-text">'+esc(r.name)+'</div>'
+          +'<span class="reminder-badge" style="margin-right:4px">'+(TYPE_LABEL[r.type]||r.type)+'</span>'
           +'<span class="badge" style="font-size:10px;flex-shrink:0;background:'+(r.urgency==='today'?'#fee2e2':'#fef3c7')+';color:'+(r.urgency==='today'?'#991b1b':'#92400e')+'">'+days+'</span>'
           +'</div>';
       }).join('');
@@ -1376,6 +1392,8 @@ function restoreTodo(id){
   renderTodo();
 }
 
+const TYPE_LABEL={pending:'待办',key:'重点',recurring:'周期'};
+
 function checkDeadlineReminders(){
   const todos=DB.get('todos');
   const now=new Date();
@@ -1413,7 +1431,7 @@ function renderReminders(){
   reminders.forEach(r=>{
     const diff=Math.ceil((new Date(r.deadline)-new Date())/86400000);
     const days=diff===0?'今天到期':'还剩 '+diff+' 天';
-    html+=`<div class="reminder-item"><a onclick="navigate('todo');setTimeout(()=>switchTodoTab('${r.type}'),100)">${esc(r.name)}</a><span class="reminder-days">${days} | 截止: ${r.deadline}</span></div>`;
+    html+=`<div class="reminder-item"><a onclick="navigate('todo');setTimeout(()=>switchTodoTab('${r.type}'),100)">${esc(r.name)}</a><span class="reminder-badge">${TYPE_LABEL[r.type]||r.type}</span><span class="reminder-days">${days} | 截止: ${r.deadline}</span></div>`;
   });
   html+=`</div></div><button class="reminder-close" onclick="document.getElementById('reminderBanner').style.display='none'">×</button>`;
   banner.className='reminder-banner'+(hasToday?' danger':'');
@@ -1569,6 +1587,15 @@ function addMultiOption(name){
     setMultiSelected(name,sel);
   }
   input.value='';
+  document.getElementById(name+'Dropdown').classList.add('open');
+}
+
+function clearMultiOptions(name){
+  if(!confirm('确认清空所有备选项？此操作不可撤销'))return;
+  OPTIONS_STORE[name]=[];
+  saveOptionStore(name);
+  setMultiSelected(name,[]);
+  renderMultiOptions(name);
   document.getElementById(name+'Dropdown').classList.add('open');
 }
 
