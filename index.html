@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#ffffff">
 <title>我的工作台</title>
 <link rel="manifest" href="manifest.json">
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -1069,6 +1070,18 @@ tr:hover td{background:#fafcff}
     </div>
     <div class="modal-body">
       <input type="hidden" id="expenseId">
+      <div class="invoice-upload-area" id="invoiceUploadArea" onclick="document.getElementById('invoiceInput').click()" ondrop="handleInvoiceDrop(event)" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')">
+        <div class="invoice-upload-icon">📷</div>
+        <div class="invoice-upload-text">点击或拖拽发票图片到此处</div>
+        <div class="invoice-upload-hint">支持 JPG / PNG，自动识别金额、日期等信息</div>
+        <input type="file" id="invoiceInput" accept="image/*" onchange="handleInvoiceUpload(this)" style="display:none">
+        <div class="invoice-ocr-loading" id="invoiceOcrLoading" style="display:none">
+          <div class="invoice-ocr-spinner"></div>
+          <span>正在识别发票内容…</span>
+        </div>
+        <div class="invoice-ocr-result" id="invoiceOcrResult" style="display:none"></div>
+        <img id="invoicePreview" class="invoice-preview" onclick="event.stopPropagation()">
+      </div>
       <div class="form-group">
         <label class="form-label">报销事项 *</label>
         <input class="form-control" id="expenseName" placeholder="报销事项描述">
@@ -2584,6 +2597,163 @@ function editExpense(id){
   document.getElementById('expenseStatus').value=e.status;
   document.getElementById('expenseNote').value=e.note||'';
   openModal('expenseModal');
+}
+
+// ============================================================
+//  INVOICE OCR
+// ============================================================
+let invoiceOcrWorker=null;
+
+function handleInvoiceUpload(input){
+  const file=input.files[0];
+  if(!file)return;
+  showInvoicePreview(file);
+  recognizeInvoice(file);
+}
+
+function handleInvoiceDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('dragover');
+  const file=e.dataTransfer.files[0];
+  if(!file||!file.type.startsWith('image/')){toast('请拖入图片文件');return;}
+  showInvoicePreview(file);
+  recognizeInvoice(file);
+}
+
+function showInvoicePreview(file){
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const img=document.getElementById('invoicePreview');
+    img.src=ev.target.result;
+    img.style.display='block';
+  };
+  reader.readAsDataURL(file);
+  document.getElementById('invoiceUploadArea').querySelector('.invoice-upload-icon').style.display='none';
+  document.getElementById('invoiceUploadArea').querySelector('.invoice-upload-text').style.display='none';
+  document.getElementById('invoiceUploadArea').querySelector('.invoice-upload-hint').style.display='none';
+}
+
+async function recognizeInvoice(file){
+  const loading=document.getElementById('invoiceOcrLoading');
+  const resultBox=document.getElementById('invoiceOcrResult');
+  loading.style.display='flex';
+  resultBox.style.display='none';
+  try{
+    const worker=await Tesseract.createWorker('chi_sim+eng',1,{
+      logger:m=>console.log(m)
+    });
+    const {data:{text}}=await worker.recognize(file);
+    await worker.terminate();
+    loading.style.display='none';
+    const info=parseInvoiceText(text);
+    showOcrResult(info,text);
+  }catch(err){
+    loading.style.display='none';
+    resultBox.style.display='block';
+    resultBox.innerHTML='<span class="ocr-label">识别失败：</span>'+esc(err.message||'未知错误');
+    console.error('OCR error:',err);
+  }
+}
+
+function parseInvoiceText(text){
+  const info={};
+  // 金额：先找关键字后的数字，再找 ¥ 后的数字
+  const lines=text.split('\n');
+  for(const line of lines){
+    if(line.match(/金额|合计|价税合计|总金额|小计|合计金额|Total|AMOUNT/i)){
+      const m=line.match(/[0-9,]+\.?[0-9]*/);
+      if(m){
+        const n=parseFloat(m[0].replace(/,/g,''));
+        if(n>0){info.amount=n;break;}
+      }
+    }
+  }
+  if(!info.amount){
+    const m=text.match(/[¥￥]\s*([0-9,]+\.?[0-9]*)/);
+    if(m){const n=parseFloat(m[1].replace(/,/g,''));if(n>0)info.amount=n;}
+  }
+
+  // 日期：支持 2024年01月02日 / 2024-01-02 / 20240102 / 01/02/2024
+  for(const line of lines){
+    // YYYY年MM月DD日 或 YYYY-MM-DD 或 YYYY/MM/DD
+    let dm=line.match(/(\d{4})[年\-/](\d{1,2})[月\-/](\d{1,2})/);
+    if(dm){info.date=dm[1]+'-'+dm[2].padStart(2,'0')+'-'+dm[3].padStart(2,'0');break;}
+    // YYYYMMDD
+    dm=line.match(/20\d{2}[01]\d[0-3]\d/);
+    if(dm){info.date=dm[0].slice(0,4)+'-'+dm[0].slice(4,6)+'-'+dm[0].slice(6,8);break;}
+    // MM/DD/YYYY 或 MM-DD-YYYY
+    dm=line.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](20\d{2})/);
+    if(dm){info.date=dm[3]+'-'+dm[1].padStart(2,'0')+'-'+dm[2].padStart(2,'0');break;}
+  }
+
+  // 发票号：发票号码 或 No. 后跟 8 位以上数字/字母
+  for(const line of lines){
+    if(line.match(/发票号码|发票号|No\.?|INVOICE\s*NO/i)){
+      const m=line.match(/[A-Za-z0-9]{6,20}/);
+      if(m){info.invoiceNo=m[0];break;}
+    }
+  }
+
+  // 类型推断
+  const t=text.toLowerCase();
+  if(t.match(/餐|饮|食|饭店|餐厅|食堂|外卖|ctober|restaurant|dinner|lunch'))info.type='餐饮';
+  else if(t.match(/酒店|住宿|宾馆|入住|退房|hotel|accommodation|lodging'))info.type='住宿';
+  else if(t.match(/打车|出租|滴滴|地铁|公交|火车|高铁|机票|uber|携程|滴滴出行|transport|taxi|metro|train|flight'))info.type='交通';
+  else if(t.match(/办公|文具|用品|打印|耗材|office|stationery|supplies'))info.type='办公用品';
+  else info.type='其他';
+
+  // 报销事项：优先取发票标题/货物名称第一行有意义的内容
+  for(const line of lines){
+    const trimmed=line.trim();
+    if(trimmed.length<2)continue;
+    if(trimmed.match(/^[0-9\s\-\.¥￥,，。]+$/))continue; // 跳过纯数字行
+    if(trimmed.match(/发票|税务局|监制|代码|号码|开票|日期|金额|税额|税率|合计|购买方|销售方|统一社会信用代码/))continue;
+    info.name=trimmed.slice(0,30);
+    break;
+  }
+
+  return info;
+}
+
+function showOcrResult(info,rawText){
+  const resultBox=document.getElementById('invoiceOcrResult');
+  let html='<strong>识别结果：</strong><br>';
+  if(info.amount)html+='<span class="ocr-label">金额：</span><b style="color:var(--color-danger)">'+info.amount+' 元</b><br>';
+  if(info.date)html+='<span class="ocr-label">日期：</span>'+info.date+'<br>';
+  if(info.invoiceNo)html+='<span class="ocr-label">发票号：</span>'+esc(info.invoiceNo)+'<br>';
+  if(info.type)html+='<span class="ocr-label">推断类型：</span>'+info.type+'<br>';
+  if(info.name)html+='<span class="ocr-label">事项：</span>'+esc(info.name)+'<br>';
+  html+='<div class="invoice-ocr-btns">';
+  html+='<button class="btn btn-primary btn-sm" onclick="fillExpenseFormFromOcr()">✓ 使用识别结果</button>';
+  html+='<button class="btn btn-outline btn-sm" onclick="resetInvoiceUpload()">重新上传</button>';
+  html+='</div>';
+  resultBox.innerHTML=html;
+  resultBox.style.display='block';
+  // 暂存识别结果到全局变量
+  window.__ocrInfo=info;
+  window.__ocrRawText=rawText;
+}
+
+function fillExpenseFormFromOcr(){
+  const info=window.__ocrInfo||{};
+  if(info.name)document.getElementById('expenseName').value=info.name;
+  if(info.amount)document.getElementById('expenseAmount').value=info.amount;
+  if(info.date)document.getElementById('expenseDate').value=info.date;
+  if(info.invoiceNo)document.getElementById('expenseInvoice').value=info.invoiceNo;
+  if(info.type)document.getElementById('expenseType').value=info.type;
+  toast('已填充识别结果，请核对后保存');
+}
+
+function resetInvoiceUpload(){
+  document.getElementById('invoiceInput').value='';
+  document.getElementById('invoicePreview').src='';
+  document.getElementById('invoicePreview').style.display='none';
+  document.getElementById('invoiceOcrResult').style.display='none';
+  document.getElementById('invoiceOcrLoading').style.display='none';
+  const area=document.getElementById('invoiceUploadArea');
+  area.querySelector('.invoice-upload-icon').style.display='';
+  area.querySelector('.invoice-upload-text').style.display='';
+  area.querySelector('.invoice-upload-hint').style.display='';
+  window.__ocrInfo=null;
 }
 
 function clearExpenseForm(){
