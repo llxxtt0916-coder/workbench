@@ -2032,14 +2032,18 @@ function updateGenericFilterCount(section){
 const OPTIONS_STORE={};
 
 function getOptionStore(name){
-  const defaults={todoCategory:'["报告","会议","审批","调研","培训","材料"]',todoSource:'["上级交办","自研","协作","会议部署","文件要求","其他来源"]',todoF_cat:'["报告","会议","审批","调研","培训","材料"]',todoF_src:'["上级交办","自研","协作","会议部署","文件要求","其他来源"]'};
-  if(!OPTIONS_STORE[name]){
-    OPTIONS_STORE[name]=JSON.parse(localStorage.getItem('wb_opts_'+name)||(defaults[name]||'[]'));
+  const defaults={todoCategory:'["报告","会议","审批","调研","培训","材料"]',todoSource:'["上级交办","自研","协作","会议部署","文件要求","其他来源"]'};
+  // 筛选面板共享表单的备选项，保证两边同步
+  const baseName=(name==='todoF_cat')?'todoCategory':(name==='todoF_src')?'todoSource':name;
+  if(!OPTIONS_STORE[baseName]){
+    OPTIONS_STORE[baseName]=JSON.parse(localStorage.getItem('wb_opts_'+baseName)||(defaults[baseName]||'[]'));
   }
-  return OPTIONS_STORE[name];
+  if(name!==baseName)OPTIONS_STORE[name]=OPTIONS_STORE[baseName];
+  return OPTIONS_STORE[baseName];
 }
 function saveOptionStore(name){
-  localStorage.setItem('wb_opts_'+name,JSON.stringify(OPTIONS_STORE[name]));
+  const baseName=(name==='todoF_cat')?'todoCategory':(name==='todoF_src')?'todoSource':name;
+  localStorage.setItem('wb_opts_'+baseName,JSON.stringify(OPTIONS_STORE[baseName]));
 }
 
 function renderMultiOptions(name){
@@ -2066,7 +2070,7 @@ function setMultiSelected(name,ary){
   if(arySanitized.length){
     el.className='';el.innerHTML=arySanitized.map(v=>`<span class="multi-select-tag">${esc(v)}<span class="tag-close" onclick="event.stopPropagation();removeMultiOption('${name}',this.parentElement.textContent.slice(0,-1))">×</span></span>`).join('');
   }else{
-    el.className='multi-select-placeholder';el.textContent=name==='todoCategory'?'选择类别…':'选择来源…';
+    const isCat=name==='todoCategory'||name==='todoF_cat';el.className='multi-select-placeholder';el.textContent=isCat?'选择类别…':'选择来源…';
   }
   renderMultiOptions(name);
 }
@@ -2106,7 +2110,7 @@ function addMultiOption(name){
 
 function clearMultiOptions(name){
   if(!confirm('确认清空所有备选项？此操作不可撤销'))return;
-  OPTIONS_STORE[name]=[];
+  getOptionStore(name).length=0; // 原地清空，保持别名引用
   saveOptionStore(name);
   setMultiSelected(name,[]);
   renderMultiOptions(name);
