@@ -1254,7 +1254,8 @@ function repairData(){
 
     const hasNonNumeric=records.some(r=>typeof r.id!=='number');
     const hasOldTodoFormat=key==='todos'&&records.some(r=>r.text&&!r.name);
-    if(!hasNonNumeric&&!hasOldTodoFormat)return;
+    const hasNonArrayCategory=key==='todos'&&records.some(r=>!Array.isArray(r.category)||!Array.isArray(r.source));
+    if(!hasNonNumeric&&!hasOldTodoFormat&&!hasNonArrayCategory)return;
 
     const fixed=records.map((r,idx)=>{
       let rec={...r};
@@ -1560,8 +1561,8 @@ function renderTodo(){
     const isRecord=activeTodoTab==='record';
     const sd=(t.subtasks||[]).filter(s=>s.done).length;
     const st=(t.subtasks||[]).length;
-    const cats=(t.category||[]).filter(Boolean);
-    const srcs=(t.source||[]).filter(Boolean);
+    const cats=toArray(t.category).filter(Boolean);
+    const srcs=toArray(t.source).filter(Boolean);
     const status=t.status||'未开始';
     const statusOpts=['未开始','进行中','已完成','已取消'];
     const isTerminal=status==='已完成'||status==='已取消';
@@ -1800,8 +1801,8 @@ function editTodo(id){
   document.getElementById('todoName').value=t.name||'';
   document.getElementById('todoType').value=(t.type==='record')?'pending':(t.type||'pending');
   document.getElementById('todoPriority').value=t.priority||'mid';
-  setMultiSelected('todoCategory',t.category||[]);
-  setMultiSelected('todoSource',t.source||[]);
+  setMultiSelected('todoCategory',toArray(t.category));
+  setMultiSelected('todoSource',toArray(t.source));
   document.getElementById('todoContent').value=t.content||'';
   document.getElementById('todoIssueDate').value=t.issueDate||'';
   document.getElementById('todoDeadline').value=t.deadline||'';
@@ -1863,8 +1864,8 @@ function applyTodoFilters(list){
     if(name&&!(t.name||'').toLowerCase().includes(name))return false;
     if(status&&t.status!==status)return false;
     if(priority&&t.priority!==priority)return false;
-    if(cats.length&&!cats.some(c=>(t.category||[]).includes(c)))return false;
-    if(srcs.length&&!srcs.some(s=>(t.source||[]).includes(s)))return false;
+    if(cats.length&&!cats.some(c=>toArray(t.category).includes(c)))return false;
+    if(srcs.length&&!srcs.some(s=>toArray(t.source).includes(s)))return false;
     const d=(t.issueDate||t.createdAt||'');
     if(issueFrom&&d<issueFrom)return false;
     if(issueTo&&d>issueTo)return false;
@@ -1950,7 +1951,7 @@ function exportTodos(mode){
     const typeName=TYPE_LABELS[t.type]||t.type||'';
     rows.push([
       csvEscape(typeName),csvEscape(t.name||''),t.priority||'',
-      csvEscape((t.category||[]).join(';')),csvEscape((t.source||[]).join(';')),
+      csvEscape(toArray(t.category).join(';')),csvEscape(toArray(t.source).join(';')),
       t.issueDate||'',t.deadline||'',t.completeDate||'',
       t.status||'',csvEscape(t.blocker||''),csvEscape(t.content||''),
       csvEscape((t.subtasks||[]).map(s=>(s.done?'✓':'☐')+' '+s.text).join('; '))
@@ -3357,6 +3358,7 @@ function esc(s){
   if(!s)return'';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+function toArray(v){ return Array.isArray(v) ? v : v ? [v] : []; }
 
 // ============================================================
 //  INIT
