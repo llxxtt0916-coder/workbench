@@ -396,14 +396,14 @@ tr:hover td{background:#fafcff}
       灵感收集
     </div>
 
-    <div class="nav-section">管理</div>
-    <div class="nav-item" onclick="navigate('contract',this)">
-      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
-      合同管理
-    </div>
+    <div class="nav-section">台账</div>
     <div class="nav-item" onclick="navigate('purchase',this)">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>
-      采购管理
+      采购台账
+    </div>
+    <div class="nav-item" onclick="navigate('contract',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+      合同台账
     </div>
     <div class="nav-item" onclick="navigate('expense',this)">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
@@ -619,7 +619,8 @@ tr:hover td{background:#fafcff}
     <div class="page" id="page-contract">
       <div class="section-header">
         <div class="section-header-right">
-          <button class="filter-toggle" onclick="toggleFilterPanel('contract')" id="contractFilterToggle">🔍 筛选<span class="filter-badge" id="contractFilterBadge" style="display:none">0</span></button>
+          <button class="filter-toggle" onclick="toggleFilterPanel('contract')" id="contractFilterToggle">筛选<span class="filter-badge" id="contractFilterBadge" style="display:none">0</span></button>
+          <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('contract')">导出</button>
           <button class="btn btn-primary btn-sm" onclick="openModal('contractModal')">+ 新增合同</button>
         </div>
       </div>
@@ -674,6 +675,7 @@ tr:hover td{background:#fafcff}
           <button class="btn btn-sm btn-outline" onclick="toggleFilterPanel('contract')">收起筛选 ▲</button>
         </div>
       </div>
+      <div id="contractStats"></div>
       <div class="card" style="padding:0">
         <div class="table-wrap">
           <table>
@@ -688,7 +690,8 @@ tr:hover td{background:#fafcff}
     <div class="page" id="page-purchase">
       <div class="section-header">
         <div class="section-header-right">
-          <button class="filter-toggle" onclick="toggleFilterPanel('purchase')" id="purchaseFilterToggle">🔍 筛选<span class="filter-badge" id="purchaseFilterBadge" style="display:none">0</span></button>
+          <button class="filter-toggle" onclick="toggleFilterPanel('purchase')" id="purchaseFilterToggle">筛选<span class="filter-badge" id="purchaseFilterBadge" style="display:none">0</span></button>
+          <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('purchase')">导出</button>
           <button class="btn btn-primary btn-sm" onclick="openModal('purchaseModal')">+ 新增采购</button>
         </div>
       </div>
@@ -735,10 +738,11 @@ tr:hover td{background:#fafcff}
           <button class="btn btn-sm btn-outline" onclick="toggleFilterPanel('purchase')">收起筛选 ▲</button>
         </div>
       </div>
+      <div id="purchaseStats"></div>
       <div class="card" style="padding:0">
         <div class="table-wrap">
           <table>
-            <thead><tr><th>采购名称</th><th>供应商</th><th>金额</th><th>申请日期</th><th>状态</th><th>备注</th><th>操作</th></tr></thead>
+            <thead><tr><th>采购名称</th><th>分类</th><th>供应商</th><th>金额</th><th>申请日期</th><th>状态</th><th>备注</th><th>操作</th></tr></thead>
             <tbody id="purchaseTable"></tbody>
           </table>
         </div>
@@ -754,7 +758,8 @@ tr:hover td{background:#fafcff}
           <span class="badge badge-yellow" style="padding:5px 12px;font-size:13px">待报销: <strong id="expPending">¥0</strong></span>
         </div>
         <div class="section-header-right">
-          <button class="filter-toggle" onclick="toggleFilterPanel('expense')" id="expenseFilterToggle">🔍 筛选<span class="filter-badge" id="expenseFilterBadge" style="display:none">0</span></button>
+          <button class="filter-toggle" onclick="toggleFilterPanel('expense')" id="expenseFilterToggle">筛选<span class="filter-badge" id="expenseFilterBadge" style="display:none">0</span></button>
+          <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('expense')">导出</button>
           <button class="btn btn-primary btn-sm" onclick="openModal('expenseModal')">+ 新增报销</button>
           <button class="btn btn-outline btn-sm" onclick="document.getElementById('invoiceUploadBtn').click()">📎 上传发票</button>
           <input type="file" id="invoiceUploadBtn" accept="image/*,.pdf" onchange="uploadInvoiceFromBtn(this)" style="display:none" multiple>
@@ -805,6 +810,7 @@ tr:hover td{background:#fafcff}
           <button class="btn btn-sm btn-outline" onclick="toggleFilterPanel('expense')">收起筛选 ▲</button>
         </div>
       </div>
+      <div id="expenseStats"></div>
       <div class="card" style="padding:0">
         <div class="table-wrap">
           <table>
@@ -894,6 +900,47 @@ tr:hover td{background:#fafcff}
           <div class="deadline-wrap">
             <input type="date" class="form-control" id="todoDeadline">
             <button class="deadline-clear" onclick="document.getElementById('todoDeadline').value=''" type="button">✕ 清除</button>
+          </div>
+        </div>
+      </div>
+      <!-- 周期工作专用配置 -->
+      <div id="recurrenceConfig" style="display:none;background:var(--color-bg);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:500;color:var(--color-teal);margin-bottom:10px">周期规则</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">周期类型</label>
+            <select class="form-control" id="recType" onchange="onRecTypeChange()">
+              <option value="">不循环</option>
+              <option value="daily">每天</option>
+              <option value="weekly">每周</option>
+              <option value="biweekly">每两周</option>
+              <option value="monthly">每月</option>
+              <option value="quarterly">每季度</option>
+              <option value="yearly">每年</option>
+              <option value="custom">自定义天数</option>
+            </select>
+          </div>
+          <div class="form-group" id="recDetailGroup" style="display:none">
+            <label class="form-label" id="recDetailLabel">详情</label>
+            <select class="form-control" id="recDetail" style="display:none"></select>
+            <input type="number" class="form-control" id="recCustomDays" placeholder="天数" min="1" max="365" style="display:none">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">首次到期</label>
+            <input type="date" class="form-control" id="recFirstDue">
+          </div>
+          <div class="form-group">
+            <label class="form-label">提前提醒</label>
+            <select class="form-control" id="recRemindBefore">
+              <option value="0">当天提醒</option>
+              <option value="1">提前 1 天</option>
+              <option value="2">提前 2 天</option>
+              <option value="3" selected>提前 3 天</option>
+              <option value="5">提前 5 天</option>
+              <option value="7">提前 7 天</option>
+            </select>
           </div>
         </div>
       </div>
@@ -989,9 +1036,20 @@ tr:hover td{background:#fafcff}
           </select>
         </div>
         <div class="form-group">
+          <label class="form-label">分类</label>
+          <select class="form-control" id="contractCategory">
+            <option value="货物类">货物类</option>
+            <option value="服务类">服务类</option>
+            <option value="其他类">其他类</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
           <label class="form-label">合同编号</label>
           <input class="form-control" id="contractNo" placeholder="可选">
         </div>
+        <div class="form-group"><!-- 占位 --></div>
       </div>
       <div class="form-group">
         <label class="form-label">备注</label>
@@ -1034,14 +1092,59 @@ tr:hover td{background:#fafcff}
           <input type="date" class="form-control" id="purchaseDate">
         </div>
         <div class="form-group">
-          <label class="form-label">状态</label>
-          <select class="form-control" id="purchaseStatus">
-            <option value="申请中">申请中</option>
-            <option value="审批通过">审批通过</option>
-            <option value="已到货">已到货</option>
-            <option value="已拒绝">已拒绝</option>
+          <label class="form-label">分类</label>
+          <select class="form-control" id="purchaseCategory">
+            <option value="货物类">货物类</option>
+            <option value="服务类">服务类</option>
+            <option value="其他类">其他类</option>
           </select>
         </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">是否签订合同</label>
+          <select class="form-control" id="purchaseHasContract" onchange="onPurchaseContractChange()">
+            <option value="">—</option>
+            <option value="是">是</option>
+            <option value="否">否</option>
+            <option value="他人签订">他人签订</option>
+          </select>
+        </div>
+        <div class="form-group" id="purchaseContractDeptGroup" style="display:none">
+          <label class="form-label">签订科室</label>
+          <input class="form-control" id="purchaseContractDept" placeholder="输入签订科室…">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">是否报账</label>
+          <select class="form-control" id="purchaseHasExpense" onchange="onPurchaseExpenseChange()">
+            <option value="">—</option>
+            <option value="是">是</option>
+            <option value="否">否</option>
+            <option value="他人报账">他人报账</option>
+          </select>
+        </div>
+        <div class="form-group" id="purchaseExpenseDeptGroup" style="display:none">
+          <label class="form-label">报账科室</label>
+          <input class="form-control" id="purchaseExpenseDept" placeholder="输入报账科室…">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">状态</label>
+        <select class="form-control" id="purchaseStatus">
+          <option value="申请中">申请中</option>
+          <option value="审批通过">审批通过</option>
+          <option value="已到货">已到货</option>
+          <option value="已拒绝">已拒绝</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">
+          采购明细
+          <button class="btn btn-ghost btn-sm" onclick="addPurchaseItem()" style="color:var(--color-primary);font-size:11px;margin-left:8px">+ 添加</button>
+        </label>
+        <div id="purchaseItems"></div>
       </div>
       <div class="form-group">
         <label class="form-label">备注</label>
@@ -1186,6 +1289,23 @@ tr:hover td{background:#fafcff}
           <option value="14">每 14 天</option>
           <option value="30">每 30 天</option>
         </select>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">🔍 百度 OCR — API Key</div>
+          <div class="settings-desc">百度智能云文字识别应用的 API Key</div>
+        </div>
+        <input class="settings-input" id="baiduAK" placeholder="API Key">
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">🔑 百度 OCR — Secret Key</div>
+          <div class="settings-desc">百度智能云文字识别应用的 Secret Key</div>
+        </div>
+        <input class="settings-input" id="baiduSK" type="password" placeholder="Secret Key">
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:var(--color-text3);display:flex;align-items:center;gap:6px" id="baiduStatus">
+        <span class="sync-dot" style="width:6px;height:6px;background:var(--color-text3)"></span> 未配置
       </div>
       <div style="margin-top:16px;padding:12px;background:var(--color-bg);border-radius:var(--radius-sm);font-size:12px;color:var(--color-text2)">
         <strong>跨平台使用说明：</strong><br>
@@ -1582,7 +1702,12 @@ function renderTodo(){
     <div class="todo-card" id="todo-${t.id}">
       <div class="todo-card-header">
         <div class="priority-dot" style="background:${PRIORITY_COLOR[t.priority]||PRIORITY_COLOR['mid']}"></div>
-        <div class="todo-card-title">${esc(t.name)}</div>
+        <div class="todo-card-title">
+          ${esc(t.name)}
+          ${t.type==='recurring'&&t.recurrence?`<span style="background:var(--color-teal);color:#fff;font-size:10px;padding:1px 6px;border-radius:99px;margin-left:6px;vertical-align:middle">${formatRecurrence(t.recurrence)}</span>`:''}
+          ${t.type==='recurring'&&t.completedCount?`<span style="color:var(--color-text3);font-size:10px;margin-left:4px">已完成 ${t.completedCount} 次</span>`:''}
+          ${t.paused?`<span style="color:var(--color-text3);font-size:10px;margin-left:4px">(已暂停)</span>`:''}
+        </div>
         <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap">
           <select class="status-select" onchange="changeTodoStatus(${t.id},this.value)">
             ${statusOpts.map(s=>`<option value="${s}" ${status===s?'selected':''}>${s}</option>`).join('')}
@@ -1591,6 +1716,11 @@ function renderTodo(){
           ${srcs.map(s=>`<span class="tag tag-src">${esc(s)}</span>`).join('')}
         </div>
         <div class="todo-card-actions">
+          ${t.type==='recurring'?`
+            <button class="btn btn-ghost btn-sm" onclick="completeRecurringTodo(${t.id})" style="color:var(--color-success);font-weight:500" title="完成本期并生成下期">✓ 完成本期</button>
+            <button class="btn btn-ghost btn-sm" onclick="skipRecurringPeriod(${t.id})" title="跳过本期">⏭ 跳过</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleRecurringPause(${t.id})" title="${t.paused?'恢复':'暂停'}">${t.paused?'▶ 恢复':'⏸ 暂停'}</button>
+          `:''}
           ${isRecord?`<button class="restore-btn" onclick="restoreTodo(${t.id})" title="恢复到原类别">↩ 恢复</button>`:''}
           <button class="btn btn-ghost btn-sm" onclick="editTodo(${t.id})" title="编辑">✏️</button>
           <button class="btn btn-ghost btn-sm" onclick="deleteTodo(${t.id})" title="删除" style="color:var(--color-danger)">🗑</button>
@@ -1785,8 +1915,26 @@ function saveTodo(){
     status:'未开始',
     completeDate:'',
     subtasks:[],
-    createdAt:now
+    createdAt:now,
+    recurrence:null
   };
+  // 如果是周期工作，保存周期配置
+  if(item.type==='recurring'){
+    const recType=document.getElementById('recType').value;
+    if(recType){
+      const rec={type:recType};
+      if(recType==='weekly'||recType==='biweekly')rec.day=document.getElementById('recDetail').value;
+      else if(recType==='monthly')rec.day=document.getElementById('recDetail').value;
+      else if(recType==='quarterly')rec.monthOfQuarter=document.getElementById('recDetail').value;
+      else if(recType==='custom')rec.days=parseInt(document.getElementById('recCustomDays').value)||1;
+      rec.remindBefore=parseInt(document.getElementById('recRemindBefore').value)||3;
+      item.recurrence=rec;
+      item.completedCount=0;
+      const firstDue=document.getElementById('recFirstDue').value;
+      if(firstDue)item.deadline=firstDue;
+      else item.deadline=calcNextDue(rec,now);
+    }
+  }
   if(id){
     const i=todos.findIndex(t=>t.id===id);
     if(i>-1){
@@ -1819,6 +1967,19 @@ function editTodo(id){
   document.getElementById('todoIssueDate').value=t.issueDate||'';
   document.getElementById('todoDeadline').value=t.deadline||'';
   document.getElementById('todoBlocker').value=t.blocker||'';
+  // 加载周期配置
+  if(t.type==='recurring'){
+    document.getElementById('recurrenceConfig').style.display='block';
+    const rec=t.recurrence||{};
+    document.getElementById('recType').value=rec.type||'';
+    document.getElementById('recFirstDue').value=t.deadline||'';
+    document.getElementById('recRemindBefore').value=rec.remindBefore||'3';
+    onRecTypeChange(); // 刷新详情字段
+    if(rec.day!==undefined)document.getElementById('recDetail').value=rec.day;
+    if(rec.days)document.getElementById('recCustomDays').value=rec.days;
+  }else{
+    document.getElementById('recurrenceConfig').style.display='none';
+  }
   openModal('todoModal');
 }
 
@@ -1829,6 +1990,14 @@ function clearTodoForm(){
   document.getElementById('todoModalTitle').textContent='新建工作';
   setMultiSelected('todoCategory',[]);
   setMultiSelected('todoSource',[]);
+  // 重置周期字段
+  document.getElementById('recurrenceConfig').style.display='none';
+  document.getElementById('recType').value='';
+  document.getElementById('recFirstDue').value='';
+  document.getElementById('recRemindBefore').value='3';
+  document.getElementById('recDetail').style.display='none';
+  document.getElementById('recCustomDays').style.display='none';
+  document.getElementById('recDetailGroup').style.display='none';
 }
 
 function deleteTodo(id){
@@ -1840,6 +2009,159 @@ function deleteTodo(id){
 }
 
 document.getElementById('todoModal').addEventListener('click',function(e){if(e.target===this)closeModal('todoModal')});
+// 类型切换时显示/隐藏周期配置
+document.getElementById('todoType').addEventListener('change',function(){
+  document.getElementById('recurrenceConfig').style.display=this.value==='recurring'?'block':'none';
+});
+
+// ===== 周期工作功能 =====
+
+// 周期类型切换：显示对应的详情输入
+function onRecTypeChange(){
+  const type=document.getElementById('recType').value;
+  const detailGroup=document.getElementById('recDetailGroup');
+  const detailSelect=document.getElementById('recDetail');
+  const customDays=document.getElementById('recCustomDays');
+  const detailLabel=document.getElementById('recDetailLabel');
+  detailGroup.style.display=type?'block':'none';
+  detailSelect.style.display='none';
+  customDays.style.display='none';
+  if(type==='weekly'||type==='biweekly'){
+    detailLabel.textContent='星期几';
+    detailSelect.style.display='block';
+    detailSelect.innerHTML='<option value="1">周一</option><option value="2">周二</option><option value="3">周三</option><option value="4">周四</option><option value="5">周五</option><option value="6">周六</option><option value="0">周日</option>';
+  }else if(type==='monthly'){
+    detailLabel.textContent='几号';
+    detailSelect.style.display='block';
+    let opts='<option value="0">最后一天</option>';
+    for(let d=1;d<=31;d++)opts+='<option value="'+d+'">'+d+'号</option>';
+    detailSelect.innerHTML=opts;
+  }else if(type==='quarterly'){
+    detailLabel.textContent='第几个月';
+    detailSelect.style.display='block';
+    detailSelect.innerHTML='<option value="1">第1个月</option><option value="2">第2个月</option><option value="3">第3个月</option>';
+  }else if(type==='custom'){
+    detailLabel.textContent='间隔天数';
+    customDays.style.display='block';
+  }else if(type==='yearly'){
+    detailLabel.textContent='月-日（自动取首次到期日）';
+  }
+}
+
+// 计算下次到期时间
+function calcNextDue(recurrence,fromDate){
+  if(!recurrence||!recurrence.type)return null;
+  const d=fromDate?new Date(fromDate):new Date();
+  const rec=recurrence;
+  switch(rec.type){
+    case 'daily':
+      d.setDate(d.getDate()+1);
+      break;
+    case 'weekly':
+      d.setDate(d.getDate()+7);
+      if(rec.day!==undefined)d.setDate(d.getDate()-d.getDay()+parseInt(rec.day));
+      break;
+    case 'biweekly':
+      d.setDate(d.getDate()+14);
+      if(rec.day!==undefined)d.setDate(d.getDate()-d.getDay()+parseInt(rec.day));
+      break;
+    case 'monthly':
+      d.setMonth(d.getMonth()+1);
+      if(rec.day===0||rec.day==='0'){
+        d.setDate(0); // 最后一天
+      }else if(rec.day){
+        d.setDate(Math.min(parseInt(rec.day),new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));
+      }
+      break;
+    case 'quarterly':
+      d.setMonth(d.getMonth()+3);
+      break;
+    case 'yearly':
+      d.setFullYear(d.getFullYear()+1);
+      break;
+    case 'custom':
+      if(rec.days)d.setDate(d.getDate()+parseInt(rec.days));
+      break;
+  }
+  return d.toISOString().slice(0,10);
+}
+
+// 完成本期周期工作 → 归档一份记录 + 下次到期时间自动后推
+function completeRecurringTodo(id){
+  const todos=DB.get('todos');
+  const t=todos.find(x=>x.id===id);
+  if(!t||t.type!=='recurring')return;
+  t.completedCount=(t.completedCount||0)+1;
+  const today=new Date().toISOString().slice(0,10);
+  // 生成一份工作记录（归档）
+  const recordId=Math.max(...todos.map(x=>x.id),0)+1;
+  todos.push({
+    id:recordId,
+    type:'record',
+    name:t.name||'',
+    category:toArray(t.category),
+    source:toArray(t.source),
+    priority:t.priority||'mid',
+    content:t.content||'',
+    deadline:t.deadline||today,
+    blocker:'',
+    status:'已完成',
+    completeDate:today,
+    subtasks:[],
+    createdAt:today,
+    _prevType:'recurring'
+  });
+  // 下次到期时间后推
+  let nextDue=calcNextDue(t.recurrence,t.deadline||today);
+  while(nextDue&&nextDue<=today)nextDue=calcNextDue(t.recurrence,nextDue);
+  t.deadline=nextDue;
+  DB.set('todos',todos);
+  renderTodo();
+}
+
+// 跳过本期（不完成，直接推到期日期）
+function skipRecurringPeriod(id){
+  const todos=DB.get('todos');
+  const t=todos.find(x=>x.id===id);
+  if(!t||t.type!=='recurring')return;
+  const today=new Date().toISOString().slice(0,10);
+  let nextDue=calcNextDue(t.recurrence,t.deadline||today);
+  while(nextDue<=today)nextDue=calcNextDue(t.recurrence,nextDue);
+  t.deadline=nextDue;
+  DB.set('todos',todos);
+  renderTodo();
+}
+
+// 暂停/恢复周期工作
+function toggleRecurringPause(id){
+  const todos=DB.get('todos');
+  const t=todos.find(x=>x.id===id);
+  if(!t||t.type!=='recurring')return;
+  t.paused=!t.paused;
+  DB.set('todos',todos);
+  renderTodo();
+}
+
+// 格式化周期规则为可读文字
+function formatRecurrence(rec){
+  if(!rec||!rec.type)return '';
+  switch(rec.type){
+    case 'daily':return '每天';
+    case 'weekly':{
+      const days=['','周一','周二','周三','周四','周五','周六','周日'];
+      return '每周'+(rec.day!==undefined?days[parseInt(rec.day)]||'':'');
+    }
+    case 'biweekly':{
+      const days=['','周一','周二','周三','周四','周五','周六','周日'];
+      return '每两周'+(rec.day!==undefined?days[parseInt(rec.day)]||'':'');
+    }
+    case 'monthly':return rec.day==='0'||rec.day===0?'每月最后一天':'每月'+rec.day+'号';
+    case 'quarterly':return '每季度';
+    case 'yearly':return '每年';
+    case 'custom':return '每'+(rec.days||1)+'天';
+    default:return '';
+  }
+}
 
 // ============================================================
 //  UNIFIED FILTER PANEL
@@ -2314,6 +2636,7 @@ function renderContracts(){
     if(expTo&&(c.expiry||'')>expTo)return false;
     return true;
   });
+  renderModuleStats('contract',filtered,contracts);
 
   if(!filtered.length){
     document.getElementById('contractTable').innerHTML=`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--color-text3)">暂无合同记录</td></tr>`;
@@ -2322,7 +2645,8 @@ function renderContracts(){
 
   document.getElementById('contractTable').innerHTML=filtered.map(c=>`
     <tr>
-      <td><span style="font-weight:500">${esc(c.name)}</span>${c.no?`<div style="font-size:11px;color:var(--color-text3)">${esc(c.no)}</div>`:''}</td>
+      <td><span style="font-weight:500">${esc(c.name)}</span>${c.no?`<div style="font-size:11px;color:var(--color-text3)">${esc(c.no)}</div>`:''}${c._fromPurchase?`<span class="badge badge-purple" style="font-size:9px;margin-left:4px">采购关联</span>`:''}</td>
+      <td><span class="badge badge-gray" style="font-size:10px">${esc(c.category||'—')}</span></td>
       <td>${esc(c.party||'—')}</td>
       <td style="font-weight:500">¥${fmt(c.amount)}</td>
       <td style="color:var(--color-text2)">${c.signDate||'—'}</td>
@@ -2349,6 +2673,7 @@ function saveContract(){
     name,
     party:document.getElementById('contractParty').value,
     amount:document.getElementById('contractAmount').value,
+    category:document.getElementById('contractCategory').value,
     signDate:document.getElementById('contractSignDate').value,
     expiry:document.getElementById('contractExpiry').value,
     status:document.getElementById('contractStatus').value,
@@ -2373,6 +2698,7 @@ function editContract(id){
   document.getElementById('contractName').value=c.name;
   document.getElementById('contractParty').value=c.party||'';
   document.getElementById('contractAmount').value=c.amount||'';
+  document.getElementById('contractCategory').value=c.category||'货物类';
   document.getElementById('contractSignDate').value=c.signDate||'';
   document.getElementById('contractExpiry').value=c.expiry||'';
   document.getElementById('contractStatus').value=c.status;
@@ -2400,6 +2726,7 @@ const purchaseStatusBadge={申请中:'badge-yellow',审批通过:'badge-blue',�
 
 function renderPurchases(){
   const purchases=DB.get('purchases');
+  // 筛选
   const q=(document.getElementById('purchaseF_name')?.value||'').toLowerCase();
   const supplier=(document.getElementById('purchaseF_supplier')?.value||'').toLowerCase();
   const sf=document.getElementById('purchaseF_status')?.value||'';
@@ -2418,7 +2745,16 @@ function renderPurchases(){
     if(dateTo&&(p.date||'')>dateTo)return false;
     return true;
   });
-
+  // 统计面板（用筛选后的数据）
+  const fTotal=filtered.length,allTotal=purchases.length;
+  const fAmt=filtered.reduce((s,p)=>s+(+p.amount||0),0);
+  const catCounts={};filtered.forEach(p=>{const c=p.category||'其他';catCounts[c]=(catCounts[c]||0)+1;});
+  document.getElementById('purchaseStats').innerHTML=filtered.length?`<div class="grid-4 grid-2" style="margin-bottom:14px">
+    <div class="metric"><div class="metric-label">${allTotal===fTotal?'采购总数':'筛选结果'}</div><div class="metric-value" style="font-size:20px">${fTotal}</div><div class="metric-sub">共 ${allTotal} 条</div></div>
+    <div class="metric"><div class="metric-label">合计金额</div><div class="metric-value" style="font-size:20px;color:var(--color-danger)">¥${fmt(fAmt)}</div></div>
+    ${Object.entries(catCounts).map(([k,v])=>`<div class="metric"><div class="metric-label">${k}</div><div class="metric-value" style="font-size:18px">${v}</div></div>`).join('')}
+  </div>`:'';
+  
   if(!filtered.length){
     document.getElementById('purchaseTable').innerHTML=`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--color-text3)">暂无采购记录</td></tr>`;
     return;
@@ -2427,6 +2763,7 @@ function renderPurchases(){
   document.getElementById('purchaseTable').innerHTML=filtered.map(p=>`
     <tr>
       <td><span style="font-weight:500">${esc(p.name)}</span></td>
+      <td><span class="badge badge-gray" style="font-size:10px">${esc(p.category||'—')}</span></td>
       <td>${esc(p.supplier||'—')}</td>
       <td style="font-weight:500">¥${fmt(p.amount)}</td>
       <td style="color:var(--color-text2)">${p.date||'—'}</td>
@@ -2448,22 +2785,55 @@ function savePurchase(){
   if(!name){toast('请输入采购名称');return;}
   const purchases=DB.get('purchases');
   const id=+document.getElementById('purchaseId').value;
+  const now=new Date().toISOString();
   const item={
     id:id||DB.nextId(purchases),
     name,
     supplier:document.getElementById('purchaseSupplier').value,
     amount:document.getElementById('purchaseAmount').value,
     date:document.getElementById('purchaseDate').value,
+    category:document.getElementById('purchaseCategory').value,
     status:document.getElementById('purchaseStatus').value,
     note:document.getElementById('purchaseNote').value,
-    createdAt:new Date().toISOString()
+    hasContract:document.getElementById('purchaseHasContract').value,
+    contractDept:document.getElementById('purchaseContractDept').value,
+    hasExpense:document.getElementById('purchaseHasExpense').value,
+    expenseDept:document.getElementById('purchaseExpenseDept').value,
+    items:(window._purchaseItems||[]).filter(i=>i&&i.name),
+    createdAt:now
   };
   if(id){const i=purchases.findIndex(p=>p.id===id);if(i>-1)purchases[i]=item;else purchases.push(item);}
   else purchases.push(item);
   DB.set('purchases',purchases);
+  
+  // 跨模块联动：是否签订合同 → 自动生成合同记录
+  if(item.hasContract==='是'){
+    const contracts=DB.get('contracts');
+    const cId=DB.nextId(contracts);
+    contracts.push({
+      id:cId,name:item.name,party:item.supplier,amount:item.amount,
+      category:item.category,signDate:item.date,expiry:'',
+      status:'待签',no:'',note:'（由采购自动生成）',createdAt:now,
+      _fromPurchase:item.id
+    });
+    DB.set('contracts',contracts);
+  }
+  // 跨模块联动：是否报账 → 自动生成报销记录
+  if(item.hasExpense==='是'){
+    const expenses=DB.get('expenses');
+    const eId=DB.nextId(expenses);
+    expenses.push({
+      id:eId,appDate:new Date().toISOString().slice(0,10),amount:item.amount,supplier:item.supplier,
+      supplierCode:'',invoice:'',invoiceDate:'',content:item.name,
+      status:'待报销',reimbDate:'',createdAt:now,_fromPurchase:item.id
+    });
+    DB.set('expenses',expenses);
+  }
+  
   closeModal('purchaseModal');
   clearPurchaseForm();
   renderPurchases();
+  toast('已保存'+(item.hasContract==='是'?'，已自动生成合同记录':'')+(item.hasExpense==='是'?'，已自动生成报销记录':''));
   toast('已保存');
 }
 
@@ -2475,6 +2845,17 @@ function editPurchase(id){
   document.getElementById('purchaseName').value=p.name;
   document.getElementById('purchaseSupplier').value=p.supplier||'';
   document.getElementById('purchaseAmount').value=p.amount||'';
+  document.getElementById('purchaseCategory').value=p.category||'货物类';
+  document.getElementById('purchaseHasContract').value=p.hasContract||'';
+  document.getElementById('purchaseContractDept').value=p.contractDept||'';
+  document.getElementById('purchaseHasExpense').value=p.hasExpense||'';
+  document.getElementById('purchaseExpenseDept').value=p.expenseDept||'';
+  onPurchaseContractChange();onPurchaseExpenseChange();
+  // 加载采购明细
+  clearPurchaseItems();
+  if(p.items&&p.items.length){
+    p.items.forEach(item=>addPurchaseItem(item));
+  }
   document.getElementById('purchaseDate').value=p.date||'';
   document.getElementById('purchaseStatus').value=p.status;
   document.getElementById('purchaseNote').value=p.note||'';
@@ -2482,9 +2863,142 @@ function editPurchase(id){
 }
 
 function clearPurchaseForm(){
-  ['purchaseId','purchaseName','purchaseSupplier','purchaseAmount','purchaseDate','purchaseNote'].forEach(id=>document.getElementById(id).value='');
+  ['purchaseId','purchaseName','purchaseSupplier','purchaseAmount','purchaseDate','purchaseNote','purchaseContractDept','purchaseExpenseDept'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('purchaseStatus').value='申请中';
+  document.getElementById('purchaseCategory').value='货物类';
+  document.getElementById('purchaseHasContract').value='';
+  document.getElementById('purchaseHasExpense').value='';
+  document.getElementById('purchaseContractDeptGroup').style.display='none';
+  document.getElementById('purchaseExpenseDeptGroup').style.display='none';
+  clearPurchaseItems();
   document.getElementById('purchaseModalTitle').textContent='新增采购';
+}
+
+// 采购-合同/报销 联动切换
+function onPurchaseContractChange(){
+  const v=document.getElementById('purchaseHasContract').value;
+  document.getElementById('purchaseContractDeptGroup').style.display=v==='他人签订'?'block':'none';
+}
+function onPurchaseExpenseChange(){
+  const v=document.getElementById('purchaseHasExpense').value;
+  document.getElementById('purchaseExpenseDeptGroup').style.display=v==='他人报账'?'block':'none';
+}
+
+// 采购/合同/报销 通用导出 CSV
+function exportModuleCSV(module){
+  const data=DB.get(module==='purchase'?'purchases':module==='contract'?'contracts':'expenses');
+  let filtered;
+  if(module==='purchase'){
+    const q=(document.getElementById('purchaseF_name')?.value||'').toLowerCase();
+    const sf=document.getElementById('purchaseF_status')?.value||'';
+    filtered=data.filter(p=>{
+      if(q&&!(p.name+(p.supplier||'')).toLowerCase().includes(q))return false;
+      if(sf&&p.status!==sf)return false;return true;
+    });
+  }else if(module==='contract'){
+    const q=(document.getElementById('contractF_name')?.value||'').toLowerCase();
+    const sf=document.getElementById('contractF_status')?.value||'';
+    filtered=data.filter(c=>{
+      if(q&&!(c.name+(c.party||'')+(c.no||'')).toLowerCase().includes(q))return false;
+      if(sf&&c.status!==sf)return false;return true;
+    });
+  }else{
+    const q=(document.getElementById('expenseF_name')?.value||'').toLowerCase();
+    const sf=document.getElementById('expenseF_status')?.value||'';
+    filtered=data.filter(e=>{
+      if(q&&!(e.invoice+(e.content||'')).toLowerCase().includes(q))return false;
+      if(sf&&e.status!==sf)return false;return true;
+    });
+  }
+  if(!filtered.length){toast('无数据可导出');return;}
+  let csv='\uFEFF';
+  if(module==='purchase'){
+    csv+='名称,分类,供应商,金额,申请日期,状态,是否签合同,是否报账\n';
+    filtered.forEach(p=>csv+=`"${p.name}","${p.category||''}","${p.supplier||''}","${p.amount||0}","${p.date||''}","${p.status||''}","${p.hasContract||''}","${p.hasExpense||''}"\n`);
+  }else if(module==='contract'){
+    csv+='名称,分类,对方单位,金额,签署日期,到期日期,状态,编号\n';
+    filtered.forEach(c=>csv+=`"${c.name}","${c.category||''}","${c.party||''}","${c.amount||0}","${c.signDate||''}","${c.expiry||''}","${c.status||''}","${c.no||''}"\n`);
+  }else{
+    csv+='申请时间,供应商,发票号,开票日期,发票内容,金额,状态,报销日期\n';
+    filtered.forEach(e=>csv+=`"${e.appDate||''}","${e.supplier||''}","${e.invoice||''}","${e.invoiceDate||''}","${e.content||''}","${e.amount||0}","${e.status||''}","${e.reimbDate||''}"\n`);
+  }
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=module+'_'+(new Date().toISOString().slice(0,10))+'.csv';
+  a.click();toast('已导出 '+filtered.length+' 条');
+}
+
+// 通用统计渲染
+function renderModuleStats(module,filtered,all){
+  const fAmt=filtered.reduce((s,x)=>s+(+(x.amount||0)),0);
+  const catCounts={};filtered.forEach(x=>{const c=x.category||'其他';catCounts[c]=(catCounts[c]||0)+1;});
+  const el=document.getElementById(module+'Stats');
+  if(!el)return;
+  el.innerHTML=filtered.length?`<div class="grid-4 grid-2" style="margin-bottom:14px">
+    <div class="metric"><div class="metric-label">${filtered.length===all.length?'总数':'筛选结果'}</div><div class="metric-value" style="font-size:20px">${filtered.length}</div><div class="metric-sub">共 ${all.length} 条</div></div>
+    <div class="metric"><div class="metric-label">合计金额</div><div class="metric-value" style="font-size:20px;color:var(--color-danger)">¥${fmt(fAmt)}</div></div>
+    ${Object.entries(catCounts).map(([k,v])=>`<div class="metric"><div class="metric-label">${k}</div><div class="metric-value" style="font-size:18px">${v}</div></div>`).join('')}
+  </div>`:'';
+}
+function addPurchaseItem(data){
+  const container=document.getElementById('purchaseItems');
+  const idx=container.children.length;
+  const item=data||{name:'',spec:'',unit:'',price:'',qty:''};
+  const div=document.createElement('div');
+  div.className='purchase-item-row';
+  div.style.cssText='display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap';
+  div.innerHTML=`
+    <input class="form-control" placeholder="名称" value="${esc(item.name)}" style="flex:2;min-width:80px;font-size:12px;padding:5px" onchange="updateItemField(${idx},'name',this.value)">
+    <input class="form-control" placeholder="品牌/型号/规格" value="${esc(item.spec||'')}" style="flex:2;min-width:100px;font-size:12px;padding:5px" onchange="updateItemField(${idx},'spec',this.value)">
+    <input class="form-control" placeholder="单位" value="${esc(item.unit||'')}" style="width:50px;min-width:50px;font-size:12px;padding:5px" onchange="updateItemField(${idx},'unit',this.value)">
+    <input type="number" class="form-control" placeholder="单价" value="${item.price||''}" style="width:70px;min-width:70px;font-size:12px;padding:5px" onchange="updateItemField(${idx},'price',this.value);calcItemSubtotal(${idx})" step="0.01" min="0">
+    <input type="number" class="form-control" placeholder="数量" value="${item.qty||''}" style="width:55px;min-width:55px;font-size:12px;padding:5px" onchange="updateItemField(${idx},'qty',this.value);calcItemSubtotal(${idx})" step="1" min="1">
+    <span style="font-size:12px;font-weight:500;color:var(--color-danger);min-width:60px;text-align:right" id="itemSubtotal-${idx}">¥0</span>
+    <button class="btn btn-ghost btn-sm" onclick="removePurchaseItem(this)" style="color:var(--color-danger);font-size:16px;padding:0 4px" title="删除">×</button>
+  `;
+  container.appendChild(div);
+  if(item.price&&item.qty)calcItemSubtotal(idx);
+  // 存储到临时数组
+  if(!window._purchaseItems)window._purchaseItems=[];
+  window._purchaseItems[idx]=item;
+}
+
+function updateItemField(idx,field,value){
+  if(!window._purchaseItems)window._purchaseItems=[];
+  if(!window._purchaseItems[idx])window._purchaseItems[idx]={};
+  window._purchaseItems[idx][field]=value;
+}
+
+function calcItemSubtotal(idx){
+  const row=document.getElementById('purchaseItems').children[idx];
+  if(!row)return;
+  const price=parseFloat(row.children[3].value)||0;
+  const qty=parseInt(row.children[4].value)||0;
+  const subtotal=price*qty;
+  document.getElementById('itemSubtotal-'+idx).textContent='¥'+subtotal.toFixed(2);
+  updateItemField(idx,'price',row.children[3].value);
+  updateItemField(idx,'qty',row.children[4].value);
+}
+
+function removePurchaseItem(btn){
+  const row=btn.parentElement;
+  const container=document.getElementById('purchaseItems');
+  const idx=Array.from(container.children).indexOf(row);
+  container.removeChild(row);
+  if(window._purchaseItems)window._purchaseItems.splice(idx,1);
+  // 重新编号
+  Array.from(container.children).forEach((r,i)=>{
+    const priceInput=r.children[3],qtyInput=r.children[4],subEl=r.children[5];
+    priceInput.setAttribute('onchange',priceInput.getAttribute('onchange').replace(/\d+/,String(i)));
+    qtyInput.setAttribute('onchange',qtyInput.getAttribute('onchange').replace(/\d+/,String(i)));
+    subEl.id='itemSubtotal-'+i;
+  });
+}
+
+function clearPurchaseItems(){
+  document.getElementById('purchaseItems').innerHTML='';
+  window._purchaseItems=[];
 }
 
 function deletePurchase(id){
@@ -2532,6 +3046,7 @@ function renderExpenses(){
     if(dateTo&&(e.appDate||'')>dateTo)return false;
     return true;
   });
+  renderModuleStats('expense',filtered,expenses);
 
   if(!filtered.length){
     document.getElementById('expenseTable').innerHTML=`<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--color-text3)">暂无报销记录</td></tr>`;
@@ -2673,35 +3188,129 @@ function showInvoicePreview(file,isPdf){
   document.getElementById('invoiceUploadArea').querySelector('.invoice-upload-hint').style.display='none';
 }
 
+// ===== 图像预处理：提升 OCR 识别质量 =====
+// 加载图片文件到 Canvas
+function loadImageToCanvas(file){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      // 限制最大尺寸，过大图片缩小处理（Tesseract 不需要太高的分辨率）
+      const MAX=1600;
+      let w=img.naturalWidth,h=img.naturalHeight;
+      if(w>MAX||h>MAX){
+        const ratio=Math.min(MAX/w,MAX/h);
+        w=Math.round(w*ratio);h=Math.round(h*ratio);
+      }
+      canvas.width=w;canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+      resolve(canvas);
+    };
+    img.onerror=()=>reject(new Error('图片加载失败'));
+    img.src=URL.createObjectURL(file);
+  });
+}
+
+// 图像预处理管道：灰度→对比度拉伸→Otsu二值化
+function preprocessForOcr(sourceCanvas){
+  const w=sourceCanvas.width,h=sourceCanvas.height;
+  const canvas=document.createElement('canvas');
+  canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(sourceCanvas,0,0);
+  const imageData=ctx.getImageData(0,0,w,h);
+  const data=imageData.data;
+  const total=w*h;
+
+  // 步骤1：灰度化
+  for(let i=0;i<data.length;i+=4){
+    const gray=Math.round(data[i]*0.299+data[i+1]*0.587+data[i+2]*0.114);
+    data[i]=data[i+1]=data[i+2]=gray;
+  }
+
+  // 步骤2：对比度拉伸（把最暗到最亮的范围拉伸到0-255）
+  let min=255,max=0;
+  for(let i=0;i<data.length;i+=4){
+    if(data[i]<min)min=data[i];
+    if(data[i]>max)max=data[i];
+  }
+  const range=max-min||1;
+  for(let i=0;i<data.length;i+=4){
+    const v=Math.round((data[i]-min)*255/range);
+    data[i]=data[i+1]=data[i+2]=v;
+  }
+
+  // 步骤3：Otsu自适应阈值二值化（黑字白底）
+  const histogram=new Array(256).fill(0);
+  for(let i=0;i<data.length;i+=4)histogram[data[i]]++;
+  let sum=0;
+  for(let i=0;i<256;i++)sum+=i*histogram[i];
+  let sumB=0,wB=0,wF=0,maxVariance=0,threshold=128;
+  for(let t=0;t<256;t++){
+    wB+=histogram[t];
+    if(wB===0)continue;
+    wF=total-wB;
+    if(wF===0)break;
+    sumB+=t*histogram[t];
+    const mB=sumB/wB;
+    const mF=(sum-sumB)/wF;
+    const variance=wB*wF*(mB-mF)*(mB-mF);
+    if(variance>maxVariance){maxVariance=variance;threshold=t;}
+  }
+  // 偏白底黑字的文档：低于阈值=文字(黑)，高于阈值=背景(白)
+  for(let i=0;i<data.length;i+=4){
+    const v=data[i]<threshold?0:255;
+    data[i]=data[i+1]=data[i+2]=v;
+  }
+
+  ctx.putImageData(imageData,0,0);
+  return canvas;
+}
+
 async function recognizeInvoice(file,isPdf){
   const loading=document.getElementById('invoiceOcrLoading');
   const resultBox=document.getElementById('invoiceOcrResult');
   loading.style.display='flex';
   resultBox.style.display='none';
   try{
+    // 如果配置了百度 OCR，直接走云端（PDF 先转图片）
+    if(BAIDU_OCR.isConfigured()){
+      await recognizeInvoiceBaidu(file,isPdf);
+      return;
+    }
+    // 降级：本地 Tesseract OCR
     let fullText='';
     if(isPdf){
-      // 用 pdf.js 将每页渲染为图片后 OCR
       const arrayBuffer=await file.arrayBuffer();
       const pdf=await pdfjsLib.getDocument({data:arrayBuffer}).promise;
-      const worker=await Tesseract.createWorker('chi_sim+eng',1,{logger:m=>console.log(m)});
-      for(let p=1;p<=pdf.numPages&&p<=5;p++){ // 最多处理5页
+      const worker=await Tesseract.createWorker('chi_sim',1,{logger:m=>console.log(m)});
+      await worker.setParameters({tessedit_pageseg_mode:'6'});
+      for(let p=1;p<=pdf.numPages&&p<=5;p++){
         const page=await pdf.getPage(p);
-        const viewport=page.getViewport({scale:2});
+        const viewport=page.getViewport({scale:3});
         const canvas=document.createElement('canvas');
         canvas.width=viewport.width;
         canvas.height=viewport.height;
         const ctx=canvas.getContext('2d');
         await page.render({canvasContext:ctx,viewport}).promise;
-        const {data:{text}}=await worker.recognize(canvas);
+        // 预处理后再 OCR
+        const processed=preprocessForOcr(canvas);
+        const {data:{text}}=await worker.recognize(processed);
         fullText+=text+'\n---PAGE BREAK---\n';
       }
       await worker.terminate();
     }else{
-      const worker=await Tesseract.createWorker('chi_sim+eng',1,{logger:m=>console.log(m)});
-      const {data:{text}}=await worker.recognize(file);
+      // 图片文件：先加载到 Canvas，预处理后再 OCR
+      const origCanvas=await loadImageToCanvas(file);
+      const processed=preprocessForOcr(origCanvas);
+      const worker=await Tesseract.createWorker('chi_sim',1,{logger:m=>console.log(m)});
+      await worker.setParameters({tessedit_pageseg_mode:'6'});
+      const {data:{text}}=await worker.recognize(processed);
       await worker.terminate();
       fullText=text;
+      // 保存预处理后的图片用于调试
+      window.__processedCanvas=processed;
     }
     loading.style.display='none';
     const info=parseInvoiceText(fullText);
@@ -2712,6 +3321,143 @@ async function recognizeInvoice(file,isPdf){
     resultBox.innerHTML='<span class="ocr-label">识别失败：</span>'+esc(err.message||'未知错误');
     console.error('OCR error:',err);
   }
+}
+
+// ===== 百度云端 OCR 识别 =====
+async function recognizeInvoiceBaidu(file,isPdf){
+  const loading=document.getElementById('invoiceOcrLoading');
+  const resultBox=document.getElementById('invoiceOcrResult');
+  try{
+    let imageBase64;
+    if(isPdf){
+      const arrayBuffer=await file.arrayBuffer();
+      const pdf=await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+      const page=await pdf.getPage(1);
+      const viewport=page.getViewport({scale:1.5});
+      const canvas=document.createElement('canvas');
+      canvas.width=viewport.width;canvas.height=viewport.height;
+      await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+      imageBase64=canvas.toDataURL('image/jpeg',0.75).split(',')[1];
+    }else{
+      // 压缩图片：限制1200px + JPEG 75%质量，大幅减少传输时间
+      imageBase64=await fileToCompressedBase64(file);
+    }
+    const kb=Math.round(imageBase64.length/1024);
+    console.log('压缩后图片:',kb,'KB');
+    loading.style.display='none';
+    resultBox.style.display='block';
+    resultBox.innerHTML='<div style="text-align:center;padding:16px;color:var(--color-text2)">☁️ 云端识别中（已压缩至 '+kb+'KB）…</div>';
+    const data=await BAIDU_OCR.recognizeInvoice(imageBase64);
+    const info=parseBaiduResult(data);
+    showOcrResultBaidu(info,data);
+  }catch(err){
+    loading.style.display='none';
+    resultBox.style.display='block';
+    const msg=err.message||err.toString()||'未知错误';
+    console.error('Baidu OCR error:',err);
+    let hint='';
+    if(msg.includes('Failed to fetch')||msg.includes('Load failed')||msg.includes('NetworkError')){
+      hint='<br><span style="font-size:11px;color:var(--color-text3)">可能是网络或跨域问题。如持续失败请检查网络。</span>';
+    }else if(msg.includes('Token获取失败')){
+      hint='<br><span style="font-size:11px;color:var(--color-text3)">请检查设置中的 API Key 和 Secret Key 是否正确。</span>';
+    }else if(msg.includes('文件读取失败')){
+      hint='<br><span style="font-size:11px;color:var(--color-text3)">文件可能已损坏或格式不支持，请尝试其他图片。</span>';
+    }
+    resultBox.innerHTML='<span class="ocr-label">云端识别失败：</span>'+esc(msg)+hint;
+  }
+}
+
+// 图片压缩：限制最大宽度1200px + JPEG 75%质量
+function fileToCompressedBase64(file){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const MAX=1200;
+      let w=img.naturalWidth,h=img.naturalHeight;
+      if(w>MAX||h>MAX){const ratio=Math.min(MAX/w,MAX/h);w=Math.round(w*ratio);h=Math.round(h*ratio);}
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(canvas.toDataURL('image/jpeg',0.75).split(',')[1]);
+    };
+    img.onerror=()=>reject(new Error('图片加载失败'));
+    const reader=new FileReader();
+    reader.onload=()=>{img.src=reader.result;};
+    reader.onerror=()=>reject(new Error('文件读取失败'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result.split(',')[1]);
+    reader.onerror=()=>reject(new Error('文件读取失败'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function parseBaiduResult(data){
+  const w=data.words_result||{};
+  const info={};
+  info.invoiceNo=w.InvoiceNum||w.InvoiceNo||'';
+  // 日期格式转换：百度返回 "2026年06月03日" → "2026-06-03"
+  let rawDate=w.InvoiceDate||'';
+  if(rawDate){
+    const m=rawDate.match(/(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日/);
+    if(m)rawDate=m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+    // 也支持已格式化的情况
+    const m2=rawDate.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if(m2)rawDate=m2[1]+'-'+m2[2].padStart(2,'0')+'-'+m2[3].padStart(2,'0');
+  }
+  info.invoiceDate=rawDate;
+  info.supplier=w.SellerName||'';
+  info.supplierCode=w.SellerRegisterNum||'';
+  // 金额：优先价税合计小写，百度返回的可能是字符串
+  let amtStr=w.AmountInFiguers||w.TotalAmount||'0';
+  if(typeof amtStr==='string')amtStr=amtStr.replace(/[¥￥,\s]/g,'');
+  info.amount=parseFloat(amtStr)||0;
+  const items=[];
+  const rows=w.CommodityName||[];
+  if(Array.isArray(rows)){
+    for(const r of rows){
+      const name=(typeof r==='string')?r:(r.word||'');
+      if(name&&!items.includes(name))items.push(name);
+    }
+  }else if(typeof rows==='string'&&rows){
+    items.push(rows);
+  }
+  info.content=items.join('、');
+  info._rawData=data;
+  return info;
+}
+
+function showOcrResultBaidu(info,rawData){
+  const resultBox=document.getElementById('invoiceOcrResult');
+  let html='<strong>☁️ 百度云端识别结果：</strong><br>';
+  const fields=[
+    {key:'supplier',label:'供应商'},{key:'supplierCode',label:'信用代码'},
+    {key:'invoiceNo',label:'发票号'},{key:'invoiceDate',label:'开票日期'},
+    {key:'content',label:'发票内容'},{key:'amount',label:'金额',isAmount:true}
+  ];
+  for(const f of fields){
+    if(info[f.key]){
+      const val=f.isAmount?'<b style="color:var(--color-danger)">¥'+info[f.key]+'</b>':esc(info[f.key]);
+      html+='<span class="ocr-label">'+f.label+'：</span>'+val+'<br>';
+    }else{
+      html+='<span class="ocr-label" style="color:var(--color-text3)">'+f.label+'：(未识别)</span><br>';
+    }
+  }
+  html+='<div class="invoice-ocr-btns">';
+  html+='<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();fillExpenseFormFromOcr()">✓ 使用识别结果</button>';
+  html+='<button class="btn btn-outline btn-sm" onclick="resetInvoiceUpload()">重新上传</button>';
+  html+='</div>';
+  html+='<details style="margin-top:8px;font-size:11px;opacity:0.7"><summary>查看API原始返回</summary>';
+  html+='<pre style="white-space:pre-wrap;word-break:break-all;max-height:200px;overflow:auto;background:var(--color-bg);padding:6px;border-radius:4px;margin-top:4px">'+esc(JSON.stringify(rawData,null,2))+'</pre>';
+  html+='</details>';
+  resultBox.innerHTML=html;
+  resultBox.style.display='block';
+  window.__ocrInfo=info;
 }
 
 function parseInvoiceText(text){
@@ -2810,18 +3556,18 @@ function parseInvoiceText(text){
         name=name.replace(/[）)]?\s*统一社会信用代码.*$/,'')
                  .replace(/[）)]?\s*纳税人识别号.*$/,'')
                  .replace(/[）)]?\s*识别号.*$/,'');
-        info.supplier=name;
+        info.supplier=name.replace(/^[：:]+/,'');
       }
     }
     // 策略B: 如果"名称："匹配不到，直接找带后缀的实体名
     if(!info.supplier){
       let nm=sellerText.match(new RegExp('([^\\s,，]{3,60}(?:'+bizSuffix+'))'));
       if(!nm){// 也尝试带括号后缀的
-        nm=sellerText.match(new RegExp('([^\\s,，]{3,60}(?:'+bizSuffix+')[（(](?:'+bizSuffixBracket+')[)）]?'));
+        nm=sellerText.match(new RegExp('([^\\s,，]{3,60}(?:'+bizSuffix+')[（(](?:'+bizSuffixBracket+')[)）]?)'));
       }
       if(nm){
-        // 清理可能粘连的"销售方"等前缀
-        info.supplier=nm[1].replace(/^(?:销[售货]方|售方|卖方)/,'');
+        // 清理可能粘连的"销售方"等前缀和冒号
+        info.supplier=nm[1].replace(/^(?:销[售货]方|售方|卖方|[：:])+/,'').replace(/^[：:]+/,'');
       }
     }
 
@@ -2859,14 +3605,14 @@ function parseInvoiceText(text){
         name=name.replace(/[）)]?\s*统一社会信用代码.*$/,'')
                  .replace(/[）)]?\s*纳税人识别号.*$/,'')
                  .replace(/[）)]?\s*识别号.*$/,'');
-        info.supplier=name;
+        info.supplier=name.replace(/^[：:]+/,'');
       }
     }
     // 兜底A2：用后缀正则直接在全文搜索实体名（不依赖"名称"标签）
     if(!info.supplier){
-      let nm=fullLine.match(new RegExp('([^\\s,，]{3,60}(?:'+bizSuffix+')(?:[（(](?:'+bizSuffixBracket+')[)）])?'));
+      let nm=fullLine.match(new RegExp('([^\\s,，]{3,60}(?:'+bizSuffix+')(?:[（(](?:'+bizSuffixBracket+')[)）])?)'));
       if(nm){
-        const name=nm[1].replace(/^(?:销[售货]方|售方|卖方)/,'');
+        const name=nm[1].replace(/^(?:销[售货]方|售方|卖方|[：:])+/,'').replace(/^[：:]+/,'');
         if(!name.match(/密码区|货物|项目|规格|单位|数量|单价|金额|税率/)){
           info.supplier=name;
         }
@@ -2888,64 +3634,85 @@ function parseInvoiceText(text){
 
   // ===== 4. 金额 —— 优先价税合计小写金额 =====
   let amtStr=null;
-  // 方式1：价税合计/小写 后面的 ¥XXX.XX（多种变体）
-  const jshjPatterns=[
-    /价税合计[^0-9¥￥]*[¥￥]\s*([0-9,]+\.[0-9]{2})/,
-    /价税合[^0-9¥￥]*[¥￥]\s*([0-9,]+\.[0-9]{2})/,
-    /价税[^0-9¥￥]*[¥￥]\s*([0-9,]+\.[0-9]{2})/,
-    /小写[^0-9¥￥]*[¥￥]\s*([0-9,]+\.[0-9]{2})/,
-  ];
-  for(const p of jshjPatterns){
-    const m=fullLine.match(p);
-    if(m){amtStr=m[1];break;}
-  }
-  // 方式1b：价税合计后直接找数字（OCR可能漏掉¥符号）
-  if(!amtStr){
-    const jshjNoYuan=fullLine.match(/价税合[计]?[\s\S]{0,60}?([0-9,]+\.[0-9]{2})/);
-    if(jshjNoYuan){
-      const val=parseFloat(jshjNoYuan[1].replace(/,/g,''));
-      amtStr=val.toFixed(2);
+  
+  // 方法A：逐行找"小写"或"价税合计"后的金额数字（不依赖¥符号）
+  for(const l of lines){
+    if(l.includes('小写')||l.includes('价税合计')){
+      const all=[...l.matchAll(/([0-9,]+\.[0-9]{2})/g)];
+      if(all.length){
+        const nums=all.map(a=>parseFloat(a[1].replace(/,/g,''))).filter(n=>n>0);
+        if(nums.length){
+          // 取最大（排除税率小数<5的状况，取>5的值）
+          const candidates=nums.filter(n=>n>5);
+          amtStr=(candidates.length?Math.max(...candidates):Math.max(...nums)).toFixed(2);
+          break;
+        }
+      }
     }
   }
-  // 方式1c：小写/合计 后面找数字（不依赖¥）
+  // 方法B：相邻行 + 后2行
   if(!amtStr){
-    const xiaoXie=fullLine.match(/(?:小写|合计)[\s\S]{0,40}?([0-9,]+\.[0-9]{2})/);
-    if(xiaoXie){
-      const val=parseFloat(xiaoXie[1].replace(/,/g,''));
-      amtStr=val.toFixed(2);
+    for(let i=0;i<lines.length-1;i++){
+      if(lines[i].includes('小写')||lines[i].includes('价税合计')){
+        for(let j=1;j<=2;j++){
+          if(i+j>=lines.length)break;
+          const all=[...lines[i+j].matchAll(/([0-9,]+\.[0-9]{2})/g)];
+          if(all.length){
+            const nums=all.map(a=>parseFloat(a[1].replace(/,/g,''))).filter(n=>n>5);
+            if(nums.length){amtStr=Math.max(...nums).toFixed(2);break;}
+          }
+        }
+        if(amtStr)break;
+      }
     }
   }
-  // 方式2：取 ¥ 符号后的金额最大值（价税合计通常是最大的¥金额）
+  // 方法C：fullLine上搜小写后面¥金额（含各种¥变体）
   if(!amtStr){
-    const allAmt=[...fullLine.matchAll(/[¥￥]\s*([0-9,]+\.[0-9]{2})/g)];
-    if(allAmt.length>0){
-      const amts=allAmt.map(a=>({raw:a[1],val:parseFloat(a[1].replace(/,/g,''))})).filter(a=>a.val>0);
-      amts.sort((a,b)=>b.val-a.val);
-      amtStr=amts[0].raw;
+    const patterns=[
+      /[（(]\s*小写\s*[)）]\s*[\u00A5\uFFE5\u04B0]*\s*([0-9,]+\.[0-9]{2})/,
+      /小写[\s\S]{0,20}?([0-9,]+\.[0-9]{2})(?=[\s\S]*?(?:合计|价税|小写|$))/,
+      /价税合[计]?[\s\S]{0,30}?([0-9,]+\.[0-9]{2})/,
+    ];
+    for(const p of patterns){
+      const m=fullLine.match(p);
+      if(m){amtStr=m[1];break;}
     }
   }
-  // 方式2b：同样在原始文本（未去空格）中查找¥金额取最大值
+  // 方法D：text中搜小写后的数字
   if(!amtStr){
-    const rawAmt=[...text.matchAll(/[¥￥]\s*([0-9,]+\.[0-9]{2})/g)];
-    if(rawAmt.length>0){
-      const amts=rawAmt.map(a=>({raw:a[1],val:parseFloat(a[1].replace(/,/g,''))})).filter(a=>a.val>0);
-      amts.sort((a,b)=>b.val-a.val);
-      amtStr=amts[0].raw;
+    for(const p of [/[（(]\s*小写\s*[)）][\s\S]{0,20}?([0-9,]+\.[0-9]{2})/,/([0-9,]+\.[0-9]{2})[\s\S]{0,10}?[）)]\s*小写/]){
+      const m=text.match(p);
+      if(m){amtStr=m[1];break;}
     }
   }
-  // 方式3：数字.XX格式取最大（排除年份20xx等明显非金额）
+  // 方法E：fullLine中所有数字.XX中取最大（最后的保底）
   if(!amtStr){
     const all=[...fullLine.matchAll(/([0-9,]+\.[0-9]{2})/g)];
     if(all.length){
-      const nums=all.map(a=>parseFloat(a[1].replace(/,/g,''))).filter(n=>n>0);
+      const nums=all.map(a=>parseFloat(a[1].replace(/,/g,''))).filter(n=>n>5);
       if(nums.length)amtStr=Math.max(...nums).toFixed(2);
     }
   }
-  // 方式3b：同样在原始文本中搜索
+  // 方法F：扩大搜索窗口——任何含"合计"的行前后3行中找最大金额
   if(!amtStr){
-    const all=[...text.matchAll(/([0-9,]+\.[0-9]{2})/g)];
-    if(all.length){
-      const nums=all.map(a=>parseFloat(a[1].replace(/,/g,''))).filter(n=>n>0);
+    let allNearby=[];
+    for(let i=0;i<lines.length;i++){
+      if(lines[i].match(/合[计]|价税|小写/)){
+        const start=Math.max(0,i-3),end=Math.min(lines.length,i+4);
+        for(let j=start;j<end;j++){
+          const all=[...lines[j].matchAll(/([0-9,]+\.[0-9]{2})/g)];
+          allNearby.push(...all.map(a=>parseFloat(a[1].replace(/,/g,''))));
+        }
+      }
+    }
+    const valid=allNearby.filter(n=>n>5);
+    if(valid.length)amtStr=Math.max(...valid).toFixed(2);
+  }
+  // 方法G：全文中所有¥金额取最大（最后的保底，不依赖关键词）
+  if(!amtStr){
+    const allYen=[...text.matchAll(/[¥￥\u00A5\uFFE5]\s*([0-9,]+\.[0-9]{2})/g)];
+    if(allYen.length){
+      const nums=allYen.map(a=>parseFloat(a[1].replace(/,/g,''))).filter(n=>n>5);
       if(nums.length)amtStr=Math.max(...nums).toFixed(2);
     }
   }
@@ -2954,34 +3721,55 @@ function parseInvoiceText(text){
   // ===== 5. 发票内容 —— 提取项目名称 =====
   const contentItems=[];
   
-  // 方式1：匹配 *类别*项目名 格式（在 fullLine 上搜索，不限于单行）
-  const starPat=/[*×xX]\s*([^*×xX\n]{1,30})\s*[*×xX]\s*([^*×xX\n]{1,80})/g;
-  let starMatch;
-  while((starMatch=starPat.exec(fullLine))!==null){
-    let name=starMatch[2].trim();
-    // 清理尾部可能粘连的数字、符号、表格字段名
-    name=name.replace(/[\s\d.,，。;；:：¥￥%/（）()*×xX\-]+$/,'').trim();
-    name=name.replace(/(?:规格型号|单位|数量|单价|金额|税率|税额|合计|价税|备注|密码区|机器编号|商品编码|享受税收|优惠政策)/g,'').trim();
-    if(name.length>=2&&name.length<=60&&!contentItems.includes(name)){
-      contentItems.push(name);
-    }
-  }
-  
-  // 方式1b：如果方式1没找到，尝试在原始文本中搜索（可能需要更宽松的星号）
-  if(contentItems.length===0){
-    const starPat2=/[*×xX]\s*([^*×xX\n]{1,30})\s*[*×xX]\s*([^*×xX\n]{1,80})/g;
-    let sm2;
-    while((sm2=starPat2.exec(text))!==null){
-      let name=sm2[2].trim();
+  // 方式A：逐行找 *xxx*xxx 格式（最可靠）
+  for(const l of lines){
+    // OCR可能在行首有任意乱码前缀，去掉行首所有非中文/非字母/非星号的字符
+    const cleanLine=l.replace(/^[^a-zA-Z\u4e00-\u9fff*×xX\d]+/,'').trim();
+    const sm=cleanLine.match(/[*×xX]\s*([^*×xX\n]{1,30})\s*[*×xX]\s*([^*×xX\n]{1,80})/);
+    if(sm){
+      let name=sm[2].trim();
       name=name.replace(/[\s\d.,，。;；:：¥￥%/（）()*×xX\-]+$/,'').trim();
       name=name.replace(/(?:规格型号|单位|数量|单价|金额|税率|税额|合计|价税|备注|密码区|机器编号|商品编码|享受税收|优惠政策)/g,'').trim();
-      if(name.length>=2&&name.length<=60&&!contentItems.includes(name)){
+      if(name.length>=1&&name.length<=60&&!contentItems.includes(name)){
         contentItems.push(name);
       }
     }
   }
   
-  // 方式2：在"项目名称/货物或应税"和"金额/税率/合计"之间的表格区域提取
+  // 方式B：逐行宽松匹配
+  if(contentItems.length===0){
+    for(const l of lines){
+      const cleanLine=l.replace(/^[^a-zA-Z\u4e00-\u9fff*×xX\d]+/,'').trim();
+      const starParts=cleanLine.match(/[*×xX]\s*([^*×xX\n]{1,30})\s*[*×xX]/);
+      if(starParts){
+        const after=starParts[0];
+        const rest=cleanLine.substring(cleanLine.indexOf(after)+after.length).trim();
+        if(rest.length>=1&&rest.length<=60){
+          let name=rest.replace(/[\s\d.,，。;；:：¥￥%/（）()*×xX\-]+$/,'').trim();
+          name=name.replace(/(?:规格型号|单位|数量|单价|金额|税率|税额|合计|价税|备注|商品编码|享受税收|优惠政策)/g,'').trim();
+          if(name.length>=1&&name.length<=60&&!contentItems.includes(name)){
+            contentItems.push(name);
+          }
+        }
+      }
+    }
+  }
+  
+  // 方式C：在 fullLine 上搜索（跨行，兜底）
+  if(contentItems.length===0){
+    const starPat=/[*×xX]\s*([^*×xX\n]{1,30})\s*[*×xX]\s*([^*×xX\n]{1,80})/g;
+    let starMatch;
+    while((starMatch=starPat.exec(fullLine))!==null){
+      let name=starMatch[2].trim();
+      name=name.replace(/[\s\d.,，。;；:：¥￥%/（）()*×xX\-]+$/,'').trim();
+      name=name.replace(/(?:规格型号|单位|数量|单价|金额|税率|税额|合计|价税|备注|密码区|机器编号|商品编码|享受税收|优惠政策)/g,'').trim();
+      if(name.length>=1&&name.length<=60&&!contentItems.includes(name)){
+        contentItems.push(name);
+      }
+    }
+  }
+  
+  // 方式D：在项目名/货物和金额/税率之间的表格区域逐行提取
   if(contentItems.length===0){
     const contentSec=findBetween(normText,
       /货物或应税|服务名称|项目名称|品名/,
@@ -2991,38 +3779,13 @@ function parseInvoiceText(text){
       for(const l of clines){
         if(l.match(/货物|应税|服务名称|项目名称|品名|规格|型号|单位|数量|单价|金额|税率|税额|密码区|机器编号|商品编码|享受税收|优惠政策/))continue;
         if(l.match(/^[\d.,，。¥￥%*\s]+$/))continue;
-        if(l.match(/\*[^*]{2,}\*/)){
-          const inner=l.match(/\*[^*]{2,}\*/g);
-          if(inner){
-            for(const m of inner){
-              const name=m.replace(/^\*|\*$/g,'').replace(/[\s\d.,，。;；:：¥￥%/（）()]+/g,' ').trim();
-              if(name.length>=2&&name.length<=60&&!contentItems.includes(name)){
-                contentItems.push(name);
-              }
-            }
-          }
-          continue;
-        }
-        const cleaned=l.replace(/规格型号|单位|数量|单价|金额|税率|税额|密码区|商品编码|享受税收|优惠政策/g,' ')
-                       .replace(/[*\d.,，。;；:：\s¥￥%×xX]+/g,' ').replace(/\s+/g,' ').trim();
+        const cleaned=l.replace(/[*\d.,，。;；:：\s¥￥%×xX]+/g,' ').replace(/\s+/g,' ').trim();
         if(cleaned.length>=2&&cleaned.length<=60){
           const words=cleaned.split(/\s+/).filter(w=>w.length>=2);
           for(const w of words){
             if(!contentItems.includes(w))contentItems.push(w);
           }
         }
-      }
-    }
-  }
-  
-  // 方式3：全文查找 *xxx* 包裹的内容（最宽松的后备）
-  if(contentItems.length===0){
-    const allStars=[...fullLine.matchAll(/\*([^*\n]{2,50})\*/g)];
-    for(const m of allStars){
-      let name=m[1].replace(/[\s\d.,，。;；:：¥￥%/（）()\-]+/g,' ').replace(/\s+/g,' ').trim();
-      name=name.replace(/(?:规格型号|单位|数量|单价|金额|税率|税额|合计|价税|备注|商品编码|享受税收|优惠政策)/g,'').trim();
-      if(name.length>=2&&name.length<=60&&!contentItems.includes(name)){
-        contentItems.push(name);
       }
     }
   }
@@ -3039,16 +3802,37 @@ function parseInvoiceText(text){
 function showOcrResult(info,rawText){
   const resultBox=document.getElementById('invoiceOcrResult');
   let html='<strong>识别结果：</strong><br>';
-  if(info.supplier)html+='<span class="ocr-label">供应商：</span>'+esc(info.supplier)+'<br>';
-  if(info.supplierCode)html+='<span class="ocr-label">信用代码：</span>'+esc(info.supplierCode)+'<br>';
-  if(info.invoiceNo)html+='<span class="ocr-label">发票号：</span>'+esc(info.invoiceNo)+'<br>';
-  if(info.invoiceDate)html+='<span class="ocr-label">开票日期：</span>'+info.invoiceDate+'<br>';
-  if(info.content)html+='<span class="ocr-label">发票内容：</span>'+esc(info.content)+'<br>';
-  if(info.amount)html+='<span class="ocr-label">金额：</span><b style="color:var(--color-danger)">¥'+info.amount+'</b><br>';
+  const fields=[
+    {key:'supplier',label:'供应商'},
+    {key:'supplierCode',label:'信用代码'},
+    {key:'invoiceNo',label:'发票号'},
+    {key:'invoiceDate',label:'开票日期'},
+    {key:'content',label:'发票内容'},
+    {key:'amount',label:'金额',isAmount:true}
+  ];
+  for(const f of fields){
+    if(info[f.key]){
+      const val=f.isAmount?'<b style="color:var(--color-danger)">¥'+info[f.key]+'</b>':esc(info[f.key]);
+      html+='<span class="ocr-label">'+f.label+'：</span>'+val+'<br>';
+    }else{
+      html+='<span class="ocr-label" style="color:var(--color-danger)">'+f.label+'：(未识别)</span><br>';
+    }
+  }
   html+='<div class="invoice-ocr-btns">';
-  html+='<button class="btn btn-primary btn-sm" onclick="fillExpenseFormFromOcr()">✓ 使用识别结果</button>';
+  html+='<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();fillExpenseFormFromOcr()">✓ 使用识别结果</button>';
   html+='<button class="btn btn-outline btn-sm" onclick="resetInvoiceUpload()">重新上传</button>';
   html+='</div>';
+  // 显示预处理后的图片缩略图，方便对比调试
+  if(window.__processedCanvas){
+    html+='<details style="margin-top:8px;font-size:11px;opacity:0.8"><summary>查看预处理效果</summary>';
+    html+='<div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap">';
+    html+='<div><div style="font-size:10px;color:var(--color-text3);margin-bottom:2px">原始图像</div>';
+    html+='<img id="cmp-orig" style="max-width:200px;max-height:200px;border:1px solid var(--color-border);border-radius:4px" src="">';
+    html+='</div>';
+    html+='<div><div style="font-size:10px;color:var(--color-text3);margin-bottom:2px">预处理后（二值化）</div>';
+    html+='<canvas id="cmp-proc" style="max-width:200px;max-height:200px;border:1px solid var(--color-border);border-radius:4px"></canvas>';
+    html+='</div></div></details>';
+  }
   // 折叠展示原始OCR文本，方便调试
   html+='<details style="margin-top:8px;font-size:11px;opacity:0.7"><summary>查看原始OCR文本</summary>';
   html+='<pre style="white-space:pre-wrap;word-break:break-all;max-height:200px;overflow:auto;background:var(--color-bg);padding:6px;border-radius:4px;margin-top:4px">'+esc(rawText||'')+'</pre>';
@@ -3057,9 +3841,26 @@ function showOcrResult(info,rawText){
   resultBox.style.display='block';
   window.__ocrInfo=info;
   window.__ocrRawText=rawText;
+  // 填充预处理对比图
+  setTimeout(()=>{
+    const cmpOrig=document.getElementById('cmp-orig');
+    const cmpProc=document.getElementById('cmp-proc');
+    if(cmpOrig){
+      const previewImg=document.getElementById('invoicePreview');
+      if(previewImg&&previewImg.src)cmpOrig.src=previewImg.src;
+    }
+    if(cmpProc&&window.__processedCanvas){
+      const thumbCanvas=cmpProc;
+      thumbCanvas.width=window.__processedCanvas.width;
+      thumbCanvas.height=window.__processedCanvas.height;
+      thumbCanvas.getContext('2d').drawImage(window.__processedCanvas,0,0);
+    }
+  },100);
 }
 
-function fillExpenseFormFromOcr(){
+function fillExpenseFormFromOcr(evt){
+  // 阻止事件冒泡，防止触发上传区域的点击
+  if(evt&&evt.stopPropagation)evt.stopPropagation();
   const info=window.__ocrInfo||{};
   if(info.supplier)document.getElementById('expenseSupplier').value=info.supplier;
   if(info.supplierCode)document.getElementById('expenseSupplierCode').value=info.supplierCode;
@@ -3067,7 +3868,9 @@ function fillExpenseFormFromOcr(){
   if(info.invoiceDate)document.getElementById('expenseInvoiceDate').value=info.invoiceDate;
   if(info.content)document.getElementById('expenseContent').value=info.content;
   if(info.amount)document.getElementById('expenseAmount').value=info.amount;
-  toast('已填充识别结果，请核对后保存');
+  // 静默填充，关闭 OCR 结果区域避免 UI 残留
+  document.getElementById('invoiceOcrResult').style.display='none';
+  document.getElementById('invoiceOcrLoading').style.display='none';
 }
 
 function resetInvoiceUpload(){
@@ -3416,6 +4219,9 @@ function loadSettings(){
   document.getElementById('giteeRepo').value=cfg.repo;
   document.getElementById('giteeToken').value=cfg.token;
   document.getElementById('backupInterval').value=getBackupInterval();
+  document.getElementById('baiduAK').value=localStorage.getItem('wb_baidu_ak')||'';
+  document.getElementById('baiduSK').value=localStorage.getItem('wb_baidu_sk')||'';
+  updateBaiduStatus();
 
   // update sync status
   if(GITEE.isConfigured()){
@@ -3432,11 +4238,23 @@ function saveSettings(){
   const repo=document.getElementById('giteeRepo').value.trim();
   const token=document.getElementById('giteeToken').value.trim();
   const interval=document.getElementById('backupInterval').value;
+  const ak=document.getElementById('baiduAK').value.trim();
+  const sk=document.getElementById('baiduSK').value.trim();
 
   localStorage.setItem('wb_gitee_user',user);
   localStorage.setItem('wb_gitee_repo',repo);
   if(token)localStorage.setItem('wb_gitee_token',token);
   localStorage.setItem('wb_backup_interval',interval);
+  if(ak)localStorage.setItem('wb_baidu_ak',ak);
+  if(sk)localStorage.setItem('wb_baidu_sk',sk);
+  // 如果 Key 变了，清除旧的 token 让它重新获取
+  if(ak!==localStorage.getItem('wb_baidu_ak_prev')||sk!==localStorage.getItem('wb_baidu_sk_prev')){
+    localStorage.removeItem('wb_baidu_token');
+    localStorage.removeItem('wb_baidu_token_expire');
+    localStorage.setItem('wb_baidu_ak_prev',ak);
+    localStorage.setItem('wb_baidu_sk_prev',sk);
+  }
+  updateBaiduStatus();
 
   closeModal('settingsModal');
   loadSettings();
@@ -3449,6 +4267,83 @@ function saveSettings(){
     toast('设置已保存');
   }
 }
+
+// ===== 百度 OCR 配置与 Token 管理 =====
+function updateBaiduStatus(){
+  const el=document.getElementById('baiduStatus');
+  if(!el)return;
+  const ak=localStorage.getItem('wb_baidu_ak');
+  const sk=localStorage.getItem('wb_baidu_sk');
+  if(ak&&sk){
+    el.innerHTML='<span class="sync-dot sync-ok" style="width:6px;height:6px"></span> 已配置（云端识别可用）';
+  }else{
+    el.innerHTML='<span class="sync-dot" style="width:6px;height:6px;background:var(--color-text3)"></span> 未配置（使用本地识别）';
+  }
+}
+
+const BAIDU_OCR={
+  getConfig(){
+    return {
+      ak:localStorage.getItem('wb_baidu_ak')||'',
+      sk:localStorage.getItem('wb_baidu_sk')||'',
+    };
+  },
+  isConfigured(){const c=this.getConfig();return !!(c.ak&&c.sk);},
+  async getToken(){
+    const cached=localStorage.getItem('wb_baidu_token');
+    const expire=parseInt(localStorage.getItem('wb_baidu_token_expire')||'0');
+    if(cached&&Date.now()<expire)return cached;
+    const cfg=this.getConfig();
+    const tokenUrl='https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials'+
+      '&client_id='+encodeURIComponent(cfg.ak)+
+      '&client_secret='+encodeURIComponent(cfg.sk);
+    // 尝试直接调，如果 CORS 被屏蔽就用代理
+    let resp,data;
+    try{
+      resp=await fetch(tokenUrl,{method:'POST'});
+      data=await resp.json();
+    }catch(e){
+      console.log('直接调Token失败，尝试CORS代理…',e.message);
+      // 通过 allorigins CORS 代理中转（支持 file:// 协议）
+      const proxyUrl='https://api.allorigins.win/raw?url='+encodeURIComponent(tokenUrl);
+      resp=await fetch(proxyUrl,{method:'POST'});
+      const text=await resp.text();
+      try{data=JSON.parse(text);}catch{throw new Error('代理返回格式异常：'+text.slice(0,200));}
+    }
+    if(data.error)throw new Error('Token获取失败：'+(data.error_description||data.error));
+    const expiresAt=Date.now()+29*24*3600*1000;
+    localStorage.setItem('wb_baidu_token',data.access_token);
+    localStorage.setItem('wb_baidu_token_expire',String(expiresAt));
+    return data.access_token;
+  },
+  async recognizeInvoice(imageBase64){
+    const token=await this.getToken();
+    console.log('Token获取成功，开始识别… 图片大小:',imageBase64.length,'字符');
+    const apiUrl='https://aip.baidubce.com/rest/2.0/ocr/v1/vat_invoice?access_token='+encodeURIComponent(token);
+    let resp,data;
+    try{
+      resp=await fetch(apiUrl,{
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:'image='+encodeURIComponent(imageBase64)
+      });
+      data=await resp.json();
+    }catch(e){
+      console.log('直接调OCR API失败，尝试CORS代理…',e.message);
+      const proxyUrl='https://api.allorigins.win/raw?url='+encodeURIComponent(apiUrl);
+      resp=await fetch(proxyUrl,{
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:'image='+encodeURIComponent(imageBase64)
+      });
+      const text=await resp.text();
+      try{data=JSON.parse(text);}catch{throw new Error('代理返回格式异常：'+text.slice(0,200));}
+    }
+    if(data.error_code)throw new Error('识别失败：'+(data.error_msg||'未知错误')+' (code:'+data.error_code+')');
+    console.log('云端识别成功，返回字段数:',Object.keys(data.words_result||{}).length);
+    return data;
+  }
+};
 
 async function testSync(){
   const result=await GITEE.test();
@@ -3869,6 +4764,9 @@ function toArray(v){ return Array.isArray(v) ? v : v ? [v] : []; }
 // ============================================================
 //  INIT
 // ============================================================
+// 初始化百度 OCR Key（首次使用）
+if(!localStorage.getItem('wb_baidu_ak'))localStorage.setItem('wb_baidu_ak','MDVmdXOsF6wAljk9ICTbyOXR');
+if(!localStorage.getItem('wb_baidu_sk'))localStorage.setItem('wb_baidu_sk','MwX2Ref7PSTsCM5F8qrk93csTfQ70IJU');
 loadSettings();
 checkBackup();
 repairData(); // 自动修复第一版智能录入产生的旧格式数据

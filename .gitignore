@@ -1,0 +1,8 @@
+# macOS resource fork
+._*
+
+# WorkBuddy session data (machine-specific, not to be versioned)
+.workbuddy/memory/
+
+# Dependencies (if any in future)
+node_modules/
