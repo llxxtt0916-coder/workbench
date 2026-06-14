@@ -4018,10 +4018,10 @@ function renderMeetingCalendar(year,month){
       onclick="${hasMeeting?'showDayMeetings('+d+')':'openQuickMeeting(\''+dateStr+'\')'}"
       title="${hasMeeting?dayMeetings.map(m=>m.name).join('\n'):'点击新增会议'}">
       <span class="cal-day-num">${d}</span>
-      ${hasMeeting?`<div class="cal-dots">${dayMeetings.slice(0,3).map(m=>{
+      ${hasMeeting?dayMeetings.slice(0,3).map(m=>{
       const typeColors={线上:'#3b82f6',线下:'#10b981',混合:'#8b5cf6'};
-      return `<span class="cal-dot" style="background:${typeColors[m.type]||'#6366f1'}" title="${m.name}"></span>`;
-      }).join('')}${dayMeetings.length>3?`<span class="cal-dot-more">+${dayMeetings.length-3}</span>`:''}</div>`:''}
+      return `<span class="cal-meeting-name" style="border-left:2px solid ${typeColors[m.type]||'#6366f1'}">${esc(m.name)}</span>`;
+      }).join('')+ (dayMeetings.length>3?`<span class="cal-meeting-more">+${dayMeetings.length-3} 场</span>`:''):''}
     </div>`;
   }
   // 下月填充
