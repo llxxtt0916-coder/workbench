@@ -50,6 +50,11 @@
       灵感收集
     </div>
 
+    <div class="nav-section">日程</div>
+    <div class="nav-item" onclick="navigate('meeting',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+      会议日程
+    </div>
     <div class="nav-section">台账</div>
     <div class="nav-item" onclick="navigate('purchase',this)">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>
@@ -401,6 +406,43 @@
           </table>
         </div>
       </div>
+    </div>
+
+    <!-- ====== MEETING PAGE ====== -->
+    <div class="page" id="page-meeting">
+      <div class="section-header">
+        <span style="font-size:16px;font-weight:600" id="meetingMonthTitle">2026年6月</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn btn-sm btn-outline" onclick="prevMeetingMonth()">◀ 上月</button>
+          <button class="btn btn-sm btn-outline" onclick="goMeetingToday()">今天</button>
+          <button class="btn btn-sm btn-outline" onclick="nextMeetingMonth()">下月 ▶</button>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('meeting')">导出</button>
+          <button class="btn btn-primary btn-sm" onclick="clearMeetingForm();openModal('meetingModal')">+ 新增会议</button>
+        </div>
+      </div>
+      <!-- 日历网格 -->
+      <div style="margin-bottom:16px;background:var(--color-bg-card);border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+        <div class="cal-weekdays" style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--color-text3);padding:4px 0 8px 0;font-weight:500">
+          <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span style="color:var(--color-danger)">六</span><span style="color:var(--color-danger)">日</span>
+        </div>
+        <div id="meetingCalendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"></div>
+      </div>
+      <!-- 会议列表 -->
+      <div class="section-header" style="margin-top:0">
+        <span style="font-size:16px;font-weight:600">会议列表</span>
+        <div style="display:flex;gap:6px">
+          <select id="meetingF_type" onchange="renderMeetings()" style="font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px">
+            <option value="">全部类型</option>
+            <option value="线上">线上</option>
+            <option value="线下">线下</option>
+            <option value="混合">混合</option>
+          </select>
+          <input placeholder="搜索…" id="meetingF_search" oninput="renderMeetings()" style="font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px;width:140px">
+        </div>
+      </div>
+      <div id="meetingList"></div>
     </div>
 
     <!-- ====== EXPENSE PAGE ====== -->
@@ -907,6 +949,88 @@
   </div>
 </div>
 
+<!-- Meeting Modal -->
+<div class="modal-overlay" id="meetingModal">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <span class="modal-title" id="meetingModalTitle">新增会议</span>
+      <button class="close-btn" onclick="closeModal('meetingModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="meetingId">
+      <div class="form-group">
+        <label class="form-label">会议名称 *</label>
+        <input class="form-control" id="meetingName" placeholder="如：月度工作例会">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">会议日期 *</label>
+          <input type="date" class="form-control" id="meetingDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">类型</label>
+          <select class="form-control" id="meetingType">
+            <option value="线下">线下</option>
+            <option value="线上">线上</option>
+            <option value="混合">混合</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">开始时间</label>
+          <input type="time" class="form-control" id="meetingStartTime">
+        </div>
+        <div class="form-group">
+          <label class="form-label">结束时间</label>
+          <input type="time" class="form-control" id="meetingEndTime">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">地点</label>
+          <input class="form-control" id="meetingLocation" placeholder="如：3楼会议室">
+        </div>
+        <div class="form-group">
+          <label class="form-label">组织方</label>
+          <input class="form-control" id="meetingOrganizer" placeholder="如：卫健委">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">参与人（逗号分隔）</label>
+        <input class="form-control" id="meetingAttendees" placeholder="张三,李四,王五">
+      </div>
+      <div class="form-group">
+        <label class="form-label">会议议程</label>
+        <textarea class="form-control" id="meetingAgenda" rows="2" placeholder="议程要点…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">会前准备事项</label>
+        <textarea class="form-control" id="meetingPrepTasks" rows="2" placeholder="需要准备的资料、设备等…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">会议纪要</label>
+        <textarea class="form-control" id="meetingMinutes" rows="3" placeholder="会议记录、决议…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;justify-content:space-between;align-items:center">
+          行动项
+          <button class="btn btn-ghost btn-sm" onclick="addMeetingActionItem()" style="color:var(--color-primary);font-size:11px">+ 添加</button>
+        </label>
+        <div id="meetingActionItems"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">下次会议时间</label>
+        <input type="date" class="form-control" id="meetingNextDate">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('meetingModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveMeeting()">保存</button>
+    </div>
+  </div>
+</div>
+
 <!-- Settings Modal -->
 <div class="modal-overlay" id="settingsModal">
   <div class="modal">
@@ -1045,7 +1169,7 @@ const DB = {
 
 // 自动修复历史数据（格式迁移 + ID修复 + 字段补齐 + 日期标准化 + 软删除）
 function repairData(){
-  const keys=['todos','inspirations','contracts','purchases','expenses'];
+  const keys=['todos','inspirations','contracts','purchases','expenses','meetings'];
   let repaired=false;
 
   keys.forEach(key=>{
@@ -1157,6 +1281,23 @@ function repairData(){
           rec.todoRef=rec.todoRef||null;
           rec.createdAt=normalizeDate(rec.createdAt);
           break;
+        case 'meetings':
+          rec.name=rec.name||'';
+          rec.date=rec.date||'';
+          rec.startTime=rec.startTime||'';
+          rec.endTime=rec.endTime||'';
+          rec.location=rec.location||'';
+          rec.type=rec.type||'线下';
+          rec.organizer=rec.organizer||'';
+          rec.attendees=Array.isArray(rec.attendees)?rec.attendees:[];
+          rec.agenda=rec.agenda||'';
+          rec.prepTasks=rec.prepTasks||'';
+          rec.minutes=rec.minutes||'';
+          rec.actionItems=Array.isArray(rec.actionItems)?rec.actionItems:[];
+          rec.nextMeetingDate=rec.nextMeetingDate||'';
+          rec.todoRef=rec.todoRef||null;
+          rec.createdAt=normalizeDate(rec.createdAt);
+          break;
       }
       return rec;
     });
@@ -1171,7 +1312,7 @@ function repairData(){
 // ============================================================
 //  NAVIGATION
 // ============================================================
-const pageTitles={dashboard:'驾驶舱',todo:'工作记录',inspiration:'灵感收集',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
+const pageTitles={dashboard:'驾驶舱',todo:'工作记录',inspiration:'灵感收集',meeting:'会议日程',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
 let currentPage='dashboard';
 let todoChartInst=null, contractChartInst=null;
 
@@ -1189,6 +1330,7 @@ function navigate(page,el){
   if(page==='contract')renderContracts();
   if(page==='purchase')renderPurchases();
   if(page==='expense')renderExpenses();
+  if(page==='meeting')renderMeetings();
 }
 
 function toggleSidebar(){
@@ -2395,8 +2537,8 @@ function renderContracts(){
 //  删除台账时同步软删除关联的工作记录
 // ============================================================
 
-const SYNC_MODULE_LABELS={contract:'合同',purchase:'采购',expenses:'报销'};
-const SYNC_MODULE_CATEGORIES={contract:'合同管理',purchase:'采购管理',expenses:'报销管理'};
+const SYNC_MODULE_LABELS={contract:'合同',purchase:'采购',expenses:'报销',meeting:'会议'};
+const SYNC_MODULE_CATEGORIES={contract:'合同管理',purchase:'采购管理',expenses:'报销管理',meeting:'会议管理'};
 
 function syncLedgerTodo(module, ledger, action){
   const todos=DB.raw('todos');
@@ -2408,6 +2550,8 @@ function syncLedgerTodo(module, ledger, action){
     todoName='合同「'+ledger.name+'」';
   }else if(module==='purchase'){
     todoName='采购「'+ledger.name+'」';
+  }else if(module==='meeting'){
+    todoName='会议「'+ledger.name+'」';
   }else{
     todoName='报销「'+(ledger.content||'未知内容').slice(0,20)+'」';
   }
@@ -2418,6 +2562,11 @@ function syncLedgerTodo(module, ledger, action){
   if(module==='contract'&&ledger.party)detailParts.push('对方单位 '+ledger.party);
   if(module==='purchase'&&ledger.supplier)detailParts.push('供应商 '+ledger.supplier);
   if(module==='expenses'&&ledger.supplier)detailParts.push('供应商 '+ledger.supplier);
+  if(module==='meeting'){
+    if(ledger.date)detailParts.push('日期 '+ledger.date);
+    if(ledger.location)detailParts.push('地点 '+ledger.location);
+    if(ledger.type)detailParts.push('类型 '+ledger.type);
+  }
   const todoContent=detailParts.join('\n');
 
   // 台账状态 → 工作记录状态映射
@@ -2432,6 +2581,12 @@ function syncLedgerTodo(module, ledger, action){
     if(ledger.status==='已到货')todoStatus='已完成';
     else if(ledger.status==='已拒绝')todoStatus='已取消';
     else if(ledger.status==='审批通过')todoStatus='进行中';
+  }else if(module==='meeting'){
+    // 会议基于日期判断状态
+    const meetingDate=ledger.date||'';
+    if(meetingDate>now)todoStatus='未开始';
+    else if(meetingDate===now)todoStatus='进行中';
+    else todoStatus='已完成';
   }else{
     if(ledger.status==='已报销')todoStatus='已完成';
   }
@@ -2482,7 +2637,7 @@ function syncLedgerTodo(module, ledger, action){
       contractRef:module==='contract'?ledger.id:null,
       purchaseRef:module==='purchase'?ledger.id:null,
       expenseRef:module==='expenses'?ledger.id:null,
-      meetingRef:null,
+      meetingRef:module==='meeting'?ledger.id:null,
       trainingRef:null,
       deleted:false
     };
@@ -2745,7 +2900,8 @@ function onPurchaseExpenseChange(){
 
 // 采购/合同/报销 通用导出 CSV
 function exportModuleCSV(module){
-  const data=DB.get(module==='purchase'?'purchases':module==='contract'?'contracts':'expenses');
+  const keyMap={purchase:'purchases',contract:'contracts',expense:'expenses',meeting:'meetings'};
+  const data=DB.get(keyMap[module]||'expenses');
   let filtered;
   if(module==='purchase'){
     const q=(document.getElementById('purchaseF_name')?.value||'').toLowerCase();
@@ -2760,6 +2916,14 @@ function exportModuleCSV(module){
     filtered=data.filter(c=>{
       if(q&&!(c.name+(c.party||'')+(c.no||'')).toLowerCase().includes(q))return false;
       if(sf&&c.status!==sf)return false;return true;
+    });
+  }else if(module==='meeting'){
+    const typeFilter=document.getElementById('meetingF_type')?.value||'';
+    const searchQ=(document.getElementById('meetingF_search')?.value||'').toLowerCase();
+    filtered=data.filter(m=>{
+      if(typeFilter&&m.type!==typeFilter)return false;
+      if(searchQ&&!(m.name||'').toLowerCase().includes(searchQ)&&!(m.location||'').toLowerCase().includes(searchQ))return false;
+      return true;
     });
   }else{
     const q=(document.getElementById('expenseF_name')?.value||'').toLowerCase();
@@ -2777,6 +2941,9 @@ function exportModuleCSV(module){
   }else if(module==='contract'){
     csv+='名称,分类,对方单位,金额,签署日期,到期日期,状态,编号\n';
     filtered.forEach(c=>csv+=`"${c.name}","${c.category||''}","${c.party||''}","${c.amount||0}","${c.signDate||''}","${c.expiry||''}","${c.status||''}","${c.no||''}"\n`);
+  }else if(module==='meeting'){
+    csv+='名称,日期,时间,地点,类型,组织方,参与人数,行动项数,下次会议\n';
+    filtered.forEach(m=>csv+=`"${m.name}","${m.date}","${m.startTime||''}-${m.endTime||''}","${m.location||''}","${m.type}","${m.organizer||''}","${(m.attendees||[]).length}","${(m.actionItems||[]).length}","${m.nextMeetingDate||''}"\n`);
   }else{
     csv+='申请时间,供应商,发票号,开票日期,发票内容,金额,状态,报销日期,备注\n';
     filtered.forEach(e=>csv+=`"${e.appDate||''}","${e.supplier||''}","${e.invoice||''}","${e.invoiceDate||''}","${e.content||''}","${e.amount||0}","${e.status||''}","${e.reimbDate||''}","${e.note||''}"\n`);
@@ -3790,6 +3957,303 @@ function deleteExpense(id){
 }
 
 // ============================================================
+//  MEETING SCHEDULE  (P1-3)
+// ============================================================
+
+let meetingCalendarYear, meetingCalendarMonth;
+
+function initMeetingCalendar(){
+  const now=new Date();
+  meetingCalendarYear=now.getFullYear();
+  meetingCalendarMonth=now.getMonth()+1;
+}
+
+function renderMeetings(){
+  if(!meetingCalendarYear)initMeetingCalendar();
+  renderMeetingCalendar(meetingCalendarYear,meetingCalendarMonth);
+  renderMeetingList();
+}
+
+function renderMeetingCalendar(year,month){
+  meetingCalendarYear=year;meetingCalendarMonth=month;
+  document.getElementById('meetingMonthTitle').textContent=year+'年'+month+'月';
+
+  const firstDay=new Date(year,month-1,1);
+  const lastDay=new Date(year,month,0);
+  const daysInMonth=lastDay.getDate();
+  // 周一=0
+  let startDayOfWeek=firstDay.getDay(); // 0=周日
+  startDayOfWeek=startDayOfWeek===0?6:startDayOfWeek-1; // 调整为周一=0
+
+  const today=new Date();
+  const todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+
+  const meetings=DB.get('meetings');
+  // 本月有会议的日期
+  const meetingDates={};
+  meetings.forEach(m=>{
+    if(!m.deleted&&m.date){
+      const d=new Date(m.date);
+      if(d.getFullYear()===year&&(d.getMonth()+1)===month){
+        const day=d.getDate();
+        if(!meetingDates[day])meetingDates[day]=[];
+        meetingDates[day].push(m);
+      }
+    }
+  });
+
+  let html='';
+  // 上月填充
+  const prevLastDay=new Date(year,month-1,0).getDate();
+  for(let i=startDayOfWeek-1;i>=0;i--){
+    html+=`<div class="cal-day cal-other">${prevLastDay-i}</div>`;
+  }
+  // 本月
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=year+'-'+String(month).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const isToday=dateStr===todayStr;
+    const dayMeetings=meetingDates[d]||[];
+    const hasMeeting=dayMeetings.length>0;
+    html+=`<div class="cal-day${isToday?' cal-today':''}${hasMeeting?' cal-has-meeting':''}"
+      onclick="${hasMeeting?'showDayMeetings('+d+')':'openQuickMeeting(\''+dateStr+'\')'}"
+      title="${hasMeeting?dayMeetings.map(m=>m.name).join('\n'):'点击新增会议'}">
+      <span class="cal-day-num">${d}</span>
+      ${hasMeeting?`<div class="cal-dots">${dayMeetings.slice(0,3).map(m=>{
+      const typeColors={线上:'#3b82f6',线下:'#10b981',混合:'#8b5cf6'};
+      return `<span class="cal-dot" style="background:${typeColors[m.type]||'#6366f1'}" title="${m.name}"></span>`;
+      }).join('')}${dayMeetings.length>3?`<span class="cal-dot-more">+${dayMeetings.length-3}</span>`:''}</div>`:''}
+    </div>`;
+  }
+  // 下月填充
+  const totalCells=Math.ceil((startDayOfWeek+daysInMonth)/7)*7;
+  for(let i=startDayOfWeek+daysInMonth;i<totalCells;i++){
+    html+=`<div class="cal-day cal-other">${i-startDayOfWeek-daysInMonth+1}</div>`;
+  }
+  document.getElementById('meetingCalendarGrid').innerHTML=html;
+
+  // 存储当前月份会议日期供 showDayMeetings 使用
+  window._meetingMonthData=meetingDates;
+}
+
+function prevMeetingMonth(){
+  if(meetingCalendarMonth===1){meetingCalendarMonth=12;meetingCalendarYear--;}
+  else meetingCalendarMonth--;
+  renderMeetings();
+}
+function nextMeetingMonth(){
+  if(meetingCalendarMonth===12){meetingCalendarMonth=1;meetingCalendarYear++;}
+  else meetingCalendarMonth++;
+  renderMeetings();
+}
+function goMeetingToday(){
+  initMeetingCalendar();
+  renderMeetings();
+}
+
+function showDayMeetings(day){
+  const meetings=(window._meetingMonthData||{})[day]||[];
+  if(!meetings.length)return;
+
+  // 高亮并滚动到会议列表
+  renderMeetingList(day);
+  const listEl=document.getElementById('meetingList');
+  if(listEl)listEl.scrollIntoView({behavior:'smooth'});
+}
+
+function openQuickMeeting(dateStr){
+  clearMeetingForm();
+  document.getElementById('meetingDate').value=dateStr;
+  openModal('meetingModal');
+}
+
+function renderMeetingList(highlightDay){
+  const meetings=DB.get('meetings');
+  const typeFilter=document.getElementById('meetingF_type')?.value||'';
+  const searchQ=(document.getElementById('meetingF_search')?.value||'').toLowerCase();
+
+  let filtered=meetings.filter(m=>!m.deleted);
+  if(typeFilter)filtered=filtered.filter(m=>m.type===typeFilter);
+  if(searchQ)filtered=filtered.filter(m=>
+    (m.name||'').toLowerCase().includes(searchQ)||
+    (m.location||'').toLowerCase().includes(searchQ)||
+    (m.organizer||'').toLowerCase().includes(searchQ)||
+    (m.attendees||[]).join(',').toLowerCase().includes(searchQ)
+  );
+
+  // 按日期降序
+  filtered.sort((a,b)=>b.date.localeCompare(a.date));
+
+  if(!filtered.length){
+    document.getElementById('meetingList').innerHTML='<div class="empty-state">暂无会议记录</div>';
+    return;
+  }
+
+  const typeBadge={线上:'badge-blue',线下:'badge-green',混合:'badge-purple'};
+  const typeIcon={线上:'📹',线下:'🏢',混合:'🔀'};
+
+  document.getElementById('meetingList').innerHTML=filtered.map(m=>{
+    const actionCount=m.actionItems?.length||0;
+    const actionDone=m.actionItems?.filter(a=>a.done).length||0;
+    const isHighlight=highlightDay&&m.date&&m.date.endsWith('-'+(highlightDay<10?'0':'')+highlightDay);
+    return `
+    <div class="meeting-card${isHighlight?' meeting-highlight':''}" style="background:var(--color-bg-card);border-radius:10px;padding:14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);${isHighlight?'border-left:3px solid var(--color-primary);':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span class="badge ${typeBadge[m.type]||'badge-gray'}">${typeIcon[m.type]||''} ${m.type}</span>
+            <strong style="font-size:15px">${esc(m.name)}</strong>
+          </div>
+          <div style="color:var(--color-text2);font-size:12px;line-height:1.6;display:flex;flex-wrap:wrap;gap:12px">
+            <span>📅 ${m.date}${m.startTime?' '+m.startTime:''}${m.endTime?'-'+m.endTime:''}</span>
+            ${m.location?`<span>📍 ${esc(m.location)}</span>`:''}
+            ${m.organizer?`<span>👤 ${esc(m.organizer)}</span>`:''}
+            ${m.attendees?.length?`<span>👥 ${m.attendees.length}人</span>`:''}
+          </div>
+          ${m.agenda?`<div style="color:var(--color-text3);font-size:11px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📋 ${esc(m.agenda)}</div>`:''}
+          ${actionCount>0?`<div style="margin-top:6px;font-size:11px;color:var(--color-text3)">✅ 行动项 ${actionDone}/${actionCount}</div>`:''}
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm" onclick="editMeeting(${m.id})" title="编辑">✏️</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteMeeting(${m.id})" title="删除">🗑</button>
+        </div>
+      </div>
+    </div>
+    `;
+  }).join('');
+}
+
+function saveMeeting(){
+  const name=document.getElementById('meetingName').value.trim();
+  const date=document.getElementById('meetingDate').value;
+  if(!name){toast('请输入会议名称');return;}
+  if(!date){toast('请选择会议日期');return;}
+
+  const meetings=DB.raw('meetings');
+  const id=+document.getElementById('meetingId').value;
+  const now=new Date().toISOString().slice(0,10);
+
+  // 收集行动项
+  const actionItems=[];
+  document.querySelectorAll('#meetingActionItems .action-item-row').forEach(row=>{
+    const text=row.querySelector('.ai-text')?.value?.trim();
+    if(text){
+      actionItems.push({
+        text:text,
+        assignee:row.querySelector('.ai-assignee')?.value?.trim()||'',
+        deadline:row.querySelector('.ai-deadline')?.value||'',
+        done:row.querySelector('.ai-done')?.checked||false
+      });
+    }
+  });
+
+  const item={
+    id:id||DB.nextId(meetings),
+    name,
+    date,
+    startTime:document.getElementById('meetingStartTime').value,
+    endTime:document.getElementById('meetingEndTime').value,
+    location:document.getElementById('meetingLocation').value.trim(),
+    type:document.getElementById('meetingType').value,
+    organizer:document.getElementById('meetingOrganizer').value.trim(),
+    attendees:(document.getElementById('meetingAttendees').value||'').split(/[,，]/).map(s=>s.trim()).filter(Boolean),
+    agenda:document.getElementById('meetingAgenda').value.trim(),
+    prepTasks:document.getElementById('meetingPrepTasks').value.trim(),
+    minutes:document.getElementById('meetingMinutes').value.trim(),
+    actionItems,
+    nextMeetingDate:document.getElementById('meetingNextDate').value,
+    todoRef:null,
+    deleted:false,
+    createdAt:now
+  };
+  if(id){
+    const i=meetings.findIndex(m=>m.id===id);
+    if(i>-1){item.todoRef=meetings[i].todoRef;item.deleted=meetings[i].deleted;meetings[i]=item;}
+    else meetings.push(item);
+  }else meetings.push(item);
+  DB.set('meetings',meetings);
+
+  // P1-2 扩展：会议同步工作记录
+  syncLedgerTodo('meeting',item);
+
+  closeModal('meetingModal');
+  clearMeetingForm();
+  renderMeetings();
+  toast('已保存');
+}
+
+function editMeeting(id){
+  const m=DB.get('meetings').find(x=>x.id===id);
+  if(!m)return;
+  document.getElementById('meetingModalTitle').textContent='编辑会议';
+  document.getElementById('meetingId').value=m.id;
+  document.getElementById('meetingName').value=m.name;
+  document.getElementById('meetingDate').value=m.date;
+  document.getElementById('meetingStartTime').value=m.startTime||'';
+  document.getElementById('meetingEndTime').value=m.endTime||'';
+  document.getElementById('meetingLocation').value=m.location||'';
+  document.getElementById('meetingType').value=m.type||'线下';
+  document.getElementById('meetingOrganizer').value=m.organizer||'';
+  document.getElementById('meetingAttendees').value=(m.attendees||[]).join(', ');
+  document.getElementById('meetingAgenda').value=m.agenda||'';
+  document.getElementById('meetingPrepTasks').value=m.prepTasks||'';
+  document.getElementById('meetingMinutes').value=m.minutes||'';
+  document.getElementById('meetingNextDate').value=m.nextMeetingDate||'';
+  // 加载行动项
+  clearMeetingActionItems();
+  if(m.actionItems?.length){
+    m.actionItems.forEach(ai=>addMeetingActionItem(ai));
+  }
+  openModal('meetingModal');
+}
+
+function deleteMeeting(id){
+  if(!confirm('确认删除此会议？'))return;
+  const meetings=DB.raw('meetings');
+  const m=meetings.find(m=>m.id===id);
+  if(m){
+    m.deleted=true;
+    DB.set('meetings',meetings);
+    // P1-2 扩展：软删除关联工作记录
+    syncLedgerTodo('meeting',m,'delete');
+  }
+  renderMeetings();toast('已删除');
+}
+
+function clearMeetingForm(){
+  ['meetingId','meetingName','meetingDate','meetingStartTime','meetingEndTime',
+   'meetingLocation','meetingOrganizer','meetingAttendees','meetingAgenda',
+   'meetingPrepTasks','meetingMinutes','meetingNextDate'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  document.getElementById('meetingType').value='线下';
+  document.getElementById('meetingModalTitle').textContent='新增会议';
+  clearMeetingActionItems();
+}
+
+function clearMeetingActionItems(){
+  document.getElementById('meetingActionItems').innerHTML='';
+  window._meetingActionItemIdx=0;
+}
+
+function addMeetingActionItem(data){
+  if(!window._meetingActionItemIdx)window._meetingActionItemIdx=0;
+  const idx=++window._meetingActionItemIdx;
+  const text=data?.text||'';
+  const assignee=data?.assignee||'';
+  const deadline=data?.deadline||'';
+  const done=data?.done||false;
+  const html=`
+  <div class="action-item-row" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
+    <input class="ai-text" value="${esc(text)}" placeholder="行动项内容" style="flex:2;min-width:120px;font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px">
+    <input class="ai-assignee" value="${esc(assignee)}" placeholder="负责人" style="flex:1;min-width:80px;font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px">
+    <input type="date" class="ai-deadline" value="${deadline}" style="flex:1;min-width:100px;font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px">
+    <label style="font-size:11px;white-space:nowrap;display:flex;align-items:center;gap:2px"><input type="checkbox" class="ai-done" ${done?'checked':''}> 完成</label>
+    <button class="btn btn-ghost btn-sm" onclick="this.closest('.action-item-row').remove()" style="color:var(--color-danger);padding:2px 4px">×</button>
+  </div>`;
+  document.getElementById('meetingActionItems').insertAdjacentHTML('beforeend',html);
+}
+
+// ============================================================
 //  EXPORT / IMPORT DATA
 // ============================================================
 function dumpData(){
@@ -3799,6 +4263,7 @@ function dumpData(){
     contracts:DB.get('contracts'),
     purchases:DB.get('purchases'),
     expenses:DB.get('expenses'),
+    meetings:DB.get('meetings'),
     exportedAt:new Date().toISOString()
   };
 }
@@ -3825,7 +4290,7 @@ function importData(e){
     try{
       const data=JSON.parse(ev.target.result);
       let imported=0;
-      ['todos','inspirations','contracts','purchases','expenses'].forEach(k=>{
+      ['todos','inspirations','contracts','purchases','expenses','meetings'].forEach(k=>{
         if(Array.isArray(data[k])){DB.set(k,data[k]);imported+=data[k].length;}
       });
       toast('已导入 '+imported+' 条数据');
@@ -4028,7 +4493,7 @@ const GITEE={
   _mergeData(data){
     if(data&&data.todos!==undefined){
       let itemsMerged=0;
-      ['todos','inspirations','contracts','purchases','expenses'].forEach(k=>{
+      ['todos','inspirations','contracts','purchases','expenses','meetings'].forEach(k=>{
         if(Array.isArray(data[k])){
           const local=DB.get(k);
           const localMap={};
@@ -4086,7 +4551,7 @@ const _origDBSet=DB.set;
 DB.set=function(key,val){
   _origDBSet(key,val);
   // only sync for main data keys
-  if(['todos','inspirations','contracts','purchases','expenses'].includes(key)){
+  if(['todos','inspirations','contracts','purchases','expenses','meetings'].includes(key)){
     triggerSync();
   }
 };
@@ -4652,6 +5117,7 @@ function renderCurrentPage(){
   if(currentPage==='contract')renderContracts();
   if(currentPage==='purchase')renderPurchases();
   if(currentPage==='expense')renderExpenses();
+  if(currentPage==='meeting')renderMeetings();
 }
 
 // ============================================================
