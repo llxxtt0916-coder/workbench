@@ -5,363 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#3b6bde">
 <title>我的工作台</title>
+<meta name="description" content="为疾控监督员等公卫基层管理者提供个人工作台——统一管理任务、台账、会议、培训、灵感，消除碎片化工具切换和信息遗漏。">
 <link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.svg">
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --nav-w:220px;
-  --color-bg:#f7f8fa;
-  --color-surface:#ffffff;
-  --color-border:#e8eaed;
-  --color-primary:#3b6bde;
-  --color-primary-light:#eef2fc;
-  --color-text:#1a1a2e;
-  --color-text2:#6b7280;
-  --color-text3:#9ca3af;
-  --color-danger:#e24b4a;
-  --color-success:#22c55e;
-  --color-warning:#f59e0b;
-  --color-purple:#7c3aed;
-  --color-teal:#0f766e;
-  --radius:10px;
-  --radius-sm:6px;
-  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
-  --shadow-md:0 4px 16px rgba(0,0,0,.10);
-}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB',sans-serif;background:var(--color-bg);color:var(--color-text);min-height:100vh;overflow-x:hidden}
-a{text-decoration:none;color:inherit}
-button{cursor:pointer;border:none;background:none;font-family:inherit}
-input,textarea,select{font-family:inherit;outline:none}
-
-/* ===== LAYOUT ===== */
-.app{display:flex;min-height:100vh}
-.sidebar{width:var(--nav-w);background:var(--color-surface);border-right:1px solid var(--color-border);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100;transition:transform .25s ease}
-.main{margin-left:var(--nav-w);flex:1;min-height:100vh;display:flex;flex-direction:column}
-.topbar{height:56px;background:var(--color-surface);border-bottom:1px solid var(--color-border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:50}
-.page-content{padding:24px;flex:1;max-width:1100px;width:100%}
-
-/* ===== SIDEBAR ===== */
-.logo{padding:20px 16px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--color-border)}
-.logo-icon{width:32px;height:32px;border-radius:8px;background:var(--color-primary);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.logo-text{font-size:15px;font-weight:600;color:var(--color-text)}
-.nav-section{padding:8px 8px 4px;font-size:11px;color:var(--color-text3);font-weight:500;letter-spacing:.5px;text-transform:uppercase;margin-top:8px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);margin:1px 8px;cursor:pointer;font-size:13.5px;color:var(--color-text2);transition:all .15s;position:relative}
-.nav-item:hover{background:var(--color-bg);color:var(--color-text)}
-.nav-item.active{background:var(--color-primary-light);color:var(--color-primary);font-weight:500}
-.nav-item .nav-icon{width:18px;height:18px;flex-shrink:0;opacity:.7}
-.nav-item.active .nav-icon{opacity:1}
-.nav-badge{background:var(--color-danger);color:#fff;font-size:10px;border-radius:99px;padding:1px 5px;margin-left:auto}
-.sidebar-footer{padding:12px 8px;border-top:1px solid var(--color-border);margin-top:auto;font-size:12px;color:var(--color-text3);text-align:center}
-
-/* ===== TOPBAR ===== */
-.menu-btn{display:none;width:36px;height:36px;border-radius:var(--radius-sm);align-items:center;justify-content:center;color:var(--color-text2);font-size:18px}
-.page-title{font-size:16px;font-weight:600;color:var(--color-text)}
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
-.avatar{width:32px;height:32px;border-radius:50%;background:var(--color-primary);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;cursor:pointer}
-
-/* ===== CARDS ===== */
-.card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
-.card-sm{padding:14px 16px}
-.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.card-title{font-size:14px;font-weight:600;color:var(--color-text)}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-
-/* ===== METRIC CARD ===== */
-.metric{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
-.metric-label{font-size:12px;color:var(--color-text2);margin-bottom:6px}
-.metric-value{font-size:26px;font-weight:600;color:var(--color-text);line-height:1}
-.metric-sub{font-size:11px;color:var(--color-text3);margin-top:4px}
-
-/* ===== BUTTONS ===== */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;transition:all .15s;cursor:pointer;border:1px solid transparent}
-.btn-primary{background:var(--color-primary);color:#fff}
-.btn-primary:hover{background:#2d58c8}
-.btn-outline{background:transparent;border-color:var(--color-border);color:var(--color-text2)}
-.btn-outline:hover{background:var(--color-bg);border-color:#c0c5ce}
-.btn-sm{padding:5px 10px;font-size:12px;border-radius:5px}
-.btn-ghost{background:transparent;color:var(--color-text2)}
-.btn-ghost:hover{background:var(--color-bg)}
-.btn-danger{background:#fef2f2;color:var(--color-danger);border-color:#fecaca}
-.btn-danger:hover{background:#fee2e2}
-
-/* ===== FORM ===== */
-.form-group{margin-bottom:14px}
-.form-label{display:block;font-size:12px;font-weight:500;color:var(--color-text2);margin-bottom:5px}
-.form-control{width:100%;padding:8px 12px;border:1px solid var(--color-border);border-radius:var(--radius-sm);font-size:13.5px;color:var(--color-text);background:var(--color-surface);transition:border .15s}
-.form-control:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px rgba(59,107,222,.1)}
-textarea.form-control{resize:vertical;min-height:80px}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-
-/* ===== MODAL ===== */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;padding:16px}
-.modal-overlay.open{display:flex}
-.modal{background:var(--color-surface);border-radius:var(--radius);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-md)}
-.modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--color-border);display:flex;align-items:center;justify-content:space-between}
-.modal-title{font-size:15px;font-weight:600}
-.modal-body{padding:20px}
-.modal-footer{padding:14px 20px;border-top:1px solid var(--color-border);display:flex;justify-content:flex-end;gap:8px}
-.close-btn{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--color-text3);font-size:18px}
-.close-btn:hover{background:var(--color-bg);color:var(--color-text)}
-
-/* ===== TABLE ===== */
-.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;padding:10px 12px;font-size:11.5px;font-weight:600;color:var(--color-text2);background:#fafafa;border-bottom:1px solid var(--color-border);white-space:nowrap}
-td{padding:11px 12px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:#fafcff}
-
-/* ===== BADGE ===== */
-.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500}
-.badge-blue{background:#eff6ff;color:#1d4ed8}
-.badge-green{background:#f0fdf4;color:#15803d}
-.badge-red{background:#fef2f2;color:#b91c1c}
-.badge-yellow{background:#fffbeb;color:#b45309}
-.badge-purple{background:#f5f3ff;color:#6d28d9}
-.badge-gray{background:#f3f4f6;color:#374151}
-.badge-teal{background:#f0fdfa;color:#0f766e}
-
-/* ===== TAGS ===== */
-.tag-input-wrap{display:flex;flex-wrap:wrap;gap:6px;padding:6px;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);min-height:38px;align-items:center}
-.tag-chip{display:inline-flex;align-items:center;gap:4px;background:var(--color-primary-light);color:var(--color-primary);padding:2px 8px;border-radius:99px;font-size:12px}
-.tag-chip .rm{cursor:pointer;opacity:.6;font-size:14px;line-height:1}
-.tag-chip .rm:hover{opacity:1}
-.tag-filter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
-.tag-pill{padding:4px 12px;border-radius:99px;font-size:12px;cursor:pointer;border:1px solid var(--color-border);background:transparent;color:var(--color-text2);transition:all .15s}
-.tag-pill:hover,.tag-pill.active{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
-
-/* ===== TODO V2 ===== */
-.todo-tab{flex:1;padding:8px 6px;font-size:12px;color:var(--color-text2);cursor:pointer;border:none;background:transparent;border-radius:var(--radius-sm);transition:all .15s;text-align:center;white-space:nowrap;position:relative}
-.todo-tab:hover{color:var(--color-text)}
-.todo-tab.active{background:#fff;color:var(--color-primary);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-.tab-count{margin-left:3px;font-size:10px;color:var(--color-text3)}
-.todo-tab.active .tab-count{color:var(--color-primary)}
-.todo-tab-content{margin-top:12px}
-/* Card */
-.todo-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;transition:box-shadow .15s}
-.todo-card:hover{box-shadow:var(--shadow)}
-.todo-card-header{display:flex;align-items:flex-start;gap:10px}
-.todo-card-title{font-size:14px;font-weight:500;flex:1;min-width:0;line-height:1.4}
-.todo-card-actions{display:none;gap:2px;flex-shrink:0}
-.todo-card:hover .todo-card-actions{display:flex}
-.todo-card-meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--color-text3);margin-top:8px;margin-left:28px}
-.todo-card-body{font-size:12.5px;color:var(--color-text2);line-height:1.6;margin-top:8px;margin-left:28px;padding:8px 10px;background:var(--color-bg);border-radius:var(--radius-sm)}
-/* Tags */
-.tag{display:inline-flex;align-items:center;padding:1px 6px;border-radius:99px;font-size:10px;font-weight:500;flex-shrink:0;white-space:nowrap}
-.tag-cat{background:#eff6ff;color:#1d4ed8}
-.tag-src{background:#fef3c7;color:#92400e}
-/* Subtask bar */
-.todo-subtask-bar{display:flex;align-items:center;gap:8px;padding:6px 0 0 28px;font-size:11px;color:var(--color-text3);cursor:pointer;margin-top:6px;border-top:1px dashed var(--color-border);transition:color .15s}
-.todo-subtask-bar:hover{color:var(--color-primary)}
-.todo-subtask-bar.no-subtask{color:var(--color-text3);opacity:.6}
-.todo-subtask-bar.no-subtask:hover{color:var(--color-primary);opacity:1}
-.subtask-progress{width:60px;height:4px;border-radius:2px;background:#e5e7eb;overflow:hidden;flex-shrink:0}
-.subtask-done-bar{height:100%;border-radius:2px;background:var(--color-primary);transition:width .3s}
-.expand-icon{font-size:10px;transition:transform .2s;flex-shrink:0}
-.todo-subtask-list{padding:8px 0 4px 28px;border-top:1px dashed var(--color-border)}
-.subtask-row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px}
-.subtask-row.done .subtask-text{text-decoration:line-through;color:var(--color-text3)}
-.subtask-text{flex:1;min-width:0;font-size:12.5px}
-.subtask-date{font-size:10px;color:var(--color-text3);flex-shrink:0}
-.subtask-add{display:flex;gap:6px;margin-top:4px}
-.subtask-input{flex:1;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:4px 8px;font-size:12px;color:var(--color-text)}
-/* Reminder banner */
-.reminder-banner{background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #f59e0b;border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;font-size:13px}
-.reminder-banner.danger{background:linear-gradient(135deg,#fee2e2,#fecaca);border-color:var(--color-danger)}
-.reminder-icon{font-size:16px;flex-shrink:0;line-height:1.2}
-.reminder-text{flex:1;line-height:1.5;font-size:12.5px}
-.reminder-text strong{color:#92400e}
-.reminder-banner.danger .reminder-text strong{color:#991b1b}
-.reminder-close{background:none;border:none;cursor:pointer;font-size:14px;color:var(--color-text3);flex-shrink:0;padding:0 2px}
-.reminder-list{margin-top:4px}
-.reminder-item{padding:2px 0;display:flex;align-items:center;gap:6px}
-.reminder-item a{color:var(--color-primary);text-decoration:none;font-weight:500;cursor:pointer}
-.reminder-item a:hover{text-decoration:underline}
-.reminder-days{font-size:11px;color:var(--color-text3);flex-shrink:0}
-.reminder-badge{font-size:10px;padding:0 5px;border-radius:99px;background:var(--color-primary-light);color:var(--color-primary);flex-shrink:0}
-/* Multi-select clear button */
-.multi-dropdown-clear{padding:4px 8px;border-top:1px solid var(--color-border);text-align:right}
-.multi-dropdown-clear button{font-size:11px;color:var(--color-danger);cursor:pointer;background:none;border:none;padding:2px 6px;border-radius:3px}
-.multi-dropdown-clear button:hover{background:#fee2e2}
-/* Deadline clear button */
-.deadline-wrap{display:flex;gap:6px;align-items:center}
-.deadline-wrap .form-control{flex:1}
-.deadline-clear{font-size:11px;color:var(--color-text3);cursor:pointer;background:none;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:4px 10px;flex-shrink:0;white-space:nowrap}
-.deadline-clear:hover{background:var(--color-bg);color:var(--color-danger);border-color:var(--color-danger)}
-/* Filter panel (enterprise grid style) */
-.filter-panel{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius);padding:14px 16px 10px;margin-bottom:12px;font-size:12.5px}
-.filter-panel.collapsed .filter-grid,
-.filter-panel.collapsed .filter-actions-bottom{display:none}
-.filter-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 16px}
-@media(max-width:900px){.filter-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:500px){.filter-grid{grid-template-columns:1fr}}
-.filter-item{display:flex;align-items:center;gap:6px}
-.filter-item label{font-size:12.5px;color:var(--color-text2);white-space:nowrap;min-width:48px;text-align:right;flex-shrink:0}
-.filter-item input,.filter-item select{flex:1;font-size:12.5px;padding:5px 8px;border:1px solid var(--color-border);border-radius:4px;color:var(--color-text);background:#fff;min-width:0}
-.filter-range{display:flex;align-items:center;gap:4px;flex:1}
-.filter-range input{flex:1;min-width:0}
-.filter-range .range-sep{color:var(--color-text3);font-size:12px}
-.filter-actions-bottom{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--color-border)}
-.filter-toggle{font-size:12px;color:var(--color-primary);cursor:pointer;background:none;border:none;display:inline-flex;align-items:center;gap:3px}
-.filter-toggle:hover{text-decoration:underline}
-.filter-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:99px;background:var(--color-primary);color:#fff;font-size:10px;padding:0 5px;margin-left:2px}
-.section-header-right{display:flex;align-items:center;gap:8px}
-/* Export dropdown */
-.export-wrap{position:relative}
-.export-dropdown{position:absolute;right:0;top:100%;z-index:30;background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-sm);box-shadow:var(--shadow-md);min-width:130px;display:none;margin-top:2px}
-.export-dropdown.open{display:block}
-.export-dropdown button{display:block;width:100%;padding:8px 14px;text-align:left;font-size:12.5px;color:var(--color-text);background:none;border:none;cursor:pointer;white-space:nowrap}
-.export-dropdown button:hover{background:var(--color-bg)}
-/* Dashboard clickable metric */
-.metric-clickable{cursor:pointer;transition:all .15s}
-.metric-clickable:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.1)}
-
-.subtask-input:focus{border-color:var(--color-primary);outline:none}
-/* Multi-select dropdown */
-.multi-select{padding:6px 8px;border:1px solid var(--color-border);border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:12.5px;color:var(--color-text);background:#fff;min-height:32px;flex-wrap:wrap;user-select:none}
-.multi-select-placeholder{color:var(--color-text3);font-size:12px}
-.multi-select-arrow{font-size:10px;color:var(--color-text3);flex-shrink:0}
-.multi-select-tag{display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:99px;font-size:11px;background:var(--color-bg);border:1px solid var(--color-border)}
-.multi-select-tag .tag-close{cursor:pointer;font-size:12px;line-height:1;color:var(--color-text3);margin-left:1px}
-.multi-select-tag .tag-close:hover{color:var(--color-danger)}
-.multi-dropdown{display:none;position:absolute;top:100%;left:0;right:0;z-index:100;background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-sm);box-shadow:0 4px 12px rgba(0,0,0,.1);max-height:220px;overflow-y:auto;margin-top:2px}
-.multi-dropdown.open{display:block}
-.multi-dropdown-list{padding:4px 0}
-.multi-dropdown-item{padding:6px 10px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .1s;color:var(--color-text)}
-.multi-dropdown-item:hover{background:var(--color-bg)}
-.multi-dropdown-item input[type=checkbox]{margin:0;accent-color:var(--color-primary)}
-.multi-dropdown-add{display:flex;gap:4px;padding:6px 8px;border-top:1px solid var(--color-border)}
-.multi-dropdown-add .subtask-input{flex:1;font-size:11px;padding:3px 6px}
-/* Blocker badge */
-.blocker-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:11px;background:#fef2f2;color:#991b1b;cursor:pointer}
-.blocker-badge:hover{background:#fee2e2}
-/* Status select inline */
-.status-select{font-size:11px;padding:2px 6px;border-radius:99px;border:1px solid var(--color-border);background:#fff;color:var(--color-text);cursor:pointer;margin-left:4px}
-.status-select:focus{outline:none;border-color:var(--color-primary)}
-/* Restore btn */
-.restore-btn{font-size:10px;padding:2px 8px;border-radius:99px;border:1px solid var(--color-primary);background:transparent;color:var(--color-primary);cursor:pointer;transition:all .15s}
-.restore-btn:hover{background:var(--color-primary);color:#fff}
-/* Keep legacy items */
-.todo-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);transition:background .1s}
-.todo-item:hover{background:#fafcff}
-.todo-item.done .todo-text{text-decoration:line-through;color:var(--color-text3)}
-.todo-check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--color-border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
-.todo-check.checked{background:var(--color-primary);border-color:var(--color-primary)}
-.todo-check.mini{width:14px;height:14px;border-radius:3px}
-.todo-text{font-size:13.5px;line-height:1.5;flex:1}
-.todo-meta{font-size:11px;color:var(--color-text3);margin-top:2px}
-.todo-actions{display:none;gap:4px}
-.todo-item:hover .todo-actions{display:flex}
-.priority-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:6px}
-.p-high{background:var(--color-danger)}
-.p-mid{background:var(--color-warning)}
-.p-low{background:var(--color-success)}
-
-/* ===== INSPIRATION CARD ===== */
-.insp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
-.insp-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .15s,transform .1s}
-.insp-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
-.insp-card-title{font-size:13.5px;font-weight:500;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.insp-card-body{font-size:12.5px;color:var(--color-text2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.insp-card-footer{margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
-.insp-tags{display:flex;flex-wrap:wrap;gap:4px}
-
-/* ===== SEARCH BAR ===== */
-.search-wrap{position:relative;flex:1;max-width:320px}
-.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none}
-.search-input{width:100%;padding:7px 10px 7px 32px;border:1px solid var(--color-border);border-radius:var(--radius-sm);font-size:13px;color:var(--color-text);background:var(--color-bg)}
-.search-input:focus{border-color:var(--color-primary);background:#fff}
-
-/* ===== STATUS/PROGRESS ===== */
-.progress-bar{height:4px;border-radius:2px;background:#e5e7eb;overflow:hidden}
-.progress-fill{height:100%;border-radius:2px;background:var(--color-primary);transition:width .4s}
-
-/* ===== MOBILE NAV OVERLAY ===== */
-.nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:99}
-
-/* ===== RESPONSIVE ===== */
-@media(max-width:768px){
-  .sidebar{transform:translateX(-100%)}
-  .sidebar.open{transform:translateX(0)}
-  .nav-overlay.open{display:block}
-  .main{margin-left:0}
-  .menu-btn{display:flex}
-  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
-  .page-content{padding:14px}
-  .form-row{grid-template-columns:1fr}
-  .topbar{padding:0 14px}
-  .grid-2.dash-metrics{grid-template-columns:1fr 1fr}
-}
-@media(max-width:400px){
-  .grid-2.dash-metrics{grid-template-columns:1fr}
-}
-
-/* ===== EMPTY STATE ===== */
-.empty-state{text-align:center;padding:48px 20px;color:var(--color-text3)}
-.empty-state svg{opacity:.3;margin-bottom:12px}
-.empty-state p{font-size:13px}
-
-/* ===== PAGES ===== */
-.page{display:none}
-.page.active{display:block}
-
-/* ===== SECTION HEADER ===== */
-.section-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-
-/* ===== FINANCE TABS ===== */
-.tabs{display:flex;border-bottom:1px solid var(--color-border);margin-bottom:16px;gap:2px}
-.tab{padding:9px 16px;font-size:13px;color:var(--color-text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
-.tab:hover{color:var(--color-text)}
-.tab.active{color:var(--color-primary);border-bottom-color:var(--color-primary);font-weight:500}
-.tab-content{display:none}
-.tab-content.active{display:block}
-
-/* ===== CHART ===== */
-.chart-wrap{position:relative;width:100%;height:200px}
-
-/* toast */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:10px 20px;border-radius:var(--radius);font-size:13px;z-index:999;transition:transform .3s;pointer-events:none}
-.toast.show{transform:translateX(-50%) translateY(0)}
-
-/* sync status */
-.sync-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.sync-ok{background:var(--color-success)}
-.sync-loading{background:var(--color-warning);animation:pulse 1s ease-in-out infinite}
-.sync-error{background:var(--color-danger)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-
-/* backup banner */
-.backup-banner{display:none;align-items:center;gap:10px;padding:10px 16px;background:#fffbeb;border:1px solid #fde68a;border-radius:var(--radius);margin-bottom:16px;font-size:12.5px;color:#92400e}
-.backup-banner.show{display:flex}
-.backup-banner .btn{flex-shrink:0;font-size:11px;padding:4px 10px}
-
-/* settings grid */
-.settings-row{display:flex;align-items:flex-start;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--color-border)}
-.settings-row:last-child{border-bottom:none}
-.settings-label{font-size:13px;font-weight:500;color:var(--color-text)}
-.settings-desc{font-size:11.5px;color:var(--color-text3);margin-top:2px}
-.settings-input{width:200px;padding:6px 10px;border:1px solid var(--color-border);border-radius:var(--radius-sm);font-size:13px}
-.settings-input:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px rgba(59,107,222,.1)}
-
-/* smart input */
-.smart-textarea{width:100%;min-height:120px;padding:12px;border:2px solid var(--color-border);border-radius:var(--radius);font-size:13px;font-family:inherit;resize:vertical;line-height:1.6;box-sizing:border-box}
-.smart-textarea:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px rgba(59,107,222,.1)}
-.cat-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--color-border);background:var(--color-bg);transition:all .2s}
-.cat-badge.active{border-color:var(--color-primary);background:rgba(59,107,222,.08);color:var(--color-primary)}
-.cat-badge:hover{border-color:var(--color-primary)}
-.cat-row{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
-.preview-card{background:var(--color-bg);border-radius:var(--radius);padding:14px;margin-top:12px;font-size:12.5px;line-height:1.7}
-.preview-card .field{display:flex;gap:8px;margin-bottom:6px}
-.preview-card .field-label{color:var(--color-text3);min-width:50px;flex-shrink:0}
-.preview-card .field-value{color:var(--color-text);word-break:break-all}
-</style>
+<link rel="stylesheet" href="styles/base.css">
+<link rel="stylesheet" href="styles/layout.css">
+<link rel="stylesheet" href="styles/components.css">
 </head>
 <body>
 <div class="app">
@@ -396,6 +50,15 @@ tr:hover td{background:#fafcff}
       灵感收集
     </div>
 
+    <div class="nav-section">日程</div>
+    <div class="nav-item" onclick="navigate('meeting',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+      会议日程
+    </div>
+    <div class="nav-item" onclick="navigate('training',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.987 1 1 0 01.25-.663zM7 12.818v-3.12l2.606 1.116a1 1 0 00.788 0L13 9.698v3.12a1 1 0 01-.606.922l-5 2.143a1 1 0 01-.788 0l-5-2.143a1 1 0 01-.606-.922z" clip-rule="evenodd"/></svg>
+      培训记录
+    </div>
     <div class="nav-section">台账</div>
     <div class="nav-item" onclick="navigate('purchase',this)">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>
@@ -747,6 +410,76 @@ tr:hover td{background:#fafcff}
           </table>
         </div>
       </div>
+    </div>
+
+    <!-- ====== MEETING PAGE ====== -->
+    <div class="page" id="page-meeting">
+      <div class="section-header">
+        <span style="font-size:16px;font-weight:600" id="meetingMonthTitle">2026年6月</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn btn-sm btn-outline" onclick="prevMeetingMonth()">◀ 上月</button>
+          <button class="btn btn-sm btn-outline" onclick="goMeetingToday()">今天</button>
+          <button class="btn btn-sm btn-outline" onclick="nextMeetingMonth()">下月 ▶</button>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('meeting')">导出</button>
+          <button class="btn btn-primary btn-sm" onclick="clearMeetingForm();openModal('meetingModal')">+ 新增会议</button>
+        </div>
+      </div>
+      <!-- 日历网格 -->
+      <div style="margin-bottom:16px;background:var(--color-bg-card);border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+        <div class="cal-weekdays" style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--color-text3);padding:4px 0 8px 0;font-weight:500">
+          <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span style="color:var(--color-danger)">六</span><span style="color:var(--color-danger)">日</span>
+        </div>
+        <div id="meetingCalendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"></div>
+      </div>
+      <!-- 会议列表 -->
+      <div class="section-header" style="margin-top:0">
+        <span style="font-size:16px;font-weight:600">会议列表</span>
+        <div style="display:flex;gap:6px">
+          <select id="meetingF_type" onchange="renderMeetings()" style="font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px">
+            <option value="">全部类型</option>
+            <option value="线上">线上</option>
+            <option value="线下">线下</option>
+            <option value="混合">混合</option>
+          </select>
+          <input placeholder="搜索…" id="meetingF_search" oninput="renderMeetings()" style="font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px;width:140px">
+        </div>
+      </div>
+      <div id="meetingList"></div>
+    </div>
+
+    <!-- ====== TRAINING PAGE ====== -->
+    <div class="page" id="page-training">
+      <div class="section-header">
+        <span style="font-size:16px;font-weight:600">📚 培训记录</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('training')">导出</button>
+          <button class="btn btn-primary btn-sm" onclick="clearTrainingForm();openModal('trainingModal')">+ 新增培训</button>
+        </div>
+      </div>
+      <!-- 筛选 -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+        <select id="trainingF_cat" onchange="renderTrainings()" style="font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px">
+          <option value="">全部分类</option>
+          <option value="业务培训">业务培训</option>
+          <option value="继续教育">继续教育</option>
+          <option value="党建学习">党建学习</option>
+          <option value="其他">其他</option>
+        </select>
+        <select id="trainingF_type" onchange="renderTrainings()" style="font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px">
+          <option value="">全部类型</option>
+          <option value="线上">线上</option>
+          <option value="线下">线下</option>
+          <option value="混合">混合</option>
+        </select>
+        <input placeholder="搜索…" id="trainingF_search" oninput="renderTrainings()" style="font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px;width:140px">
+        <label style="font-size:11px;color:var(--color-text3);margin-left:auto;display:flex;align-items:center;gap:4px">
+          <input type="checkbox" id="trainingF_expiring" onchange="renderTrainings()"> 仅看即将到期证书
+        </label>
+      </div>
+      <div id="trainingStats" style="margin-bottom:12px"></div>
+      <div id="trainingList"></div>
     </div>
 
     <!-- ====== EXPENSE PAGE ====== -->
@@ -1214,6 +947,10 @@ tr:hover td{background:#fafcff}
         <label class="form-label">发票内容 *</label>
         <textarea class="form-control" id="expenseContent" placeholder="多条发票内容用顿号（、）隔开，如：技术服务费、咨询服务费" rows="2"></textarea>
       </div>
+      <div class="form-group">
+        <label class="form-label">备注</label>
+        <textarea class="form-control" id="expenseNote" rows="2" placeholder="可选备注…"></textarea>
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">报销状态</label>
@@ -1245,6 +982,215 @@ tr:hover td{background:#fafcff}
     <div class="modal-body" id="detailBody"></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('detailModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Training Modal -->
+<div class="modal-overlay" id="trainingModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <span class="modal-title" id="trainingModalTitle">新增培训</span>
+      <button class="close-btn" onclick="closeModal('trainingModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="trainingId">
+      <div class="form-group">
+        <label class="form-label">培训名称 *</label>
+        <input class="form-control" id="trainingName" placeholder="如：2026年度公卫继续教育培训">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">组织方</label>
+          <input class="form-control" id="trainingOrganizer" placeholder="如：市疾控中心">
+        </div>
+        <div class="form-group">
+          <label class="form-label">类型</label>
+          <select class="form-control" id="trainingType">
+            <option value="线下">线下</option>
+            <option value="线上">线上</option>
+            <option value="混合">混合</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">分类</label>
+          <select class="form-control" id="trainingCategory">
+            <option value="业务培训">业务培训</option>
+            <option value="继续教育">继续教育</option>
+            <option value="党建学习">党建学习</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">费用状态</label>
+          <select class="form-control" id="trainingFeeStatus">
+            <option value="自费">自费</option>
+            <option value="公费">公费</option>
+            <option value="免费">免费</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">开始日期 *</label>
+          <input type="date" class="form-control" id="trainingStartDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">结束日期</label>
+          <input type="date" class="form-control" id="trainingEndDate">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">费用（元）</label>
+          <input type="number" class="form-control" id="trainingFee" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">学分/学时</label>
+          <input type="number" class="form-control" id="trainingCredits" placeholder="0" step="0.5">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">学分类型</label>
+          <input class="form-control" id="trainingCreditType" placeholder="如：I类学分">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="trainingHasCertificate" onchange="document.getElementById('certFields').style.display=this.checked?'block':'none'"> 有证书
+        </label>
+      </div>
+      <div id="certFields" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">证书编号</label>
+            <input class="form-control" id="trainingCertNo" placeholder="证书编号">
+          </div>
+          <div class="form-group">
+            <label class="form-label">证书到期日</label>
+            <input type="date" class="form-control" id="trainingCertExpiry">
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="trainingHasExam" onchange="document.getElementById('examFields').style.display=this.checked?'block':'none'"> 有考核
+        </label>
+      </div>
+      <div id="examFields" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">考核日期</label>
+            <input type="date" class="form-control" id="trainingExamDate">
+          </div>
+          <div class="form-group">
+            <label class="form-label">考核结果</label>
+            <select class="form-control" id="trainingExamResult">
+              <option value="">待定</option>
+              <option value="合格">合格</option>
+              <option value="优秀">优秀</option>
+              <option value="不合格">不合格</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">培训内容摘要</label>
+        <textarea class="form-control" id="trainingContent" rows="2" placeholder="培训主要内容…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">附件链接</label>
+        <input class="form-control" id="trainingAttachment" placeholder="培训通知/课件链接">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('trainingModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveTraining()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Meeting Modal -->
+<div class="modal-overlay" id="meetingModal">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <span class="modal-title" id="meetingModalTitle">新增会议</span>
+      <button class="close-btn" onclick="closeModal('meetingModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="meetingId">
+      <div class="form-group">
+        <label class="form-label">会议名称 *</label>
+        <input class="form-control" id="meetingName" placeholder="如：月度工作例会">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">会议日期 *</label>
+          <input type="date" class="form-control" id="meetingDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">类型</label>
+          <select class="form-control" id="meetingType">
+            <option value="线下">线下</option>
+            <option value="线上">线上</option>
+            <option value="混合">混合</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">开始时间</label>
+          <input type="time" class="form-control" id="meetingStartTime">
+        </div>
+        <div class="form-group">
+          <label class="form-label">结束时间</label>
+          <input type="time" class="form-control" id="meetingEndTime">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">地点</label>
+          <input class="form-control" id="meetingLocation" placeholder="如：3楼会议室">
+        </div>
+        <div class="form-group">
+          <label class="form-label">组织方</label>
+          <input class="form-control" id="meetingOrganizer" placeholder="如：卫健委">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">参与人（逗号分隔）</label>
+        <input class="form-control" id="meetingAttendees" placeholder="张三,李四,王五">
+      </div>
+      <div class="form-group">
+        <label class="form-label">会议议程</label>
+        <textarea class="form-control" id="meetingAgenda" rows="2" placeholder="议程要点…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">会前准备事项</label>
+        <textarea class="form-control" id="meetingPrepTasks" rows="2" placeholder="需要准备的资料、设备等…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">会议纪要</label>
+        <textarea class="form-control" id="meetingMinutes" rows="3" placeholder="会议记录、决议…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;justify-content:space-between;align-items:center">
+          行动项
+          <button class="btn btn-ghost btn-sm" onclick="addMeetingActionItem()" style="color:var(--color-primary);font-size:11px">+ 添加</button>
+        </label>
+        <div id="meetingActionItems"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">下次会议时间</label>
+        <input type="date" class="form-control" id="meetingNextDate">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('meetingModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveMeeting()">保存</button>
     </div>
   </div>
 </div>
@@ -1369,30 +1315,59 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
 // ============================================================
 //  DATA LAYER
 // ============================================================
+// ----- Date normalization -----
+function normalizeDate(str){
+  if(!str)return'';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
+  const d=new Date(str);
+  if(isNaN(d.getTime()))return'';
+  return d.toISOString().slice(0,10);
+}
+
 const DB = {
-  get(key){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return[]}},
+  get(key){try{return JSON.parse(localStorage.getItem(key)||'[]').filter(r=>!r.deleted)}catch{return[]}},
   set(key,val){localStorage.setItem(key,JSON.stringify(val))},
-  nextId(arr){return arr.length?Math.max(0,...arr.map(x=>typeof x.id==='number'?x.id:0))+1:1}
+  nextId(arr){return arr.length?Math.max(0,...arr.map(x=>typeof x.id==='number'?x.id:0))+1:1},
+  raw(key){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return[]}}
 };
 
-// 自动修复第一版智能录入产生的非数字 ID 和字段名问题
+// 自动修复历史数据（格式迁移 + ID修复 + 字段补齐 + 日期标准化 + 软删除）
 function repairData(){
-  const keys=['todos','inspirations','contracts','purchases','expenses'];
+  const keys=['todos','inspirations','contracts','purchases','expenses','meetings','trainings'];
   let repaired=false;
 
   keys.forEach(key=>{
-    const records=DB.get(key);
+    const records=DB.raw(key);
     if(!records.length)return;
 
     const hasNonNumeric=records.some(r=>typeof r.id!=='number');
     const hasOldTodoFormat=key==='todos'&&records.some(r=>r.text&&!r.name);
     const hasNonArrayCategory=key==='todos'&&records.some(r=>!Array.isArray(r.category)||!Array.isArray(r.source));
-    if(!hasNonNumeric&&!hasOldTodoFormat&&!hasNonArrayCategory)return;
+    // P0-3 新增检测：缺失字段 / 非标准日期 / 无 deleted 标记
+    const hasMissingRefs=key==='todos'&&records.some(r=>r.id&&r.contractRef===undefined);
+    const hasFullISO=records.some(r=>r.createdAt&&!/^\d{4}-\d{2}-\d{2}$/.test(String(r.createdAt)));
+    const hasNoDeleted=records.some(r=>r.deleted===undefined);
+    const hasEmptyStatus=records.some(r=>r.status===undefined||r.status==='');
+    const needsCategoryFix=key==='expenses'&&records.some(r=>r.category===undefined);
+    // P1-1 字段命名规范：expenses 补齐 note 字段（与 contracts/purchases 保持一致）
+    const needsExpenseNote=key==='expenses'&&records.some(r=>r.note===undefined);
+
+    if(!hasNonNumeric&&!hasOldTodoFormat&&!hasNonArrayCategory
+      &&!hasMissingRefs&&!hasFullISO&&!hasNoDeleted&&!hasEmptyStatus&&!needsCategoryFix&&!needsExpenseNote)return;
 
     const fixed=records.map((r,idx)=>{
       let rec={...r};
       rec.id=idx+1;
+      // 统一补齐软删除标记
+      rec.deleted=rec.deleted===true;
 
+      // ============================================================
+      //  字段命名规范 (P1-1)
+      //  - content: 主体内容（详细描述/发票内容/灵感正文）
+      //  - note: 补充备注（合同/采购/报销的附加说明）
+      //  - name: 台账类名称（合同/采购/工作记录）
+      //  - title: 灵感类标题
+      // ============================================================
       switch(key){
         case 'todos':
           // Migrate old format {text,due,note,done,doneAt} → new format {type,name,...}
@@ -1412,10 +1387,10 @@ function repairData(){
               blocker:'',
               status:rec.done?'已完成':'未开始',
               subtasks:[],
-              createdAt:rec.createdAt||''
+              createdAt:rec.createdAt||'',
+              deleted:false
             };
           }else{
-            // Fix new-format records with non-numeric IDs
             rec.type=rec.type||'pending';
             rec.name=rec.name||'未命名工作';
             rec.category=Array.isArray(rec.category)?rec.category:rec.category?[rec.category]:[];
@@ -1428,8 +1403,13 @@ function repairData(){
             rec.blocker=rec.blocker||'';
             rec.status=rec.status||'未开始';
             rec.subtasks=Array.isArray(rec.subtasks)?rec.subtasks.map(s=>({...s,addTime:s.addTime||s.date||'',completeTime:s.completeTime||''})):[];
-            rec.createdAt=rec.createdAt||'';
-            rec.id=idx+1;
+            rec.createdAt=normalizeDate(rec.createdAt);
+            // Phase 0 数据条件：补齐台账外键
+            rec.contractRef=rec.contractRef||null;
+            rec.purchaseRef=rec.purchaseRef||null;
+            rec.expenseRef=rec.expenseRef||null;
+            rec.meetingRef=rec.meetingRef||null;
+            rec.trainingRef=rec.trainingRef||null;
           }
           break;
         case 'inspirations':
@@ -1437,25 +1417,72 @@ function repairData(){
           rec.title=rec.title||'未命名灵感';
           rec.content=rec.content||'';
           rec.tags=Array.isArray(rec.tags)?rec.tags:['想法'];
-          rec.createdAt=rec.createdAt||'';
+          rec.createdAt=normalizeDate(rec.createdAt);
           break;
         case 'contracts':
           rec.name=rec.name||'';rec.party=rec.party||'';
-          rec.amount=rec.amount||0;rec.date=rec.date||'';
+          rec.amount=rec.amount||0;rec.signDate=rec.signDate||rec.date||'';
           rec.expiry=rec.expiry||'';rec.status=rec.status||'执行中';
-          rec.note=rec.note||'';rec.createdAt=rec.createdAt||'';
+          rec.note=rec.note||'';rec.category=rec.category||'货物类';
+          rec.todoRef=rec.todoRef||null;
+          rec.createdAt=normalizeDate(rec.createdAt);
           break;
         case 'purchases':
           rec.name=rec.name||'';rec.supplier=rec.supplier||'';
           rec.amount=rec.amount||0;rec.date=rec.date||'';
           rec.status=rec.status||'申请中';rec.note=rec.note||'';
-          rec.createdAt=rec.createdAt||'';
+          rec.category=rec.category||'货物类';
+          rec.todoRef=rec.todoRef||null;
+          rec.createdAt=normalizeDate(rec.createdAt);
           break;
         case 'expenses':
-          rec.name=rec.name||'';rec.amount=rec.amount||0;
-          rec.date=rec.date||'';rec.invoice=rec.invoice||'';
-          rec.type=rec.type||'其他';rec.status=rec.status||'待报销';
-          rec.note=rec.note||'';rec.createdAt=rec.createdAt||'';
+          rec.appDate=rec.appDate||'';rec.content=rec.content||'';rec.note=rec.note||'';
+          rec.supplier=rec.supplier||'';
+          rec.amount=rec.amount||0;
+          rec.invoice=rec.invoice||'';rec.invoiceDate=rec.invoiceDate||'';
+          rec.status=rec.status||'待报销';rec.reimbDate=rec.reimbDate||'';
+          rec.category=rec.category||'其他';
+          rec.todoRef=rec.todoRef||null;
+          rec.createdAt=normalizeDate(rec.createdAt);
+          break;
+        case 'meetings':
+          rec.name=rec.name||'';
+          rec.date=rec.date||'';
+          rec.startTime=rec.startTime||'';
+          rec.endTime=rec.endTime||'';
+          rec.location=rec.location||'';
+          rec.type=rec.type||'线下';
+          rec.organizer=rec.organizer||'';
+          rec.attendees=Array.isArray(rec.attendees)?rec.attendees:[];
+          rec.agenda=rec.agenda||'';
+          rec.prepTasks=rec.prepTasks||'';
+          rec.minutes=rec.minutes||'';
+          rec.actionItems=Array.isArray(rec.actionItems)?rec.actionItems:[];
+          rec.nextMeetingDate=rec.nextMeetingDate||'';
+          rec.todoRef=rec.todoRef||null;
+          rec.createdAt=normalizeDate(rec.createdAt);
+          break;
+        case 'trainings':
+          rec.name=rec.name||'';
+          rec.organizer=rec.organizer||'';
+          rec.type=rec.type||'线下';
+          rec.category=rec.category||'业务培训';
+          rec.startDate=rec.startDate||'';
+          rec.endDate=rec.endDate||'';
+          rec.credits=rec.credits||0;
+          rec.creditType=rec.creditType||'';
+          rec.hasCertificate=rec.hasCertificate||false;
+          rec.certificateNo=rec.certificateNo||'';
+          rec.certificateExpiry=rec.certificateExpiry||'';
+          rec.fee=rec.fee||0;
+          rec.feeStatus=rec.feeStatus||'自费';
+          rec.hasExam=rec.hasExam||false;
+          rec.examDate=rec.examDate||'';
+          rec.examResult=rec.examResult||'';
+          rec.content=rec.content||'';
+          rec.attachment=rec.attachment||'';
+          rec.todoRef=rec.todoRef||null;
+          rec.createdAt=normalizeDate(rec.createdAt);
           break;
       }
       return rec;
@@ -1465,13 +1492,23 @@ function repairData(){
     repaired=true;
   });
 
-  if(repaired)console.log('✅ 历史数据已自动修复（格式迁移+ID修复）');
+  if(repaired)console.log('✅ 历史数据已自动修复（格式迁移+ID修复+字段补齐）');
+
+  // P1-2 回填：为 P1-2 之前创建的台账补全工作记录联动（一次性，幂等）
+  ['contracts','purchases','expenses'].forEach(key=>{
+    const records=DB.raw(key);
+    const missing=records.filter(r=>r.id&&!r.deleted&&!r.todoRef&&!r._fromPurchase);
+    if(!missing.length)return;
+    const mod=key==='expenses'?'expenses':key.slice(0,-1);
+    missing.forEach(r=>syncLedgerTodo(mod,r));
+    console.log('🔗 '+key+'：为 '+missing.length+' 条历史记录补全了工作记录联动');
+  });
 }
 
 // ============================================================
 //  NAVIGATION
 // ============================================================
-const pageTitles={dashboard:'驾驶舱',todo:'工作记录',inspiration:'灵感收集',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
+const pageTitles={dashboard:'驾驶舱',todo:'工作记录',inspiration:'灵感收集',meeting:'会议日程',training:'培训记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
 let currentPage='dashboard';
 let todoChartInst=null, contractChartInst=null;
 
@@ -1489,6 +1526,8 @@ function navigate(page,el){
   if(page==='contract')renderContracts();
   if(page==='purchase')renderPurchases();
   if(page==='expense')renderExpenses();
+  if(page==='meeting')renderMeetings();
+  if(page==='training')renderTrainings();
 }
 
 function toggleSidebar(){
@@ -1836,9 +1875,10 @@ function changeTodoStatus(id,newStatus){
 }
 
 function restoreTodo(id){
-  const todos=DB.get('todos');
+  const todos=DB.raw('todos');
   const t=todos.find(x=>x.id===id);
   if(!t)return;
+  t.deleted=false;
   if(t.type!=='record'){toast('该记录不在工作记录中');return;}
   t.type=t._prevType||'pending';
   t.status='进行中';
@@ -1916,7 +1956,13 @@ function saveTodo(){
     completeDate:'',
     subtasks:[],
     createdAt:now,
-    recurrence:null
+    recurrence:null,
+    contractRef:null,
+    purchaseRef:null,
+    expenseRef:null,
+    meetingRef:null,
+    trainingRef:null,
+    deleted:false
   };
   // 如果是周期工作，保存周期配置
   if(item.type==='recurring'){
@@ -1936,17 +1982,25 @@ function saveTodo(){
     }
   }
   if(id){
-    const i=todos.findIndex(t=>t.id===id);
+    const todosRaw=DB.raw('todos');
+    const i=todosRaw.findIndex(t=>t.id===id);
     if(i>-1){
-      item.subtasks=todos[i].subtasks||[];
-      item.completeDate=todos[i].completeDate||'';
-      item.status=todos[i].status||'未开始';
-      item._prevType=todos[i]._prevType;
-      if(todos[i].type==='record')item.type='record';
-      todos[i]=item;
-    }else{todos.push(item);}
-  }else{todos.push(item);}
-  DB.set('todos',todos);
+      const old=todosRaw[i];
+      item.subtasks=old.subtasks||[];
+      item.completeDate=old.completeDate||'';
+      item.status=old.status||'未开始';
+      item._prevType=old._prevType;
+      item.contractRef=old.contractRef||null;
+      item.purchaseRef=old.purchaseRef||null;
+      item.expenseRef=old.expenseRef||null;
+      item.meetingRef=old.meetingRef||null;
+      item.trainingRef=old.trainingRef||null;
+      item.deleted=old.deleted||false;
+      if(old.type==='record')item.type='record';
+      todosRaw[i]=item;
+    }else{todosRaw.push(item);}
+    DB.set('todos',todosRaw);
+  }else{todos.push(item);DB.set('todos',todos);}
   closeModal('todoModal');
   clearTodoForm();
   renderTodo();
@@ -2002,7 +2056,9 @@ function clearTodoForm(){
 
 function deleteTodo(id){
   if(!confirm('确认删除此工作记录？'))return;
-  const todos=DB.get('todos').filter(t=>t.id!==id);
+  const todos=DB.raw('todos');
+  const t=todos.find(t=>t.id===id);
+  if(t)t.deleted=true;
   DB.set('todos',todos);
   renderTodo();
   toast('已删除');
@@ -2109,7 +2165,13 @@ function completeRecurringTodo(id){
     completeDate:today,
     subtasks:[],
     createdAt:today,
-    _prevType:'recurring'
+    _prevType:'recurring',
+    contractRef:t.contractRef||null,
+    purchaseRef:t.purchaseRef||null,
+    expenseRef:t.expenseRef||null,
+    meetingRef:t.meetingRef||null,
+    trainingRef:t.trainingRef||null,
+    deleted:false
   });
   // 下次到期时间后推
   let nextDue=calcNextDue(t.recurrence,t.deadline||today);
@@ -2558,11 +2620,11 @@ function saveInspiration(){
     title,
     content:document.getElementById('inspContent').value,
     tags:JSON.parse(document.getElementById('inspTags').value||'[]'),
-    createdAt:new Date().toISOString()
+    createdAt:new Date().toISOString().slice(0,10),
+    deleted:false
   };
-  if(id){const i=insps.findIndex(x=>x.id===id);if(i>-1)insps[i]=item;else insps.push(item);}
+  if(id){const i=insps.findIndex(x=>x.id===id);if(i>-1){item.deleted=insps[i].deleted;insps[i]=item;}else insps.push(item);}
   else insps.push(item);
-  DB.set('inspirations',insps);
   closeModal('inspModal');
   clearInspForm();
   renderInspiration();
@@ -2591,7 +2653,10 @@ function editInsp(id){
 
 function deleteInsp(id){
   if(!confirm('确认删除？'))return;
-  DB.set('inspirations',DB.get('inspirations').filter(i=>i.id!==id));
+  const insps=DB.raw('inspirations');
+  const x=insps.find(i=>i.id===id);
+  if(x)x.deleted=true;
+  DB.set('inspirations',insps);
   renderInspiration();toast('已删除');
 }
 
@@ -2663,27 +2728,168 @@ function renderContracts(){
   updateGenericFilterCount('contract');
 }
 
+// ============================================================
+//  P1-2 台账 ↔ 工作记录自动同步
+//  原则：台账创建/更新时自动在工作记录(todos)中生成/同步对应条目
+//  删除台账时同步软删除关联的工作记录
+// ============================================================
+
+const SYNC_MODULE_LABELS={contract:'合同',purchase:'采购',expenses:'报销',meeting:'会议',training:'培训'};
+const SYNC_MODULE_CATEGORIES={contract:'合同管理',purchase:'采购管理',expenses:'报销管理',meeting:'会议管理',training:'培训管理'};
+
+function syncLedgerTodo(module, ledger, action){
+  const todos=DB.raw('todos');
+  const now=new Date().toISOString().slice(0,10);
+
+  // 生成工作记录名称
+  let todoName;
+  if(module==='contract'){
+    todoName='合同「'+ledger.name+'」';
+  }else if(module==='purchase'){
+    todoName='采购「'+ledger.name+'」';
+  }else if(module==='meeting'){
+    todoName='会议「'+ledger.name+'」';
+  }else if(module==='training'){
+    todoName='培训「'+ledger.name+'」';
+  }else{
+    todoName='报销「'+(ledger.content||'未知内容').slice(0,20)+'」';
+  }
+
+  // 生成工作记录内容摘要
+  const detailParts=[];
+  if(ledger.amount)detailParts.push('金额 ¥'+Number(ledger.amount).toLocaleString());
+  if(module==='contract'&&ledger.party)detailParts.push('对方单位 '+ledger.party);
+  if(module==='purchase'&&ledger.supplier)detailParts.push('供应商 '+ledger.supplier);
+  if(module==='expenses'&&ledger.supplier)detailParts.push('供应商 '+ledger.supplier);
+  if(module==='meeting'){
+    if(ledger.date)detailParts.push('日期 '+ledger.date);
+    if(ledger.location)detailParts.push('地点 '+ledger.location);
+    if(ledger.type)detailParts.push('类型 '+ledger.type);
+  }
+  if(module==='training'){
+    if(ledger.startDate)detailParts.push('开始 '+ledger.startDate);
+    if(ledger.organizer)detailParts.push('组织方 '+ledger.organizer);
+    if(ledger.credits)detailParts.push(ledger.credits+'学分');
+  }
+  const todoContent=detailParts.join('\n');
+
+  // 台账状态 → 工作记录状态映射
+  let todoStatus='未开始';
+  if(module==='contract'){
+    if(ledger.status==='已签')todoStatus='已完成';
+    else if(ledger.status==='执行中')todoStatus='进行中';
+    else if(ledger.status==='已到期')todoStatus='进行中';
+    else if(ledger.status==='已终止')todoStatus='已完成';
+    else if(ledger.status==='已解除')todoStatus='已完成';
+  }else if(module==='purchase'){
+    if(ledger.status==='已到货')todoStatus='已完成';
+    else if(ledger.status==='已拒绝')todoStatus='已取消';
+    else if(ledger.status==='审批通过')todoStatus='进行中';
+  }else if(module==='meeting'){
+    // 会议基于日期判断状态
+    const meetingDate=ledger.date||'';
+    if(meetingDate>now)todoStatus='未开始';
+    else if(meetingDate===now)todoStatus='进行中';
+    else todoStatus='已完成';
+  }else if(module==='training'){
+    // 培训基于日期判断状态
+    const trainingEnd=ledger.endDate||ledger.startDate||'';
+    if(trainingEnd>now)todoStatus='未开始';
+    else if(trainingEnd===now)todoStatus='进行中';
+    else todoStatus='已完成';
+  }else{
+    if(ledger.status==='已报销')todoStatus='已完成';
+  }
+
+  if(action==='delete'){
+    // 软删除关联的工作记录
+    if(ledger.todoRef){
+      const todo=todos.find(t=>t.id===ledger.todoRef);
+      if(todo&&!todo.deleted){
+        todo.deleted=true;
+        DB.set('todos',todos);
+      }
+    }
+    return;
+  }
+
+  if(ledger.todoRef){
+    // 更新已有工作记录
+    const idx=todos.findIndex(t=>t.id===ledger.todoRef);
+    if(idx>-1){
+      const todo=todos[idx];
+      todo.name=todoName;
+      todo.content=todoContent;
+      todo.status=todoStatus;
+      todo.issueDate=ledger.signDate||ledger.date||ledger.appDate||todo.issueDate;
+      if(module==='contract'&&ledger.expiry)todo.deadline=ledger.expiry;
+      if(todoStatus==='已完成'&&!todo.completeDate)todo.completeDate=now;
+      DB.set('todos',todos);
+    }
+  }else{
+    // 新建工作记录
+    const todoId=DB.nextId(todos);
+    const newTodo={
+      id:todoId,
+      type:'pending',
+      name:todoName,
+      category:[SYNC_MODULE_CATEGORIES[module]],
+      source:['台账生成'],
+      priority:'low',
+      content:todoContent,
+      issueDate:ledger.signDate||ledger.date||ledger.appDate||'',
+      deadline:module==='contract'?ledger.expiry||'':'',
+      completeDate:todoStatus==='已完成'?now:'',
+      blocker:'',
+      status:todoStatus,
+      subtasks:[],
+      createdAt:ledger.createdAt||now,
+      contractRef:module==='contract'?ledger.id:null,
+      purchaseRef:module==='purchase'?ledger.id:null,
+      expenseRef:module==='expenses'?ledger.id:null,
+      meetingRef:module==='meeting'?ledger.id:null,
+      trainingRef:module==='training'?ledger.id:null,
+      deleted:false
+    };
+    todos.push(newTodo);
+    DB.set('todos',todos);
+    // 将 todoRef 回写到 ledger
+    const key=module==='expenses'?'expenses':(module+'s');
+    const ledgers=DB.raw(key);
+    const lIdx=ledgers.findIndex(l=>l.id===ledger.id);
+    if(lIdx>-1){
+      ledgers[lIdx].todoRef=todoId;
+      DB.set(key,ledgers);
+    }
+  }
+}
+
 function saveContract(){
   const name=document.getElementById('contractName').value.trim();
   if(!name){toast('请输入合同名称');return;}
-  const contracts=DB.get('contracts');
+  const contracts=DB.raw('contracts');
   const id=+document.getElementById('contractId').value;
+  const now=new Date().toISOString().slice(0,10);
   const item={
     id:id||DB.nextId(contracts),
     name,
     party:document.getElementById('contractParty').value,
-    amount:document.getElementById('contractAmount').value,
+    amount:+(document.getElementById('contractAmount').value||0),
     category:document.getElementById('contractCategory').value,
     signDate:document.getElementById('contractSignDate').value,
     expiry:document.getElementById('contractExpiry').value,
     status:document.getElementById('contractStatus').value,
     no:document.getElementById('contractNo').value,
     note:document.getElementById('contractNote').value,
-    createdAt:new Date().toISOString()
+    todoRef:null,
+    deleted:false,
+    createdAt:now
   };
-  if(id){const i=contracts.findIndex(c=>c.id===id);if(i>-1)contracts[i]=item;else contracts.push(item);}
+  if(id){const i=contracts.findIndex(c=>c.id===id);if(i>-1){item.todoRef=contracts[i].todoRef;item.deleted=contracts[i].deleted;contracts[i]=item;}else contracts.push(item);}
   else contracts.push(item);
   DB.set('contracts',contracts);
+  // P1-2: 自动同步工作记录
+  syncLedgerTodo('contract',item);
   closeModal('contractModal');
   clearContractForm();
   renderContracts();
@@ -2715,7 +2921,14 @@ function clearContractForm(){
 
 function deleteContract(id){
   if(!confirm('确认删除？'))return;
-  DB.set('contracts',DB.get('contracts').filter(c=>c.id!==id));
+  const contracts=DB.raw('contracts');
+  const c=contracts.find(c=>c.id===id);
+  if(c){
+    c.deleted=true;
+    DB.set('contracts',contracts);
+    // P1-2: 同步软删除关联的工作记录
+    syncLedgerTodo('contract',c,'delete');
+  }
   renderContracts();toast('已删除');
 }
 
@@ -2783,14 +2996,14 @@ function renderPurchases(){
 function savePurchase(){
   const name=document.getElementById('purchaseName').value.trim();
   if(!name){toast('请输入采购名称');return;}
-  const purchases=DB.get('purchases');
+  const purchases=DB.raw('purchases');
   const id=+document.getElementById('purchaseId').value;
-  const now=new Date().toISOString();
+  const now=new Date().toISOString().slice(0,10);
   const item={
     id:id||DB.nextId(purchases),
     name,
     supplier:document.getElementById('purchaseSupplier').value,
-    amount:document.getElementById('purchaseAmount').value,
+    amount:+(document.getElementById('purchaseAmount').value||0),
     date:document.getElementById('purchaseDate').value,
     category:document.getElementById('purchaseCategory').value,
     status:document.getElementById('purchaseStatus').value,
@@ -2800,40 +3013,51 @@ function savePurchase(){
     hasExpense:document.getElementById('purchaseHasExpense').value,
     expenseDept:document.getElementById('purchaseExpenseDept').value,
     items:(window._purchaseItems||[]).filter(i=>i&&i.name),
+    todoRef:null,
+    deleted:false,
     createdAt:now
   };
-  if(id){const i=purchases.findIndex(p=>p.id===id);if(i>-1)purchases[i]=item;else purchases.push(item);}
+  if(id){const i=purchases.findIndex(p=>p.id===id);if(i>-1){item.todoRef=purchases[i].todoRef;item.deleted=purchases[i].deleted;purchases[i]=item;}else purchases.push(item);}
   else purchases.push(item);
   DB.set('purchases',purchases);
   
   // 跨模块联动：是否签订合同 → 自动生成合同记录
   if(item.hasContract==='是'){
-    const contracts=DB.get('contracts');
+    const contracts=DB.raw('contracts');
     const cId=DB.nextId(contracts);
-    contracts.push({
+    const autoContract={
       id:cId,name:item.name,party:item.supplier,amount:item.amount,
       category:item.category,signDate:item.date,expiry:'',
       status:'待签',no:'',note:'（由采购自动生成）',createdAt:now,
-      _fromPurchase:item.id
-    });
+      todoRef:null,deleted:false,_fromPurchase:item.id
+    };
+    contracts.push(autoContract);
     DB.set('contracts',contracts);
+    // P1-2: 自动生成的合同也同步工作记录
+    syncLedgerTodo('contract',autoContract);
   }
   // 跨模块联动：是否报账 → 自动生成报销记录
   if(item.hasExpense==='是'){
-    const expenses=DB.get('expenses');
+    const expenses=DB.raw('expenses');
     const eId=DB.nextId(expenses);
-    expenses.push({
-      id:eId,appDate:new Date().toISOString().slice(0,10),amount:item.amount,supplier:item.supplier,
+    const autoExpense={
+      id:eId,appDate:now,amount:item.amount,supplier:item.supplier,
       supplierCode:'',invoice:'',invoiceDate:'',content:item.name,
-      status:'待报销',reimbDate:'',createdAt:now,_fromPurchase:item.id
-    });
+      status:'待报销',reimbDate:'',createdAt:now,
+      todoRef:null,deleted:false,category:'其他',_fromPurchase:item.id
+    };
+    expenses.push(autoExpense);
     DB.set('expenses',expenses);
+    // P1-2: 自动生成的报销也同步工作记录
+    syncLedgerTodo('expenses',autoExpense);
   }
   
+  // P1-2: 自动同步工作记录
+  syncLedgerTodo('purchase',item);
+
   closeModal('purchaseModal');
   clearPurchaseForm();
   renderPurchases();
-  toast('已保存'+(item.hasContract==='是'?'，已自动生成合同记录':'')+(item.hasExpense==='是'?'，已自动生成报销记录':''));
   toast('已保存');
 }
 
@@ -2886,7 +3110,8 @@ function onPurchaseExpenseChange(){
 
 // 采购/合同/报销 通用导出 CSV
 function exportModuleCSV(module){
-  const data=DB.get(module==='purchase'?'purchases':module==='contract'?'contracts':'expenses');
+  const keyMap={purchase:'purchases',contract:'contracts',expense:'expenses',meeting:'meetings',training:'trainings'};
+  const data=DB.get(keyMap[module]||'expenses');
   let filtered;
   if(module==='purchase'){
     const q=(document.getElementById('purchaseF_name')?.value||'').toLowerCase();
@@ -2901,6 +3126,24 @@ function exportModuleCSV(module){
     filtered=data.filter(c=>{
       if(q&&!(c.name+(c.party||'')+(c.no||'')).toLowerCase().includes(q))return false;
       if(sf&&c.status!==sf)return false;return true;
+    });
+  }else if(module==='meeting'){
+    const typeFilter=document.getElementById('meetingF_type')?.value||'';
+    const searchQ=(document.getElementById('meetingF_search')?.value||'').toLowerCase();
+    filtered=data.filter(m=>{
+      if(typeFilter&&m.type!==typeFilter)return false;
+      if(searchQ&&!(m.name||'').toLowerCase().includes(searchQ)&&!(m.location||'').toLowerCase().includes(searchQ))return false;
+      return true;
+    });
+  }else if(module==='training'){
+    const catFilter=document.getElementById('trainingF_cat')?.value||'';
+    const typeFilter=document.getElementById('trainingF_type')?.value||'';
+    const searchQ=(document.getElementById('trainingF_search')?.value||'').toLowerCase();
+    filtered=data.filter(t=>{
+      if(catFilter&&t.category!==catFilter)return false;
+      if(typeFilter&&t.type!==typeFilter)return false;
+      if(searchQ&&!(t.name||'').toLowerCase().includes(searchQ)&&!(t.organizer||'').toLowerCase().includes(searchQ))return false;
+      return true;
     });
   }else{
     const q=(document.getElementById('expenseF_name')?.value||'').toLowerCase();
@@ -2918,9 +3161,15 @@ function exportModuleCSV(module){
   }else if(module==='contract'){
     csv+='名称,分类,对方单位,金额,签署日期,到期日期,状态,编号\n';
     filtered.forEach(c=>csv+=`"${c.name}","${c.category||''}","${c.party||''}","${c.amount||0}","${c.signDate||''}","${c.expiry||''}","${c.status||''}","${c.no||''}"\n`);
+  }else if(module==='meeting'){
+    csv+='名称,日期,时间,地点,类型,组织方,参与人数,行动项数,下次会议\n';
+    filtered.forEach(m=>csv+=`"${m.name}","${m.date}","${m.startTime||''}-${m.endTime||''}","${m.location||''}","${m.type}","${m.organizer||''}","${(m.attendees||[]).length}","${(m.actionItems||[]).length}","${m.nextMeetingDate||''}"\n`);
+  }else if(module==='training'){
+    csv+='名称,组织方,类型,分类,开始日期,结束日期,学分,学分类型,有证书,证书到期,费用,费用状态,有考核,考核结果\n';
+    filtered.forEach(t=>csv+=`"${t.name}","${t.organizer||''}","${t.type}","${t.category||''}","${t.startDate}","${t.endDate||''}","${t.credits||''}","${t.creditType||''}","${t.hasCertificate?'是':'否'}","${t.certificateExpiry||''}","${t.fee||''}","${t.feeStatus||''}","${t.hasExam?'是':'否'}","${t.examResult||''}"\n`);
   }else{
-    csv+='申请时间,供应商,发票号,开票日期,发票内容,金额,状态,报销日期\n';
-    filtered.forEach(e=>csv+=`"${e.appDate||''}","${e.supplier||''}","${e.invoice||''}","${e.invoiceDate||''}","${e.content||''}","${e.amount||0}","${e.status||''}","${e.reimbDate||''}"\n`);
+    csv+='申请时间,供应商,发票号,开票日期,发票内容,金额,状态,报销日期,备注\n';
+    filtered.forEach(e=>csv+=`"${e.appDate||''}","${e.supplier||''}","${e.invoice||''}","${e.invoiceDate||''}","${e.content||''}","${e.amount||0}","${e.status||''}","${e.reimbDate||''}","${e.note||''}"\n`);
   }
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');
@@ -3003,7 +3252,14 @@ function clearPurchaseItems(){
 
 function deletePurchase(id){
   if(!confirm('确认删除？'))return;
-  DB.set('purchases',DB.get('purchases').filter(p=>p.id!==id));
+  const purchases=DB.raw('purchases');
+  const p=purchases.find(p=>p.id===id);
+  if(p){
+    p.deleted=true;
+    DB.set('purchases',purchases);
+    // P1-2: 同步软删除关联的工作记录
+    syncLedgerTodo('purchase',p,'delete');
+  }
   renderPurchases();toast('已删除');
 }
 
@@ -3035,7 +3291,7 @@ function renderExpenses(){
   const dateTo=document.getElementById('expenseF_dateTo')?.value||'';
 
   const filtered=expenses.filter(e=>{
-    if(q&&!(e.content||'').toLowerCase().includes(q))return false;
+    if(q&&!(e.content||'').toLowerCase().includes(q)&&!(e.note||'').toLowerCase().includes(q))return false;
     if(supplier&&!(e.supplier||'').toLowerCase().includes(supplier))return false;
     if(invoice&&!(e.invoice||'').toLowerCase().includes(invoice))return false;
     if(sf&&e.status!==sf)return false;
@@ -3082,11 +3338,12 @@ function saveExpense(){
   if(!appDate){toast('请选择申请时间');return;}
   if(!content){toast('请输入发票内容');return;}
   const status=document.getElementById('expenseStatus').value;
-  const expenses=DB.get('expenses');
+  const expenses=DB.raw('expenses');
   const id=+document.getElementById('expenseId').value;
   // 已报销时自动记录报销日期
   let reimbDate=document.getElementById('expenseReimbDate').value;
   if(status==='已报销'&&!reimbDate)reimbDate=new Date().toISOString().slice(0,10);
+  const now=new Date().toISOString().slice(0,10);
   const item={
     id:id||DB.nextId(expenses),
     appDate,
@@ -3095,14 +3352,20 @@ function saveExpense(){
     invoice,
     invoiceDate:document.getElementById('expenseInvoiceDate').value,
     content,
+    note:document.getElementById('expenseNote').value.trim(),
     amount:+(document.getElementById('expenseAmount').value||0),
     status,
     reimbDate,
-    createdAt:new Date().toISOString()
+    category:document.getElementById('expenseCategory')?.value||'其他',
+    todoRef:null,
+    deleted:false,
+    createdAt:now
   };
-  if(id){const i=expenses.findIndex(e=>e.id===id);if(i>-1)expenses[i]=item;else expenses.push(item);}
+  if(id){const i=expenses.findIndex(e=>e.id===id);if(i>-1){item.todoRef=expenses[i].todoRef;item.deleted=expenses[i].deleted;expenses[i]=item;}else expenses.push(item);}
   else expenses.push(item);
   DB.set('expenses',expenses);
+  // P1-2: 自动同步工作记录
+  syncLedgerTodo('expenses',item);
   closeModal('expenseModal');
   clearExpenseForm();
   renderExpenses();
@@ -3121,6 +3384,7 @@ function editExpense(id){
   document.getElementById('expenseInvoice').value=e.invoice||'';
   document.getElementById('expenseInvoiceDate').value=e.invoiceDate||'';
   document.getElementById('expenseContent').value=e.content||'';
+  document.getElementById('expenseNote').value=e.note||'';
   document.getElementById('expenseStatus').value=e.status||'待报销';
   document.getElementById('expenseReimbDate').value=e.reimbDate||'';
   openModal('expenseModal');
@@ -3897,15 +4161,513 @@ function onExpenseStatusChange(){
 }
 
 function clearExpenseForm(){
-  ['expenseId','expenseAppDate','expenseAmount','expenseSupplier','expenseSupplierCode','expenseInvoice','expenseInvoiceDate','expenseContent','expenseReimbDate'].forEach(id=>document.getElementById(id).value='');
+  ['expenseId','expenseAppDate','expenseAmount','expenseSupplier','expenseSupplierCode','expenseInvoice','expenseInvoiceDate','expenseContent','expenseNote','expenseReimbDate'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('expenseStatus').value='待报销';
   document.getElementById('expenseModalTitle').textContent='新增报销';
 }
 
 function deleteExpense(id){
   if(!confirm('确认删除？'))return;
-  DB.set('expenses',DB.get('expenses').filter(e=>e.id!==id));
+  const expenses=DB.raw('expenses');
+  const e=expenses.find(e=>e.id===id);
+  if(e){
+    e.deleted=true;
+    DB.set('expenses',expenses);
+    // P1-2: 同步软删除关联的工作记录
+    syncLedgerTodo('expenses',e,'delete');
+  }
   renderExpenses();toast('已删除');
+}
+
+// ============================================================
+//  MEETING SCHEDULE  (P1-3)
+// ============================================================
+
+let meetingCalendarYear, meetingCalendarMonth;
+
+function initMeetingCalendar(){
+  const now=new Date();
+  meetingCalendarYear=now.getFullYear();
+  meetingCalendarMonth=now.getMonth()+1;
+}
+
+function renderMeetings(){
+  if(!meetingCalendarYear)initMeetingCalendar();
+  renderMeetingCalendar(meetingCalendarYear,meetingCalendarMonth);
+  renderMeetingList();
+}
+
+function renderMeetingCalendar(year,month){
+  meetingCalendarYear=year;meetingCalendarMonth=month;
+  document.getElementById('meetingMonthTitle').textContent=year+'年'+month+'月';
+
+  const firstDay=new Date(year,month-1,1);
+  const lastDay=new Date(year,month,0);
+  const daysInMonth=lastDay.getDate();
+  // 周一=0
+  let startDayOfWeek=firstDay.getDay(); // 0=周日
+  startDayOfWeek=startDayOfWeek===0?6:startDayOfWeek-1; // 调整为周一=0
+
+  const today=new Date();
+  const todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+
+  const meetings=DB.get('meetings');
+  // 本月有会议的日期
+  const meetingDates={};
+  meetings.forEach(m=>{
+    if(!m.deleted&&m.date){
+      const d=new Date(m.date);
+      if(d.getFullYear()===year&&(d.getMonth()+1)===month){
+        const day=d.getDate();
+        if(!meetingDates[day])meetingDates[day]=[];
+        meetingDates[day].push(m);
+      }
+    }
+  });
+
+  let html='';
+  // 上月填充
+  const prevLastDay=new Date(year,month-1,0).getDate();
+  for(let i=startDayOfWeek-1;i>=0;i--){
+    html+=`<div class="cal-day cal-other">${prevLastDay-i}</div>`;
+  }
+  // 本月
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=year+'-'+String(month).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const isToday=dateStr===todayStr;
+    const dayMeetings=meetingDates[d]||[];
+    const hasMeeting=dayMeetings.length>0;
+    html+=`<div class="cal-day${isToday?' cal-today':''}${hasMeeting?' cal-has-meeting':''}"
+      onclick="${hasMeeting?'showDayMeetings('+d+')':'openQuickMeeting(\''+dateStr+'\')'}"
+      title="${hasMeeting?dayMeetings.map(m=>m.name).join('\n'):'点击新增会议'}">
+      <span class="cal-day-num">${d}</span>
+      ${hasMeeting?dayMeetings.slice(0,3).map(m=>{
+      const typeColors={线上:'#3b82f6',线下:'#10b981',混合:'#8b5cf6'};
+      return `<span class="cal-meeting-name" style="border-left:2px solid ${typeColors[m.type]||'#6366f1'}">${esc(m.name)}</span>`;
+      }).join('')+ (dayMeetings.length>3?`<span class="cal-meeting-more">+${dayMeetings.length-3} 场</span>`:''):''}
+    </div>`;
+  }
+  // 下月填充
+  const totalCells=Math.ceil((startDayOfWeek+daysInMonth)/7)*7;
+  for(let i=startDayOfWeek+daysInMonth;i<totalCells;i++){
+    html+=`<div class="cal-day cal-other">${i-startDayOfWeek-daysInMonth+1}</div>`;
+  }
+  document.getElementById('meetingCalendarGrid').innerHTML=html;
+
+  // 存储当前月份会议日期供 showDayMeetings 使用
+  window._meetingMonthData=meetingDates;
+}
+
+function prevMeetingMonth(){
+  if(meetingCalendarMonth===1){meetingCalendarMonth=12;meetingCalendarYear--;}
+  else meetingCalendarMonth--;
+  renderMeetings();
+}
+function nextMeetingMonth(){
+  if(meetingCalendarMonth===12){meetingCalendarMonth=1;meetingCalendarYear++;}
+  else meetingCalendarMonth++;
+  renderMeetings();
+}
+function goMeetingToday(){
+  initMeetingCalendar();
+  renderMeetings();
+}
+
+function showDayMeetings(day){
+  const meetings=(window._meetingMonthData||{})[day]||[];
+  if(!meetings.length)return;
+
+  // 高亮并滚动到会议列表
+  renderMeetingList(day);
+  const listEl=document.getElementById('meetingList');
+  if(listEl)listEl.scrollIntoView({behavior:'smooth'});
+}
+
+function openQuickMeeting(dateStr){
+  clearMeetingForm();
+  document.getElementById('meetingDate').value=dateStr;
+  openModal('meetingModal');
+}
+
+function renderMeetingList(highlightDay){
+  const meetings=DB.get('meetings');
+  const typeFilter=document.getElementById('meetingF_type')?.value||'';
+  const searchQ=(document.getElementById('meetingF_search')?.value||'').toLowerCase();
+
+  let filtered=meetings.filter(m=>!m.deleted);
+  if(typeFilter)filtered=filtered.filter(m=>m.type===typeFilter);
+  if(searchQ)filtered=filtered.filter(m=>
+    (m.name||'').toLowerCase().includes(searchQ)||
+    (m.location||'').toLowerCase().includes(searchQ)||
+    (m.organizer||'').toLowerCase().includes(searchQ)||
+    (m.attendees||[]).join(',').toLowerCase().includes(searchQ)
+  );
+
+  // 按日期降序
+  filtered.sort((a,b)=>b.date.localeCompare(a.date));
+
+  if(!filtered.length){
+    document.getElementById('meetingList').innerHTML='<div class="empty-state">暂无会议记录</div>';
+    return;
+  }
+
+  const typeBadge={线上:'badge-blue',线下:'badge-green',混合:'badge-purple'};
+  const typeIcon={线上:'📹',线下:'🏢',混合:'🔀'};
+
+  document.getElementById('meetingList').innerHTML=filtered.map(m=>{
+    const actionCount=m.actionItems?.length||0;
+    const actionDone=m.actionItems?.filter(a=>a.done).length||0;
+    const isHighlight=highlightDay&&m.date&&m.date.endsWith('-'+(highlightDay<10?'0':'')+highlightDay);
+    return `
+    <div class="meeting-card${isHighlight?' meeting-highlight':''}" style="background:var(--color-bg-card);border-radius:10px;padding:14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);${isHighlight?'border-left:3px solid var(--color-primary);':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span class="badge ${typeBadge[m.type]||'badge-gray'}">${typeIcon[m.type]||''} ${m.type}</span>
+            <strong style="font-size:15px">${esc(m.name)}</strong>
+          </div>
+          <div style="color:var(--color-text2);font-size:12px;line-height:1.6;display:flex;flex-wrap:wrap;gap:12px">
+            <span>📅 ${m.date}${m.startTime?' '+m.startTime:''}${m.endTime?'-'+m.endTime:''}</span>
+            ${m.location?`<span>📍 ${esc(m.location)}</span>`:''}
+            ${m.organizer?`<span>👤 ${esc(m.organizer)}</span>`:''}
+            ${m.attendees?.length?`<span>👥 ${m.attendees.length}人</span>`:''}
+          </div>
+          ${m.agenda?`<div style="color:var(--color-text3);font-size:11px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📋 ${esc(m.agenda)}</div>`:''}
+          ${actionCount>0?`<div style="margin-top:6px;font-size:11px;color:var(--color-text3)">✅ 行动项 ${actionDone}/${actionCount}</div>`:''}
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm" onclick="editMeeting(${m.id})" title="编辑">✏️</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteMeeting(${m.id})" title="删除">🗑</button>
+        </div>
+      </div>
+    </div>
+    `;
+  }).join('');
+}
+
+function saveMeeting(){
+  const name=document.getElementById('meetingName').value.trim();
+  const date=document.getElementById('meetingDate').value;
+  if(!name){toast('请输入会议名称');return;}
+  if(!date){toast('请选择会议日期');return;}
+
+  const meetings=DB.raw('meetings');
+  const id=+document.getElementById('meetingId').value;
+  const now=new Date().toISOString().slice(0,10);
+
+  // 收集行动项
+  const actionItems=[];
+  document.querySelectorAll('#meetingActionItems .action-item-row').forEach(row=>{
+    const text=row.querySelector('.ai-text')?.value?.trim();
+    if(text){
+      actionItems.push({
+        text:text,
+        assignee:row.querySelector('.ai-assignee')?.value?.trim()||'',
+        deadline:row.querySelector('.ai-deadline')?.value||'',
+        done:row.querySelector('.ai-done')?.checked||false
+      });
+    }
+  });
+
+  const item={
+    id:id||DB.nextId(meetings),
+    name,
+    date,
+    startTime:document.getElementById('meetingStartTime').value,
+    endTime:document.getElementById('meetingEndTime').value,
+    location:document.getElementById('meetingLocation').value.trim(),
+    type:document.getElementById('meetingType').value,
+    organizer:document.getElementById('meetingOrganizer').value.trim(),
+    attendees:(document.getElementById('meetingAttendees').value||'').split(/[,，]/).map(s=>s.trim()).filter(Boolean),
+    agenda:document.getElementById('meetingAgenda').value.trim(),
+    prepTasks:document.getElementById('meetingPrepTasks').value.trim(),
+    minutes:document.getElementById('meetingMinutes').value.trim(),
+    actionItems,
+    nextMeetingDate:document.getElementById('meetingNextDate').value,
+    todoRef:null,
+    deleted:false,
+    createdAt:now
+  };
+  if(id){
+    const i=meetings.findIndex(m=>m.id===id);
+    if(i>-1){item.todoRef=meetings[i].todoRef;item.deleted=meetings[i].deleted;meetings[i]=item;}
+    else meetings.push(item);
+  }else meetings.push(item);
+  DB.set('meetings',meetings);
+
+  // P1-2 扩展：会议同步工作记录
+  syncLedgerTodo('meeting',item);
+
+  closeModal('meetingModal');
+  clearMeetingForm();
+  renderMeetings();
+  toast('已保存');
+}
+
+function editMeeting(id){
+  const m=DB.get('meetings').find(x=>x.id===id);
+  if(!m)return;
+  document.getElementById('meetingModalTitle').textContent='编辑会议';
+  document.getElementById('meetingId').value=m.id;
+  document.getElementById('meetingName').value=m.name;
+  document.getElementById('meetingDate').value=m.date;
+  document.getElementById('meetingStartTime').value=m.startTime||'';
+  document.getElementById('meetingEndTime').value=m.endTime||'';
+  document.getElementById('meetingLocation').value=m.location||'';
+  document.getElementById('meetingType').value=m.type||'线下';
+  document.getElementById('meetingOrganizer').value=m.organizer||'';
+  document.getElementById('meetingAttendees').value=(m.attendees||[]).join(', ');
+  document.getElementById('meetingAgenda').value=m.agenda||'';
+  document.getElementById('meetingPrepTasks').value=m.prepTasks||'';
+  document.getElementById('meetingMinutes').value=m.minutes||'';
+  document.getElementById('meetingNextDate').value=m.nextMeetingDate||'';
+  // 加载行动项
+  clearMeetingActionItems();
+  if(m.actionItems?.length){
+    m.actionItems.forEach(ai=>addMeetingActionItem(ai));
+  }
+  openModal('meetingModal');
+}
+
+function deleteMeeting(id){
+  if(!confirm('确认删除此会议？'))return;
+  const meetings=DB.raw('meetings');
+  const m=meetings.find(m=>m.id===id);
+  if(m){
+    m.deleted=true;
+    DB.set('meetings',meetings);
+    // P1-2 扩展：软删除关联工作记录
+    syncLedgerTodo('meeting',m,'delete');
+  }
+  renderMeetings();toast('已删除');
+}
+
+function clearMeetingForm(){
+  ['meetingId','meetingName','meetingDate','meetingStartTime','meetingEndTime',
+   'meetingLocation','meetingOrganizer','meetingAttendees','meetingAgenda',
+   'meetingPrepTasks','meetingMinutes','meetingNextDate'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  document.getElementById('meetingType').value='线下';
+  document.getElementById('meetingModalTitle').textContent='新增会议';
+  clearMeetingActionItems();
+}
+
+function clearMeetingActionItems(){
+  document.getElementById('meetingActionItems').innerHTML='';
+  window._meetingActionItemIdx=0;
+}
+
+function addMeetingActionItem(data){
+  if(!window._meetingActionItemIdx)window._meetingActionItemIdx=0;
+  const idx=++window._meetingActionItemIdx;
+  const text=data?.text||'';
+  const assignee=data?.assignee||'';
+  const deadline=data?.deadline||'';
+  const done=data?.done||false;
+  const html=`
+  <div class="action-item-row" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
+    <input class="ai-text" value="${esc(text)}" placeholder="行动项内容" style="flex:2;min-width:120px;font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px">
+    <input class="ai-assignee" value="${esc(assignee)}" placeholder="负责人" style="flex:1;min-width:80px;font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px">
+    <input type="date" class="ai-deadline" value="${deadline}" style="flex:1;min-width:100px;font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px">
+    <label style="font-size:11px;white-space:nowrap;display:flex;align-items:center;gap:2px"><input type="checkbox" class="ai-done" ${done?'checked':''}> 完成</label>
+    <button class="btn btn-ghost btn-sm" onclick="this.closest('.action-item-row').remove()" style="color:var(--color-danger);padding:2px 4px">×</button>
+  </div>`;
+  document.getElementById('meetingActionItems').insertAdjacentHTML('beforeend',html);
+}
+
+// ============================================================
+//  TRAINING RECORDS  (P1-4)
+// ============================================================
+
+function renderTrainings(){
+  const trainings=DB.get('trainings');
+  const catFilter=document.getElementById('trainingF_cat')?.value||'';
+  const typeFilter=document.getElementById('trainingF_type')?.value||'';
+  const searchQ=(document.getElementById('trainingF_search')?.value||'').toLowerCase();
+  const expiringOnly=document.getElementById('trainingF_expiring')?.checked||false;
+
+  const today=new Date();
+  const soon=new Date(today);
+  soon.setDate(soon.getDate()+30);
+  const soonStr=soon.toISOString().slice(0,10);
+  const todayStr=today.toISOString().slice(0,10);
+
+  let filtered=trainings.filter(t=>!t.deleted);
+  if(catFilter)filtered=filtered.filter(t=>t.category===catFilter);
+  if(typeFilter)filtered=filtered.filter(t=>t.type===typeFilter);
+  if(searchQ)filtered=filtered.filter(t=>
+    (t.name||'').toLowerCase().includes(searchQ)||
+    (t.organizer||'').toLowerCase().includes(searchQ)||
+    (t.content||'').toLowerCase().includes(searchQ)
+  );
+  if(expiringOnly)filtered=filtered.filter(t=>t.hasCertificate&&t.certificateExpiry&&t.certificateExpiry>=todayStr&&t.certificateExpiry<=soonStr);
+
+  // 按日期降序
+  filtered.sort((a,b)=>b.startDate.localeCompare(a.startDate));
+
+  // 统计
+  const totalCredits=filtered.reduce((s,t)=>s+(t.credits||0),0);
+  const totalFee=filtered.reduce((s,t)=>s+(t.fee||0),0);
+  const expiringCount=filtered.filter(t=>t.hasCertificate&&t.certificateExpiry&&t.certificateExpiry>=todayStr&&t.certificateExpiry<=soonStr).length;
+  document.getElementById('trainingStats').innerHTML=filtered.length?`
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:4px">
+    <span class="badge badge-blue">共 ${filtered.length} 场</span>
+    <span class="badge badge-green">学分 ${totalCredits}</span>
+    <span class="badge badge-yellow">费用 ¥${totalFee.toLocaleString()}</span>
+    ${expiringCount>0?`<span class="badge badge-red">⚠️ ${expiringCount} 证书即将到期</span>`:''}
+  </div>`:'';
+
+  if(!filtered.length){
+    document.getElementById('trainingList').innerHTML='<div class="empty-state">暂无培训记录</div>';
+    return;
+  }
+
+  const typeBadge={线上:'badge-blue',线下:'badge-green',混合:'badge-purple'};
+  const feeBadge={自费:'badge-yellow',公费:'badge-blue',免费:'badge-green'};
+
+  document.getElementById('trainingList').innerHTML=filtered.map(t=>{
+    const isExpiring=t.hasCertificate&&t.certificateExpiry&&t.certificateExpiry>=todayStr&&t.certificateExpiry<=soonStr;
+    const isPast=t.certificateExpiry&&t.certificateExpiry<todayStr;
+    return `
+    <div class="training-card" style="background:var(--color-bg-card);border-radius:10px;padding:14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);${isExpiring?'border-left:3px solid var(--color-danger);':''}${isPast?'opacity:0.7;':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+            <span class="badge ${typeBadge[t.type]||'badge-gray'}">${t.type}</span>
+            <span class="badge badge-gray">${esc(t.category||'其他')}</span>
+            <strong style="font-size:15px">${esc(t.name)}</strong>
+          </div>
+          <div style="color:var(--color-text2);font-size:12px;line-height:1.6;display:flex;flex-wrap:wrap;gap:12px">
+            <span>📅 ${t.startDate}${t.endDate?'→'+t.endDate:''}</span>
+            ${t.organizer?`<span>👤 ${esc(t.organizer)}</span>`:''}
+            ${t.credits?`<span>📝 ${t.credits}学分${t.creditType?'('+esc(t.creditType)+')':''}</span>`:''}
+            ${t.fee?`<span>💰 ${esc(t.feeStatus||'自费')} ¥${t.fee.toLocaleString()}</span>`:''}
+          </div>
+          ${t.hasCertificate?`<div style="margin-top:6px;font-size:11px">
+            📜 证书${t.certificateNo?': '+esc(t.certificateNo):''}
+            ${t.certificateExpiry?` · 到期: <span style="color:${isExpiring?'var(--color-danger)':isPast?'var(--color-text3)':'var(--color-success)'};font-weight:${isExpiring?'700':'400'}">${t.certificateExpiry}${isExpiring?' ⚠️即将到期':isPast?' 已过期':''}</span>`:''}
+          </div>`:''}
+          ${t.hasExam?`<div style="margin-top:2px;font-size:11px;color:var(--color-text3)">
+            📝 考核${t.examDate?'日期: '+t.examDate:''}${t.examResult?' · 结果: '+t.examResult:''}
+          </div>`:''}
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm" onclick="editTraining(${t.id})" title="编辑">✏️</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteTraining(${t.id})" title="删除">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function saveTraining(){
+  const name=document.getElementById('trainingName').value.trim();
+  const startDate=document.getElementById('trainingStartDate').value;
+  if(!name){toast('请输入培训名称');return;}
+  if(!startDate){toast('请选择开始日期');return;}
+
+  const trainings=DB.raw('trainings');
+  const id=+document.getElementById('trainingId').value;
+  const now=new Date().toISOString().slice(0,10);
+
+  const item={
+    id:id||DB.nextId(trainings),
+    name,
+    organizer:document.getElementById('trainingOrganizer').value.trim(),
+    type:document.getElementById('trainingType').value,
+    category:document.getElementById('trainingCategory').value,
+    startDate,
+    endDate:document.getElementById('trainingEndDate').value,
+    credits:+(document.getElementById('trainingCredits').value||0),
+    creditType:document.getElementById('trainingCreditType').value.trim(),
+    hasCertificate:document.getElementById('trainingHasCertificate').checked,
+    certificateNo:document.getElementById('trainingCertNo').value.trim(),
+    certificateExpiry:document.getElementById('trainingCertExpiry').value,
+    fee:+(document.getElementById('trainingFee').value||0),
+    feeStatus:document.getElementById('trainingFeeStatus').value,
+    hasExam:document.getElementById('trainingHasExam').checked,
+    examDate:document.getElementById('trainingExamDate').value,
+    examResult:document.getElementById('trainingExamResult').value,
+    content:document.getElementById('trainingContent').value.trim(),
+    attachment:document.getElementById('trainingAttachment').value.trim(),
+    todoRef:null,
+    deleted:false,
+    createdAt:now
+  };
+  if(id){
+    const i=trainings.findIndex(t=>t.id===id);
+    if(i>-1){item.todoRef=trainings[i].todoRef;item.deleted=trainings[i].deleted;trainings[i]=item;}
+    else trainings.push(item);
+  }else trainings.push(item);
+  DB.set('trainings',trainings);
+
+  // P1-2 扩展：培训同步工作记录
+  syncLedgerTodo('training',item);
+
+  closeModal('trainingModal');
+  clearTrainingForm();
+  renderTrainings();
+  toast('已保存');
+}
+
+function editTraining(id){
+  const t=DB.get('trainings').find(x=>x.id===id);
+  if(!t)return;
+  document.getElementById('trainingModalTitle').textContent='编辑培训';
+  document.getElementById('trainingId').value=t.id;
+  document.getElementById('trainingName').value=t.name;
+  document.getElementById('trainingOrganizer').value=t.organizer||'';
+  document.getElementById('trainingType').value=t.type||'线下';
+  document.getElementById('trainingCategory').value=t.category||'业务培训';
+  document.getElementById('trainingFeeStatus').value=t.feeStatus||'自费';
+  document.getElementById('trainingStartDate').value=t.startDate;
+  document.getElementById('trainingEndDate').value=t.endDate||'';
+  document.getElementById('trainingFee').value=t.fee||'';
+  document.getElementById('trainingCredits').value=t.credits||'';
+  document.getElementById('trainingCreditType').value=t.creditType||'';
+  document.getElementById('trainingHasCertificate').checked=t.hasCertificate||false;
+  document.getElementById('trainingCertNo').value=t.certificateNo||'';
+  document.getElementById('trainingCertExpiry').value=t.certificateExpiry||'';
+  document.getElementById('trainingHasExam').checked=t.hasExam||false;
+  document.getElementById('trainingExamDate').value=t.examDate||'';
+  document.getElementById('trainingExamResult').value=t.examResult||'';
+  document.getElementById('trainingContent').value=t.content||'';
+  document.getElementById('trainingAttachment').value=t.attachment||'';
+  // 切换条件区域
+  document.getElementById('certFields').style.display=t.hasCertificate?'block':'none';
+  document.getElementById('examFields').style.display=t.hasExam?'block':'none';
+  openModal('trainingModal');
+}
+
+function deleteTraining(id){
+  if(!confirm('确认删除此培训记录？'))return;
+  const trainings=DB.raw('trainings');
+  const t=trainings.find(t=>t.id===id);
+  if(t){
+    t.deleted=true;
+    DB.set('trainings',trainings);
+    syncLedgerTodo('training',t,'delete');
+  }
+  renderTrainings();toast('已删除');
+}
+
+function clearTrainingForm(){
+  ['trainingId','trainingName','trainingOrganizer','trainingCreditType',
+   'trainingStartDate','trainingEndDate','trainingCertNo','trainingCertExpiry',
+   'trainingExamDate','trainingContent','trainingAttachment'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  ['trainingFee','trainingCredits'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('trainingType').value='线下';
+  document.getElementById('trainingCategory').value='业务培训';
+  document.getElementById('trainingFeeStatus').value='自费';
+  document.getElementById('trainingExamResult').value='';
+  document.getElementById('trainingHasCertificate').checked=false;
+  document.getElementById('trainingHasExam').checked=false;
+  document.getElementById('certFields').style.display='none';
+  document.getElementById('examFields').style.display='none';
+  document.getElementById('trainingModalTitle').textContent='新增培训';
 }
 
 // ============================================================
@@ -3918,6 +4680,8 @@ function dumpData(){
     contracts:DB.get('contracts'),
     purchases:DB.get('purchases'),
     expenses:DB.get('expenses'),
+    meetings:DB.get('meetings'),
+    trainings:DB.get('trainings'),
     exportedAt:new Date().toISOString()
   };
 }
@@ -3944,7 +4708,7 @@ function importData(e){
     try{
       const data=JSON.parse(ev.target.result);
       let imported=0;
-      ['todos','inspirations','contracts','purchases','expenses'].forEach(k=>{
+      ['todos','inspirations','contracts','purchases','expenses','meetings','trainings'].forEach(k=>{
         if(Array.isArray(data[k])){DB.set(k,data[k]);imported+=data[k].length;}
       });
       toast('已导入 '+imported+' 条数据');
@@ -4147,7 +4911,7 @@ const GITEE={
   _mergeData(data){
     if(data&&data.todos!==undefined){
       let itemsMerged=0;
-      ['todos','inspirations','contracts','purchases','expenses'].forEach(k=>{
+      ['todos','inspirations','contracts','purchases','expenses','meetings','trainings'].forEach(k=>{
         if(Array.isArray(data[k])){
           const local=DB.get(k);
           const localMap={};
@@ -4205,7 +4969,7 @@ const _origDBSet=DB.set;
 DB.set=function(key,val){
   _origDBSet(key,val);
   // only sync for main data keys
-  if(['todos','inspirations','contracts','purchases','expenses'].includes(key)){
+  if(['todos','inspirations','contracts','purchases','expenses','meetings','trainings'].includes(key)){
     triggerSync();
   }
 };
@@ -4666,7 +5430,10 @@ function smartSave(){
         blocker:'',
         status:'未开始',
         subtasks:[],
-        createdAt:now
+        createdAt:now,
+        contractRef:null,purchaseRef:null,expenseRef:null,
+        meetingRef:null,trainingRef:null,
+        deleted:false
       };
       DB.set('todos',[...todos,record]);
       break;
@@ -4679,7 +5446,8 @@ function smartSave(){
         title:title,
         content:f.content||'',
         tags:Array.isArray(f.tags)?f.tags:['想法'],
-        createdAt:now
+        createdAt:now,
+        deleted:false
       };
       DB.set('inspirations',[...insps,record]);
       break;
@@ -4696,9 +5464,14 @@ function smartSave(){
         expiry:'',
         no:'',
         note:'',
+        category:'货物类',
+        todoRef:null,
+        deleted:false,
         createdAt:now
       };
       DB.set('contracts',[...contracts,record]);
+      // P1-2: 智能录入的合同也同步工作记录
+      syncLedgerTodo('contract',record);
       break;
     }
     case 'purchase':{
@@ -4711,25 +5484,37 @@ function smartSave(){
         status:'待审批',
         date:f.date||now,
         note:'',
+        category:'货物类',
+        todoRef:null,
+        deleted:false,
         createdAt:now
       };
       DB.set('purchases',[...purchases,record]);
+      // P1-2: 智能录入的采购也同步工作记录
+      syncLedgerTodo('purchase',record);
       break;
     }
     case 'expense':{
       const expenses=DB.get('expenses');
       record={
         id:DB.nextId(expenses),
-        name:f.name||'未命名报销',
-        type:f.type||'其他',
-        amount:f.amount||0,
+        appDate:f.date||now,
+        supplier:f.supplier||'',
+        supplierCode:'',
         invoice:f.invoice||'',
-        date:f.date||now,
+        invoiceDate:'',
+        content:f.name||f.content||'未命名报销',
+        amount:f.amount||0,
         status:'待审批',
-        note:'',
+        reimbDate:'',
+        category:'其他',
+        todoRef:null,
+        deleted:false,
         createdAt:now
       };
       DB.set('expenses',[...expenses,record]);
+      // P1-2: 智能录入的报销也同步工作记录
+      syncLedgerTodo('expenses',record);
       break;
     }
   }
@@ -4750,6 +5535,8 @@ function renderCurrentPage(){
   if(currentPage==='contract')renderContracts();
   if(currentPage==='purchase')renderPurchases();
   if(currentPage==='expense')renderExpenses();
+  if(currentPage==='meeting')renderMeetings();
+  if(currentPage==='training')renderTrainings();
 }
 
 // ============================================================
