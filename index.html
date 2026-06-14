@@ -1493,6 +1493,16 @@ function repairData(){
   });
 
   if(repaired)console.log('✅ 历史数据已自动修复（格式迁移+ID修复+字段补齐）');
+
+  // P1-2 回填：为 P1-2 之前创建的台账补全工作记录联动（一次性，幂等）
+  ['contracts','purchases','expenses'].forEach(key=>{
+    const records=DB.raw(key);
+    const missing=records.filter(r=>r.id&&!r.deleted&&!r.todoRef&&!r._fromPurchase);
+    if(!missing.length)return;
+    const mod=key==='expenses'?'expenses':key.slice(0,-1);
+    missing.forEach(r=>syncLedgerTodo(mod,r));
+    console.log('🔗 '+key+'：为 '+missing.length+' 条历史记录补全了工作记录联动');
+  });
 }
 
 // ============================================================
