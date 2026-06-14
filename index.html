@@ -2389,6 +2389,116 @@ function renderContracts(){
   updateGenericFilterCount('contract');
 }
 
+// ============================================================
+//  P1-2 台账 ↔ 工作记录自动同步
+//  原则：台账创建/更新时自动在工作记录(todos)中生成/同步对应条目
+//  删除台账时同步软删除关联的工作记录
+// ============================================================
+
+const SYNC_MODULE_LABELS={contract:'合同',purchase:'采购',expenses:'报销'};
+const SYNC_MODULE_CATEGORIES={contract:'合同管理',purchase:'采购管理',expenses:'报销管理'};
+
+function syncLedgerTodo(module, ledger, action){
+  const todos=DB.raw('todos');
+  const now=new Date().toISOString().slice(0,10);
+
+  // 生成工作记录名称
+  let todoName;
+  if(module==='contract'){
+    todoName='合同「'+ledger.name+'」';
+  }else if(module==='purchase'){
+    todoName='采购「'+ledger.name+'」';
+  }else{
+    todoName='报销「'+(ledger.content||'未知内容').slice(0,20)+'」';
+  }
+
+  // 生成工作记录内容摘要
+  const detailParts=[];
+  if(ledger.amount)detailParts.push('金额 ¥'+Number(ledger.amount).toLocaleString());
+  if(module==='contract'&&ledger.party)detailParts.push('对方单位 '+ledger.party);
+  if(module==='purchase'&&ledger.supplier)detailParts.push('供应商 '+ledger.supplier);
+  if(module==='expenses'&&ledger.supplier)detailParts.push('供应商 '+ledger.supplier);
+  const todoContent=detailParts.join('\n');
+
+  // 台账状态 → 工作记录状态映射
+  let todoStatus='未开始';
+  if(module==='contract'){
+    if(ledger.status==='已签')todoStatus='已完成';
+    else if(ledger.status==='执行中')todoStatus='进行中';
+    else if(ledger.status==='已到期')todoStatus='进行中';
+    else if(ledger.status==='已终止')todoStatus='已完成';
+    else if(ledger.status==='已解除')todoStatus='已完成';
+  }else if(module==='purchase'){
+    if(ledger.status==='已到货')todoStatus='已完成';
+    else if(ledger.status==='已拒绝')todoStatus='已取消';
+    else if(ledger.status==='审批通过')todoStatus='进行中';
+  }else{
+    if(ledger.status==='已报销')todoStatus='已完成';
+  }
+
+  if(action==='delete'){
+    // 软删除关联的工作记录
+    if(ledger.todoRef){
+      const todo=todos.find(t=>t.id===ledger.todoRef);
+      if(todo&&!todo.deleted){
+        todo.deleted=true;
+        DB.set('todos',todos);
+      }
+    }
+    return;
+  }
+
+  if(ledger.todoRef){
+    // 更新已有工作记录
+    const idx=todos.findIndex(t=>t.id===ledger.todoRef);
+    if(idx>-1){
+      const todo=todos[idx];
+      todo.name=todoName;
+      todo.content=todoContent;
+      todo.status=todoStatus;
+      todo.issueDate=ledger.signDate||ledger.date||ledger.appDate||todo.issueDate;
+      if(module==='contract'&&ledger.expiry)todo.deadline=ledger.expiry;
+      if(todoStatus==='已完成'&&!todo.completeDate)todo.completeDate=now;
+      DB.set('todos',todos);
+    }
+  }else{
+    // 新建工作记录
+    const todoId=DB.nextId(todos);
+    const newTodo={
+      id:todoId,
+      type:'pending',
+      name:todoName,
+      category:[SYNC_MODULE_CATEGORIES[module]],
+      source:['台账生成'],
+      priority:'low',
+      content:todoContent,
+      issueDate:ledger.signDate||ledger.date||ledger.appDate||'',
+      deadline:module==='contract'?ledger.expiry||'':'',
+      completeDate:todoStatus==='已完成'?now:'',
+      blocker:'',
+      status:todoStatus,
+      subtasks:[],
+      createdAt:ledger.createdAt||now,
+      contractRef:module==='contract'?ledger.id:null,
+      purchaseRef:module==='purchase'?ledger.id:null,
+      expenseRef:module==='expenses'?ledger.id:null,
+      meetingRef:null,
+      trainingRef:null,
+      deleted:false
+    };
+    todos.push(newTodo);
+    DB.set('todos',todos);
+    // 将 todoRef 回写到 ledger
+    const key=module==='expenses'?'expenses':(module+'s');
+    const ledgers=DB.raw(key);
+    const lIdx=ledgers.findIndex(l=>l.id===ledger.id);
+    if(lIdx>-1){
+      ledgers[lIdx].todoRef=todoId;
+      DB.set(key,ledgers);
+    }
+  }
+}
+
 function saveContract(){
   const name=document.getElementById('contractName').value.trim();
   if(!name){toast('请输入合同名称');return;}
@@ -2413,6 +2523,8 @@ function saveContract(){
   if(id){const i=contracts.findIndex(c=>c.id===id);if(i>-1){item.todoRef=contracts[i].todoRef;item.deleted=contracts[i].deleted;contracts[i]=item;}else contracts.push(item);}
   else contracts.push(item);
   DB.set('contracts',contracts);
+  // P1-2: 自动同步工作记录
+  syncLedgerTodo('contract',item);
   closeModal('contractModal');
   clearContractForm();
   renderContracts();
@@ -2446,8 +2558,12 @@ function deleteContract(id){
   if(!confirm('确认删除？'))return;
   const contracts=DB.raw('contracts');
   const c=contracts.find(c=>c.id===id);
-  if(c)c.deleted=true;
-  DB.set('contracts',contracts);
+  if(c){
+    c.deleted=true;
+    DB.set('contracts',contracts);
+    // P1-2: 同步软删除关联的工作记录
+    syncLedgerTodo('contract',c,'delete');
+  }
   renderContracts();toast('已删除');
 }
 
@@ -2544,27 +2660,36 @@ function savePurchase(){
   if(item.hasContract==='是'){
     const contracts=DB.raw('contracts');
     const cId=DB.nextId(contracts);
-    contracts.push({
+    const autoContract={
       id:cId,name:item.name,party:item.supplier,amount:item.amount,
       category:item.category,signDate:item.date,expiry:'',
       status:'待签',no:'',note:'（由采购自动生成）',createdAt:now,
       todoRef:null,deleted:false,_fromPurchase:item.id
-    });
+    };
+    contracts.push(autoContract);
     DB.set('contracts',contracts);
+    // P1-2: 自动生成的合同也同步工作记录
+    syncLedgerTodo('contract',autoContract);
   }
   // 跨模块联动：是否报账 → 自动生成报销记录
   if(item.hasExpense==='是'){
     const expenses=DB.raw('expenses');
     const eId=DB.nextId(expenses);
-    expenses.push({
+    const autoExpense={
       id:eId,appDate:now,amount:item.amount,supplier:item.supplier,
       supplierCode:'',invoice:'',invoiceDate:'',content:item.name,
       status:'待报销',reimbDate:'',createdAt:now,
       todoRef:null,deleted:false,category:'其他',_fromPurchase:item.id
-    });
+    };
+    expenses.push(autoExpense);
     DB.set('expenses',expenses);
+    // P1-2: 自动生成的报销也同步工作记录
+    syncLedgerTodo('expenses',autoExpense);
   }
   
+  // P1-2: 自动同步工作记录
+  syncLedgerTodo('purchase',item);
+
   closeModal('purchaseModal');
   clearPurchaseForm();
   renderPurchases();
@@ -2739,8 +2864,12 @@ function deletePurchase(id){
   if(!confirm('确认删除？'))return;
   const purchases=DB.raw('purchases');
   const p=purchases.find(p=>p.id===id);
-  if(p)p.deleted=true;
-  DB.set('purchases',purchases);
+  if(p){
+    p.deleted=true;
+    DB.set('purchases',purchases);
+    // P1-2: 同步软删除关联的工作记录
+    syncLedgerTodo('purchase',p,'delete');
+  }
   renderPurchases();toast('已删除');
 }
 
@@ -2845,6 +2974,8 @@ function saveExpense(){
   if(id){const i=expenses.findIndex(e=>e.id===id);if(i>-1){item.todoRef=expenses[i].todoRef;item.deleted=expenses[i].deleted;expenses[i]=item;}else expenses.push(item);}
   else expenses.push(item);
   DB.set('expenses',expenses);
+  // P1-2: 自动同步工作记录
+  syncLedgerTodo('expenses',item);
   closeModal('expenseModal');
   clearExpenseForm();
   renderExpenses();
@@ -3649,8 +3780,12 @@ function deleteExpense(id){
   if(!confirm('确认删除？'))return;
   const expenses=DB.raw('expenses');
   const e=expenses.find(e=>e.id===id);
-  if(e)e.deleted=true;
-  DB.set('expenses',expenses);
+  if(e){
+    e.deleted=true;
+    DB.set('expenses',expenses);
+    // P1-2: 同步软删除关联的工作记录
+    syncLedgerTodo('expenses',e,'delete');
+  }
   renderExpenses();toast('已删除');
 }
 
@@ -4452,6 +4587,8 @@ function smartSave(){
         createdAt:now
       };
       DB.set('contracts',[...contracts,record]);
+      // P1-2: 智能录入的合同也同步工作记录
+      syncLedgerTodo('contract',record);
       break;
     }
     case 'purchase':{
@@ -4470,6 +4607,8 @@ function smartSave(){
         createdAt:now
       };
       DB.set('purchases',[...purchases,record]);
+      // P1-2: 智能录入的采购也同步工作记录
+      syncLedgerTodo('purchase',record);
       break;
     }
     case 'expense':{
@@ -4491,6 +4630,8 @@ function smartSave(){
         createdAt:now
       };
       DB.set('expenses',[...expenses,record]);
+      // P1-2: 智能录入的报销也同步工作记录
+      syncLedgerTodo('expenses',record);
       break;
     }
   }
