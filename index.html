@@ -55,6 +55,10 @@
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
       会议日程
     </div>
+    <div class="nav-item" onclick="navigate('training',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.987 1 1 0 01.25-.663zM7 12.818v-3.12l2.606 1.116a1 1 0 00.788 0L13 9.698v3.12a1 1 0 01-.606.922l-5 2.143a1 1 0 01-.788 0l-5-2.143a1 1 0 01-.606-.922z" clip-rule="evenodd"/></svg>
+      培训记录
+    </div>
     <div class="nav-section">台账</div>
     <div class="nav-item" onclick="navigate('purchase',this)">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>
@@ -443,6 +447,39 @@
         </div>
       </div>
       <div id="meetingList"></div>
+    </div>
+
+    <!-- ====== TRAINING PAGE ====== -->
+    <div class="page" id="page-training">
+      <div class="section-header">
+        <span style="font-size:16px;font-weight:600">📚 培训记录</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('training')">导出</button>
+          <button class="btn btn-primary btn-sm" onclick="clearTrainingForm();openModal('trainingModal')">+ 新增培训</button>
+        </div>
+      </div>
+      <!-- 筛选 -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+        <select id="trainingF_cat" onchange="renderTrainings()" style="font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px">
+          <option value="">全部分类</option>
+          <option value="业务培训">业务培训</option>
+          <option value="继续教育">继续教育</option>
+          <option value="党建学习">党建学习</option>
+          <option value="其他">其他</option>
+        </select>
+        <select id="trainingF_type" onchange="renderTrainings()" style="font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px">
+          <option value="">全部类型</option>
+          <option value="线上">线上</option>
+          <option value="线下">线下</option>
+          <option value="混合">混合</option>
+        </select>
+        <input placeholder="搜索…" id="trainingF_search" oninput="renderTrainings()" style="font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px;width:140px">
+        <label style="font-size:11px;color:var(--color-text3);margin-left:auto;display:flex;align-items:center;gap:4px">
+          <input type="checkbox" id="trainingF_expiring" onchange="renderTrainings()"> 仅看即将到期证书
+        </label>
+      </div>
+      <div id="trainingStats" style="margin-bottom:12px"></div>
+      <div id="trainingList"></div>
     </div>
 
     <!-- ====== EXPENSE PAGE ====== -->
@@ -949,6 +986,133 @@
   </div>
 </div>
 
+<!-- Training Modal -->
+<div class="modal-overlay" id="trainingModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <span class="modal-title" id="trainingModalTitle">新增培训</span>
+      <button class="close-btn" onclick="closeModal('trainingModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="trainingId">
+      <div class="form-group">
+        <label class="form-label">培训名称 *</label>
+        <input class="form-control" id="trainingName" placeholder="如：2026年度公卫继续教育培训">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">组织方</label>
+          <input class="form-control" id="trainingOrganizer" placeholder="如：市疾控中心">
+        </div>
+        <div class="form-group">
+          <label class="form-label">类型</label>
+          <select class="form-control" id="trainingType">
+            <option value="线下">线下</option>
+            <option value="线上">线上</option>
+            <option value="混合">混合</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">分类</label>
+          <select class="form-control" id="trainingCategory">
+            <option value="业务培训">业务培训</option>
+            <option value="继续教育">继续教育</option>
+            <option value="党建学习">党建学习</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">费用状态</label>
+          <select class="form-control" id="trainingFeeStatus">
+            <option value="自费">自费</option>
+            <option value="公费">公费</option>
+            <option value="免费">免费</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">开始日期 *</label>
+          <input type="date" class="form-control" id="trainingStartDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">结束日期</label>
+          <input type="date" class="form-control" id="trainingEndDate">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">费用（元）</label>
+          <input type="number" class="form-control" id="trainingFee" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">学分/学时</label>
+          <input type="number" class="form-control" id="trainingCredits" placeholder="0" step="0.5">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">学分类型</label>
+          <input class="form-control" id="trainingCreditType" placeholder="如：I类学分">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="trainingHasCertificate" onchange="document.getElementById('certFields').style.display=this.checked?'block':'none'"> 有证书
+        </label>
+      </div>
+      <div id="certFields" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">证书编号</label>
+            <input class="form-control" id="trainingCertNo" placeholder="证书编号">
+          </div>
+          <div class="form-group">
+            <label class="form-label">证书到期日</label>
+            <input type="date" class="form-control" id="trainingCertExpiry">
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="trainingHasExam" onchange="document.getElementById('examFields').style.display=this.checked?'block':'none'"> 有考核
+        </label>
+      </div>
+      <div id="examFields" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">考核日期</label>
+            <input type="date" class="form-control" id="trainingExamDate">
+          </div>
+          <div class="form-group">
+            <label class="form-label">考核结果</label>
+            <select class="form-control" id="trainingExamResult">
+              <option value="">待定</option>
+              <option value="合格">合格</option>
+              <option value="优秀">优秀</option>
+              <option value="不合格">不合格</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">培训内容摘要</label>
+        <textarea class="form-control" id="trainingContent" rows="2" placeholder="培训主要内容…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">附件链接</label>
+        <input class="form-control" id="trainingAttachment" placeholder="培训通知/课件链接">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('trainingModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveTraining()">保存</button>
+    </div>
+  </div>
+</div>
+
 <!-- Meeting Modal -->
 <div class="modal-overlay" id="meetingModal">
   <div class="modal" style="max-width:620px">
@@ -1169,7 +1333,7 @@ const DB = {
 
 // 自动修复历史数据（格式迁移 + ID修复 + 字段补齐 + 日期标准化 + 软删除）
 function repairData(){
-  const keys=['todos','inspirations','contracts','purchases','expenses','meetings'];
+  const keys=['todos','inspirations','contracts','purchases','expenses','meetings','trainings'];
   let repaired=false;
 
   keys.forEach(key=>{
@@ -1298,6 +1462,28 @@ function repairData(){
           rec.todoRef=rec.todoRef||null;
           rec.createdAt=normalizeDate(rec.createdAt);
           break;
+        case 'trainings':
+          rec.name=rec.name||'';
+          rec.organizer=rec.organizer||'';
+          rec.type=rec.type||'线下';
+          rec.category=rec.category||'业务培训';
+          rec.startDate=rec.startDate||'';
+          rec.endDate=rec.endDate||'';
+          rec.credits=rec.credits||0;
+          rec.creditType=rec.creditType||'';
+          rec.hasCertificate=rec.hasCertificate||false;
+          rec.certificateNo=rec.certificateNo||'';
+          rec.certificateExpiry=rec.certificateExpiry||'';
+          rec.fee=rec.fee||0;
+          rec.feeStatus=rec.feeStatus||'自费';
+          rec.hasExam=rec.hasExam||false;
+          rec.examDate=rec.examDate||'';
+          rec.examResult=rec.examResult||'';
+          rec.content=rec.content||'';
+          rec.attachment=rec.attachment||'';
+          rec.todoRef=rec.todoRef||null;
+          rec.createdAt=normalizeDate(rec.createdAt);
+          break;
       }
       return rec;
     });
@@ -1312,7 +1498,7 @@ function repairData(){
 // ============================================================
 //  NAVIGATION
 // ============================================================
-const pageTitles={dashboard:'驾驶舱',todo:'工作记录',inspiration:'灵感收集',meeting:'会议日程',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
+const pageTitles={dashboard:'驾驶舱',todo:'工作记录',inspiration:'灵感收集',meeting:'会议日程',training:'培训记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
 let currentPage='dashboard';
 let todoChartInst=null, contractChartInst=null;
 
@@ -1331,6 +1517,7 @@ function navigate(page,el){
   if(page==='purchase')renderPurchases();
   if(page==='expense')renderExpenses();
   if(page==='meeting')renderMeetings();
+  if(page==='training')renderTrainings();
 }
 
 function toggleSidebar(){
@@ -2537,8 +2724,8 @@ function renderContracts(){
 //  删除台账时同步软删除关联的工作记录
 // ============================================================
 
-const SYNC_MODULE_LABELS={contract:'合同',purchase:'采购',expenses:'报销',meeting:'会议'};
-const SYNC_MODULE_CATEGORIES={contract:'合同管理',purchase:'采购管理',expenses:'报销管理',meeting:'会议管理'};
+const SYNC_MODULE_LABELS={contract:'合同',purchase:'采购',expenses:'报销',meeting:'会议',training:'培训'};
+const SYNC_MODULE_CATEGORIES={contract:'合同管理',purchase:'采购管理',expenses:'报销管理',meeting:'会议管理',training:'培训管理'};
 
 function syncLedgerTodo(module, ledger, action){
   const todos=DB.raw('todos');
@@ -2552,6 +2739,8 @@ function syncLedgerTodo(module, ledger, action){
     todoName='采购「'+ledger.name+'」';
   }else if(module==='meeting'){
     todoName='会议「'+ledger.name+'」';
+  }else if(module==='training'){
+    todoName='培训「'+ledger.name+'」';
   }else{
     todoName='报销「'+(ledger.content||'未知内容').slice(0,20)+'」';
   }
@@ -2566,6 +2755,11 @@ function syncLedgerTodo(module, ledger, action){
     if(ledger.date)detailParts.push('日期 '+ledger.date);
     if(ledger.location)detailParts.push('地点 '+ledger.location);
     if(ledger.type)detailParts.push('类型 '+ledger.type);
+  }
+  if(module==='training'){
+    if(ledger.startDate)detailParts.push('开始 '+ledger.startDate);
+    if(ledger.organizer)detailParts.push('组织方 '+ledger.organizer);
+    if(ledger.credits)detailParts.push(ledger.credits+'学分');
   }
   const todoContent=detailParts.join('\n');
 
@@ -2586,6 +2780,12 @@ function syncLedgerTodo(module, ledger, action){
     const meetingDate=ledger.date||'';
     if(meetingDate>now)todoStatus='未开始';
     else if(meetingDate===now)todoStatus='进行中';
+    else todoStatus='已完成';
+  }else if(module==='training'){
+    // 培训基于日期判断状态
+    const trainingEnd=ledger.endDate||ledger.startDate||'';
+    if(trainingEnd>now)todoStatus='未开始';
+    else if(trainingEnd===now)todoStatus='进行中';
     else todoStatus='已完成';
   }else{
     if(ledger.status==='已报销')todoStatus='已完成';
@@ -2638,7 +2838,7 @@ function syncLedgerTodo(module, ledger, action){
       purchaseRef:module==='purchase'?ledger.id:null,
       expenseRef:module==='expenses'?ledger.id:null,
       meetingRef:module==='meeting'?ledger.id:null,
-      trainingRef:null,
+      trainingRef:module==='training'?ledger.id:null,
       deleted:false
     };
     todos.push(newTodo);
@@ -2900,7 +3100,7 @@ function onPurchaseExpenseChange(){
 
 // 采购/合同/报销 通用导出 CSV
 function exportModuleCSV(module){
-  const keyMap={purchase:'purchases',contract:'contracts',expense:'expenses',meeting:'meetings'};
+  const keyMap={purchase:'purchases',contract:'contracts',expense:'expenses',meeting:'meetings',training:'trainings'};
   const data=DB.get(keyMap[module]||'expenses');
   let filtered;
   if(module==='purchase'){
@@ -2925,6 +3125,16 @@ function exportModuleCSV(module){
       if(searchQ&&!(m.name||'').toLowerCase().includes(searchQ)&&!(m.location||'').toLowerCase().includes(searchQ))return false;
       return true;
     });
+  }else if(module==='training'){
+    const catFilter=document.getElementById('trainingF_cat')?.value||'';
+    const typeFilter=document.getElementById('trainingF_type')?.value||'';
+    const searchQ=(document.getElementById('trainingF_search')?.value||'').toLowerCase();
+    filtered=data.filter(t=>{
+      if(catFilter&&t.category!==catFilter)return false;
+      if(typeFilter&&t.type!==typeFilter)return false;
+      if(searchQ&&!(t.name||'').toLowerCase().includes(searchQ)&&!(t.organizer||'').toLowerCase().includes(searchQ))return false;
+      return true;
+    });
   }else{
     const q=(document.getElementById('expenseF_name')?.value||'').toLowerCase();
     const sf=document.getElementById('expenseF_status')?.value||'';
@@ -2944,6 +3154,9 @@ function exportModuleCSV(module){
   }else if(module==='meeting'){
     csv+='名称,日期,时间,地点,类型,组织方,参与人数,行动项数,下次会议\n';
     filtered.forEach(m=>csv+=`"${m.name}","${m.date}","${m.startTime||''}-${m.endTime||''}","${m.location||''}","${m.type}","${m.organizer||''}","${(m.attendees||[]).length}","${(m.actionItems||[]).length}","${m.nextMeetingDate||''}"\n`);
+  }else if(module==='training'){
+    csv+='名称,组织方,类型,分类,开始日期,结束日期,学分,学分类型,有证书,证书到期,费用,费用状态,有考核,考核结果\n';
+    filtered.forEach(t=>csv+=`"${t.name}","${t.organizer||''}","${t.type}","${t.category||''}","${t.startDate}","${t.endDate||''}","${t.credits||''}","${t.creditType||''}","${t.hasCertificate?'是':'否'}","${t.certificateExpiry||''}","${t.fee||''}","${t.feeStatus||''}","${t.hasExam?'是':'否'}","${t.examResult||''}"\n`);
   }else{
     csv+='申请时间,供应商,发票号,开票日期,发票内容,金额,状态,报销日期,备注\n';
     filtered.forEach(e=>csv+=`"${e.appDate||''}","${e.supplier||''}","${e.invoice||''}","${e.invoiceDate||''}","${e.content||''}","${e.amount||0}","${e.status||''}","${e.reimbDate||''}","${e.note||''}"\n`);
@@ -4254,6 +4467,200 @@ function addMeetingActionItem(data){
 }
 
 // ============================================================
+//  TRAINING RECORDS  (P1-4)
+// ============================================================
+
+function renderTrainings(){
+  const trainings=DB.get('trainings');
+  const catFilter=document.getElementById('trainingF_cat')?.value||'';
+  const typeFilter=document.getElementById('trainingF_type')?.value||'';
+  const searchQ=(document.getElementById('trainingF_search')?.value||'').toLowerCase();
+  const expiringOnly=document.getElementById('trainingF_expiring')?.checked||false;
+
+  const today=new Date();
+  const soon=new Date(today);
+  soon.setDate(soon.getDate()+30);
+  const soonStr=soon.toISOString().slice(0,10);
+  const todayStr=today.toISOString().slice(0,10);
+
+  let filtered=trainings.filter(t=>!t.deleted);
+  if(catFilter)filtered=filtered.filter(t=>t.category===catFilter);
+  if(typeFilter)filtered=filtered.filter(t=>t.type===typeFilter);
+  if(searchQ)filtered=filtered.filter(t=>
+    (t.name||'').toLowerCase().includes(searchQ)||
+    (t.organizer||'').toLowerCase().includes(searchQ)||
+    (t.content||'').toLowerCase().includes(searchQ)
+  );
+  if(expiringOnly)filtered=filtered.filter(t=>t.hasCertificate&&t.certificateExpiry&&t.certificateExpiry>=todayStr&&t.certificateExpiry<=soonStr);
+
+  // 按日期降序
+  filtered.sort((a,b)=>b.startDate.localeCompare(a.startDate));
+
+  // 统计
+  const totalCredits=filtered.reduce((s,t)=>s+(t.credits||0),0);
+  const totalFee=filtered.reduce((s,t)=>s+(t.fee||0),0);
+  const expiringCount=filtered.filter(t=>t.hasCertificate&&t.certificateExpiry&&t.certificateExpiry>=todayStr&&t.certificateExpiry<=soonStr).length;
+  document.getElementById('trainingStats').innerHTML=filtered.length?`
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:4px">
+    <span class="badge badge-blue">共 ${filtered.length} 场</span>
+    <span class="badge badge-green">学分 ${totalCredits}</span>
+    <span class="badge badge-yellow">费用 ¥${totalFee.toLocaleString()}</span>
+    ${expiringCount>0?`<span class="badge badge-red">⚠️ ${expiringCount} 证书即将到期</span>`:''}
+  </div>`:'';
+
+  if(!filtered.length){
+    document.getElementById('trainingList').innerHTML='<div class="empty-state">暂无培训记录</div>';
+    return;
+  }
+
+  const typeBadge={线上:'badge-blue',线下:'badge-green',混合:'badge-purple'};
+  const feeBadge={自费:'badge-yellow',公费:'badge-blue',免费:'badge-green'};
+
+  document.getElementById('trainingList').innerHTML=filtered.map(t=>{
+    const isExpiring=t.hasCertificate&&t.certificateExpiry&&t.certificateExpiry>=todayStr&&t.certificateExpiry<=soonStr;
+    const isPast=t.certificateExpiry&&t.certificateExpiry<todayStr;
+    return `
+    <div class="training-card" style="background:var(--color-bg-card);border-radius:10px;padding:14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);${isExpiring?'border-left:3px solid var(--color-danger);':''}${isPast?'opacity:0.7;':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+            <span class="badge ${typeBadge[t.type]||'badge-gray'}">${t.type}</span>
+            <span class="badge badge-gray">${esc(t.category||'其他')}</span>
+            <strong style="font-size:15px">${esc(t.name)}</strong>
+          </div>
+          <div style="color:var(--color-text2);font-size:12px;line-height:1.6;display:flex;flex-wrap:wrap;gap:12px">
+            <span>📅 ${t.startDate}${t.endDate?'→'+t.endDate:''}</span>
+            ${t.organizer?`<span>👤 ${esc(t.organizer)}</span>`:''}
+            ${t.credits?`<span>📝 ${t.credits}学分${t.creditType?'('+esc(t.creditType)+')':''}</span>`:''}
+            ${t.fee?`<span>💰 ${esc(t.feeStatus||'自费')} ¥${t.fee.toLocaleString()}</span>`:''}
+          </div>
+          ${t.hasCertificate?`<div style="margin-top:6px;font-size:11px">
+            📜 证书${t.certificateNo?': '+esc(t.certificateNo):''}
+            ${t.certificateExpiry?` · 到期: <span style="color:${isExpiring?'var(--color-danger)':isPast?'var(--color-text3)':'var(--color-success)'};font-weight:${isExpiring?'700':'400'}">${t.certificateExpiry}${isExpiring?' ⚠️即将到期':isPast?' 已过期':''}</span>`:''}
+          </div>`:''}
+          ${t.hasExam?`<div style="margin-top:2px;font-size:11px;color:var(--color-text3)">
+            📝 考核${t.examDate?'日期: '+t.examDate:''}${t.examResult?' · 结果: '+t.examResult:''}
+          </div>`:''}
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm" onclick="editTraining(${t.id})" title="编辑">✏️</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteTraining(${t.id})" title="删除">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function saveTraining(){
+  const name=document.getElementById('trainingName').value.trim();
+  const startDate=document.getElementById('trainingStartDate').value;
+  if(!name){toast('请输入培训名称');return;}
+  if(!startDate){toast('请选择开始日期');return;}
+
+  const trainings=DB.raw('trainings');
+  const id=+document.getElementById('trainingId').value;
+  const now=new Date().toISOString().slice(0,10);
+
+  const item={
+    id:id||DB.nextId(trainings),
+    name,
+    organizer:document.getElementById('trainingOrganizer').value.trim(),
+    type:document.getElementById('trainingType').value,
+    category:document.getElementById('trainingCategory').value,
+    startDate,
+    endDate:document.getElementById('trainingEndDate').value,
+    credits:+(document.getElementById('trainingCredits').value||0),
+    creditType:document.getElementById('trainingCreditType').value.trim(),
+    hasCertificate:document.getElementById('trainingHasCertificate').checked,
+    certificateNo:document.getElementById('trainingCertNo').value.trim(),
+    certificateExpiry:document.getElementById('trainingCertExpiry').value,
+    fee:+(document.getElementById('trainingFee').value||0),
+    feeStatus:document.getElementById('trainingFeeStatus').value,
+    hasExam:document.getElementById('trainingHasExam').checked,
+    examDate:document.getElementById('trainingExamDate').value,
+    examResult:document.getElementById('trainingExamResult').value,
+    content:document.getElementById('trainingContent').value.trim(),
+    attachment:document.getElementById('trainingAttachment').value.trim(),
+    todoRef:null,
+    deleted:false,
+    createdAt:now
+  };
+  if(id){
+    const i=trainings.findIndex(t=>t.id===id);
+    if(i>-1){item.todoRef=trainings[i].todoRef;item.deleted=trainings[i].deleted;trainings[i]=item;}
+    else trainings.push(item);
+  }else trainings.push(item);
+  DB.set('trainings',trainings);
+
+  // P1-2 扩展：培训同步工作记录
+  syncLedgerTodo('training',item);
+
+  closeModal('trainingModal');
+  clearTrainingForm();
+  renderTrainings();
+  toast('已保存');
+}
+
+function editTraining(id){
+  const t=DB.get('trainings').find(x=>x.id===id);
+  if(!t)return;
+  document.getElementById('trainingModalTitle').textContent='编辑培训';
+  document.getElementById('trainingId').value=t.id;
+  document.getElementById('trainingName').value=t.name;
+  document.getElementById('trainingOrganizer').value=t.organizer||'';
+  document.getElementById('trainingType').value=t.type||'线下';
+  document.getElementById('trainingCategory').value=t.category||'业务培训';
+  document.getElementById('trainingFeeStatus').value=t.feeStatus||'自费';
+  document.getElementById('trainingStartDate').value=t.startDate;
+  document.getElementById('trainingEndDate').value=t.endDate||'';
+  document.getElementById('trainingFee').value=t.fee||'';
+  document.getElementById('trainingCredits').value=t.credits||'';
+  document.getElementById('trainingCreditType').value=t.creditType||'';
+  document.getElementById('trainingHasCertificate').checked=t.hasCertificate||false;
+  document.getElementById('trainingCertNo').value=t.certificateNo||'';
+  document.getElementById('trainingCertExpiry').value=t.certificateExpiry||'';
+  document.getElementById('trainingHasExam').checked=t.hasExam||false;
+  document.getElementById('trainingExamDate').value=t.examDate||'';
+  document.getElementById('trainingExamResult').value=t.examResult||'';
+  document.getElementById('trainingContent').value=t.content||'';
+  document.getElementById('trainingAttachment').value=t.attachment||'';
+  // 切换条件区域
+  document.getElementById('certFields').style.display=t.hasCertificate?'block':'none';
+  document.getElementById('examFields').style.display=t.hasExam?'block':'none';
+  openModal('trainingModal');
+}
+
+function deleteTraining(id){
+  if(!confirm('确认删除此培训记录？'))return;
+  const trainings=DB.raw('trainings');
+  const t=trainings.find(t=>t.id===id);
+  if(t){
+    t.deleted=true;
+    DB.set('trainings',trainings);
+    syncLedgerTodo('training',t,'delete');
+  }
+  renderTrainings();toast('已删除');
+}
+
+function clearTrainingForm(){
+  ['trainingId','trainingName','trainingOrganizer','trainingCreditType',
+   'trainingStartDate','trainingEndDate','trainingCertNo','trainingCertExpiry',
+   'trainingExamDate','trainingContent','trainingAttachment'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  ['trainingFee','trainingCredits'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('trainingType').value='线下';
+  document.getElementById('trainingCategory').value='业务培训';
+  document.getElementById('trainingFeeStatus').value='自费';
+  document.getElementById('trainingExamResult').value='';
+  document.getElementById('trainingHasCertificate').checked=false;
+  document.getElementById('trainingHasExam').checked=false;
+  document.getElementById('certFields').style.display='none';
+  document.getElementById('examFields').style.display='none';
+  document.getElementById('trainingModalTitle').textContent='新增培训';
+}
+
+// ============================================================
 //  EXPORT / IMPORT DATA
 // ============================================================
 function dumpData(){
@@ -4264,6 +4671,7 @@ function dumpData(){
     purchases:DB.get('purchases'),
     expenses:DB.get('expenses'),
     meetings:DB.get('meetings'),
+    trainings:DB.get('trainings'),
     exportedAt:new Date().toISOString()
   };
 }
@@ -4290,7 +4698,7 @@ function importData(e){
     try{
       const data=JSON.parse(ev.target.result);
       let imported=0;
-      ['todos','inspirations','contracts','purchases','expenses','meetings'].forEach(k=>{
+      ['todos','inspirations','contracts','purchases','expenses','meetings','trainings'].forEach(k=>{
         if(Array.isArray(data[k])){DB.set(k,data[k]);imported+=data[k].length;}
       });
       toast('已导入 '+imported+' 条数据');
@@ -4493,7 +4901,7 @@ const GITEE={
   _mergeData(data){
     if(data&&data.todos!==undefined){
       let itemsMerged=0;
-      ['todos','inspirations','contracts','purchases','expenses','meetings'].forEach(k=>{
+      ['todos','inspirations','contracts','purchases','expenses','meetings','trainings'].forEach(k=>{
         if(Array.isArray(data[k])){
           const local=DB.get(k);
           const localMap={};
@@ -4551,7 +4959,7 @@ const _origDBSet=DB.set;
 DB.set=function(key,val){
   _origDBSet(key,val);
   // only sync for main data keys
-  if(['todos','inspirations','contracts','purchases','expenses','meetings'].includes(key)){
+  if(['todos','inspirations','contracts','purchases','expenses','meetings','trainings'].includes(key)){
     triggerSync();
   }
 };
@@ -5118,6 +5526,7 @@ function renderCurrentPage(){
   if(currentPage==='purchase')renderPurchases();
   if(currentPage==='expense')renderExpenses();
   if(currentPage==='meeting')renderMeetings();
+  if(currentPage==='training')renderTrainings();
 }
 
 // ============================================================

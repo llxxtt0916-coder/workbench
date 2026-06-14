@@ -1531,3 +1531,15 @@ tr:hover td {
 .action-item-row {
   transition: opacity .15s;
 }
+
+/* ============================================================
+   Training Cards (P1-4)
+   ============================================================ */
+
+.training-card {
+  transition: box-shadow .15s;
+}
+
+.training-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
