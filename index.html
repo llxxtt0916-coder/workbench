@@ -12,7 +12,6 @@
 <link rel="apple-touch-icon" href="icons/icon-192.svg">
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <link rel="stylesheet" href="styles/base.css">
 <link rel="stylesheet" href="styles/layout.css">
 <link rel="stylesheet" href="styles/components.css">
@@ -35,7 +34,7 @@
   <nav style="flex:1;overflow-y:auto;padding-bottom:8px">
     <div class="nav-section">总览</div>
     <div class="nav-item active" onclick="navigate('dashboard',this)">
-      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 000 2h14a1 1 0 000-2H3zm0 4a1 1 0 000 2h10a1 1 0 000-2H3zm0 4a1 1 0 000 2h7a1 1 0 000-2H3z"/></svg>
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"/></svg>
       驾驶舱
     </div>
 
@@ -105,44 +104,74 @@
       <button class="btn btn-sm btn-outline" onclick="dismissBackup()">稍后</button>
     </div>
 
-    <!-- ====== DASHBOARD PAGE ====== -->
+    <!-- ====== DASHBOARD PAGE (已重构为数据汇总面板) ====== -->
     <div class="page active" id="page-dashboard">
-      <div class="grid-4 dash-metrics grid-2" style="margin-bottom:20px" id="dashMetrics"></div>
-      <div class="grid-2">
+      <div class="section-header" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="summaryPrevMonth()" title="上个月">◀</button>
+          <span id="summaryMonthTitle" style="font-size:16px;font-weight:600;min-width:100px;text-align:center">2026年6月</span>
+          <button class="btn btn-outline btn-sm" onclick="summaryNextMonth()" title="下个月">▶</button>
+          <button class="btn btn-outline btn-sm" onclick="summaryGoToday()" style="margin-left:4px">本月</button>
+        </div>
+      </div>
+
+      <!-- 统计指标卡片 -->
+      <div class="grid-4 dash-metrics grid-2" style="margin-bottom:20px" id="summaryMetrics"></div>
+
+      <!-- 任务概况 + 堵点卡点 -->
+      <div class="grid-2" style="margin-bottom:16px">
         <div class="card">
           <div class="card-header">
-            <span class="card-title">本月任务完成趋势</span>
+            <span class="card-title">📋 本月任务概况</span>
+            <button class="btn btn-sm btn-outline" onclick="toggleSummaryDetail('taskDetail')" id="btnTaskToggle">展开明细</button>
           </div>
-          <div class="chart-wrap"><canvas id="todoChart" role="img" aria-label="本月任务完成趋势折线图">任务趋势图</canvas></div>
+          <div id="summaryTaskOverview"></div>
+          <div id="summaryTaskDetail" style="display:none;margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px"></div>
         </div>
         <div class="card">
           <div class="card-header">
-            <span class="card-title">合同金额分布</span>
+            <span class="card-title">🚧 堵点卡点汇总</span>
           </div>
-          <div class="chart-wrap"><canvas id="contractChart" role="img" aria-label="合同金额分布饼图">合同分布图</canvas></div>
+          <div id="summaryBlockers"></div>
         </div>
       </div>
-      <div class="grid-2" style="margin-top:16px">
+
+      <!-- 台账汇总 -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <span class="card-title">💰 台账汇总</span>
+          <span style="font-size:11px;color:var(--color-text3)">合同 · 采购 · 报销</span>
+        </div>
+        <div class="grid-3" id="summaryLedger"></div>
+      </div>
+
+      <!-- 会议 + 培训 -->
+      <div class="grid-2" style="margin-bottom:16px">
         <div class="card">
-          <div class="card-header"><span class="card-title">⭐ 重点工作</span><button class="btn btn-sm btn-outline" onclick="navigate('todo');setTimeout(()=>switchTodoTab('key'),100)">查看全部</button></div>
-          <div id="dashKeyTodo"></div>
+          <div class="card-header">
+            <span class="card-title">📅 本月会议</span>
+            <button class="btn btn-sm btn-outline" onclick="toggleSummaryDetail('meetingDetail')" id="btnMeetingToggle">展开明细</button>
+          </div>
+          <div id="summaryMeeting"></div>
+          <div id="summaryMeetingDetail" style="display:none;margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px"></div>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">🔄 周期工作</span><button class="btn btn-sm btn-outline" onclick="navigate('todo');setTimeout(()=>switchTodoTab('recurring'),100)">查看全部</button></div>
-          <div id="dashRecurringTodo"></div>
+          <div class="card-header">
+            <span class="card-title">🎓 本月培训</span>
+            <button class="btn btn-sm btn-outline" onclick="toggleSummaryDetail('trainingDetail')" id="btnTrainingToggle">展开明细</button>
+          </div>
+          <div id="summaryTraining"></div>
+          <div id="summaryTrainingDetail" style="display:none;margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px"></div>
         </div>
       </div>
-      <div class="card" style="margin-top:16px">
-        <div class="card-header"><span class="card-title">最近任务</span><button class="btn btn-sm btn-outline" onclick="navigate('todo',document.querySelector('.nav-item:nth-child(2)'))">查看全部</button></div>
-        <div id="dashRecentTodo"></div>
-      </div>
-      <div class="card" style="margin-top:16px">
-        <div class="card-header"><span class="card-title">✅ 已完成工作</span><button class="btn btn-sm btn-outline" onclick="navigate('todo');setTimeout(()=>switchTodoTab('record'),100)">查看全部</button></div>
-        <div id="dashDoneTodo"></div>
-      </div>
-      <div class="card" style="margin-top:16px;display:none" id="dashReminderCard">
-        <div class="card-header"><span class="card-title">⏰ 截止提醒</span><button class="btn btn-sm btn-outline" onclick="navigate('todo',document.querySelector('.nav-item:nth-child(2)'))">查看详情</button></div>
-        <div id="dashReminders"></div>
+
+      <!-- 下月计划 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📆 下月计划</span>
+          <span style="font-size:11px;color:var(--color-text3)" id="summaryNextMonthLabel">截止日期在下月的任务</span>
+        </div>
+        <div id="summaryNextMonthPlan"></div>
       </div>
     </div>
 
@@ -1510,7 +1539,6 @@ function repairData(){
 // ============================================================
 const pageTitles={dashboard:'驾驶舱',todo:'工作记录',inspiration:'灵感收集',meeting:'会议日程',training:'培训记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
 let currentPage='dashboard';
-let todoChartInst=null, contractChartInst=null;
 
 function navigate(page,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -1520,7 +1548,7 @@ function navigate(page,el){
   document.getElementById('pageTitle').textContent=pageTitles[page]||page;
   currentPage=page;
   closeSidebar();
-  if(page==='dashboard')renderDashboard();
+  if(page==='dashboard')renderSummary();
   if(page==='todo')renderTodo();
   if(page==='inspiration')renderInspiration();
   if(page==='contract')renderContracts();
@@ -1573,112 +1601,247 @@ setInterval(updateClock,30000);updateClock();
 // ============================================================
 function fmt(n){return(+n||0).toLocaleString('zh-CN')}
 
-function renderDashboard(){
+// ============================================================
+//  DATA SUMMARY PANEL (P2-1) — 跨模块交叉统计+钻取
+// ============================================================
+let summaryYear, summaryMonth;
+function initSummaryMonth(){
+  const now=new Date();
+  summaryYear=now.getFullYear();
+  summaryMonth=now.getMonth()+1;
+}
+initSummaryMonth();
+
+function fmtMonthKey(y,m){ return y+'-'+String(m).padStart(2,'0'); }
+function fmtCNY(n){ return '¥'+(+n||0).toLocaleString('zh-CN',{minimumFractionDigits:0,maximumFractionDigits:2}); }
+
+function summaryPrevMonth(){
+  if(summaryMonth===1){ summaryMonth=12; summaryYear--; }
+  else summaryMonth--;
+  renderSummary();
+}
+function summaryNextMonth(){
+  if(summaryMonth===12){ summaryMonth=1; summaryYear++; }
+  else summaryMonth++;
+  renderSummary();
+}
+function summaryGoToday(){ initSummaryMonth(); renderSummary(); }
+
+function renderSummary(){
+  const monthKey=fmtMonthKey(summaryYear,summaryMonth);
+  const monthPrefix=monthKey; // "2026-06"
+  document.getElementById('summaryMonthTitle').textContent=summaryYear+'年'+summaryMonth+'月';
+  document.getElementById('summaryNextMonthLabel').textContent='截止日期在 '+(summaryMonth===12?(summaryYear+1)+'年1月':summaryYear+'年'+(summaryMonth+1)+'月')+' 的任务';
+
   const todos=DB.get('todos');
   const contracts=DB.get('contracts');
   const purchases=DB.get('purchases');
   const expenses=DB.get('expenses');
+  const meetings=DB.get('meetings');
+  const trainings=DB.get('trainings');
 
-  const pendingTodo=todos.filter(t=>t.type==='pending').length;
-  const keyTodo=todos.filter(t=>t.type==='key').length;
-  const recurringTodo=todos.filter(t=>t.type==='recurring').length;
-  const doneTodo=todos.filter(t=>t.type==='record').length;
-  const contractSum=contracts.reduce((s,c)=>s+(+c.amount||0),0);
-  const expSum=expenses.filter(e=>e.status==='已报销').reduce((s,e)=>s+(+e.amount||0),0);
+  // ----- 本月筛选辅助函数 -----
+  const inMonth=s=>s&&s.startsWith(monthPrefix);
 
-  document.getElementById('dashMetrics').innerHTML=`
-    <div class="metric metric-clickable" onclick="navigate('todo');setTimeout(()=>switchTodoTab('pending'),100)"><div class="metric-label">待办工作</div><div class="metric-value" style="color:var(--color-primary)">${pendingTodo}</div><div class="metric-sub">点击查看详情</div></div>
-    <div class="metric metric-clickable" onclick="navigate('todo');setTimeout(()=>switchTodoTab('key'),100)"><div class="metric-label">⭐ 重点工作</div><div class="metric-value" style="color:var(--color-purple)">${keyTodo}</div><div class="metric-sub">点击查看详情</div></div>
-    <div class="metric metric-clickable" onclick="navigate('todo');setTimeout(()=>switchTodoTab('recurring'),100)"><div class="metric-label">🔄 周期工作</div><div class="metric-value" style="color:var(--color-teal)">${recurringTodo}</div><div class="metric-sub">点击查看详情</div></div>
-    <div class="metric metric-clickable" onclick="navigate('todo');setTimeout(()=>switchTodoTab('record'),100)"><div class="metric-label">✅ 已完成</div><div class="metric-value" style="color:var(--color-success)">${doneTodo}</div><div class="metric-sub">点击查看详情</div></div>
+  // ----- 1. 本月任务统计 -----
+  const monthCompleted=todos.filter(t=>t.completeDate&&inMonth(t.completeDate));
+  const monthKeyCompleted=monthCompleted.filter(t=>t.type==='record'&&t._prevType==='key').length;
+  const monthRecCompleted=monthCompleted.filter(t=>t.type==='record'&&t._prevType==='recurring').length;
+  const monthPendingCompleted=monthCompleted.filter(t=>t.type==='record'&&(!t._prevType||t._prevType==='pending')).length;
+  const totalCompleted=monthCompleted.length;
+
+  // 本月创建的任务（非已完成/取消状态）
+  const monthActive=todos.filter(t=>t.type!=='record'&&t.status!=='已完成'&&t.status!=='已取消'&&t.issueDate&&inMonth(t.issueDate));
+  const monthOverdue=todos.filter(t=>t.type!=='record'&&t.status!=='已完成'&&t.status!=='已取消'&&t.deadline&&t.deadline<new Date().toISOString().slice(0,10));
+  const monthBlockers=todos.filter(t=>t.blocker&&t.type!=='record').map(t=>({name:t.name,blocker:t.blocker,deadline:t.deadline,status:t.status}));
+
+  // 计算完成率（本月截止的 + 本月完成的）
+  const monthDue=todos.filter(t=>t.type!=='record'&&t.deadline&&inMonth(t.deadline)).length;
+  const monthDueCompleted=todos.filter(t=>t.type==='record'&&t.completeDate&&inMonth(t.completeDate)&&t.deadline&&inMonth(t.deadline)).length;
+  const completionRate=monthDue>0?Math.round(monthDueCompleted/monthDue*100):0;
+
+  // 平均滞留天数
+  const dwellItems=todos.filter(t=>t.type==='record'&&t.completeDate&&inMonth(t.completeDate)&&t.createdAt);
+  const totalDwell=dwellItems.reduce((s,t)=>{
+    const start=new Date(t.createdAt); const end=new Date(t.completeDate);
+    return s+Math.max(0,Math.ceil((end-start)/86400000));
+  },0);
+  const avgDwell=dwellItems.length>0?Math.round(totalDwell/dwellItems.length):0;
+
+  // ----- 2. 指标卡 -----
+  document.getElementById('summaryMetrics').innerHTML=`
+    <div class="metric"><div class="metric-label">本月完成</div><div class="metric-value" style="color:var(--color-success)">${totalCompleted}</div><div class="metric-sub">完成率 ${completionRate}%</div></div>
+    <div class="metric"><div class="metric-label">平均滞留</div><div class="metric-value" style="color:var(--color-warning)">${avgDwell}</div><div class="metric-sub">天</div></div>
+    <div class="metric"><div class="metric-label">逾期任务</div><div class="metric-value" style="color:var(--color-danger)">${monthOverdue.length}</div><div class="metric-sub">截止已过未完成</div></div>
+    <div class="metric"><div class="metric-label">堵点卡点</div><div class="metric-value" style="color:var(--color-purple)">${monthBlockers.length}</div><div class="metric-sub">项工作受阻</div></div>
   `;
 
-  // Todo trend chart (last 7 days completions)
-  const labels=[],data=[];
-  for(let i=6;i>=0;i--){
-    const d=new Date();d.setDate(d.getDate()-i);
-    const key=d.toISOString().slice(0,10);
-    labels.push(key.slice(5));
-    data.push(todos.filter(t=>t.completeDate&&t.completeDate===key).length);
-  }
-  if(todoChartInst)todoChartInst.destroy();
-  todoChartInst=new Chart(document.getElementById('todoChart'),{
-    type:'line',
-    data:{labels,datasets:[{label:'完成工作',data,borderColor:'#3b6bde',backgroundColor:'rgba(59,107,222,.08)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#3b6bde'}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:'#f3f4f6'}},x:{grid:{display:false}}}}
+  // ----- 3. 任务概况 -----
+  let taskHtml=`<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px">
+    <div style="text-align:center"><div style="font-size:24px;font-weight:700;color:var(--color-primary)">${totalCompleted}</div><div style="font-size:11px;color:var(--color-text3)">本月完成</div></div>
+    <div style="text-align:center"><div style="font-size:24px;font-weight:700;color:var(--color-purple)">${monthKeyCompleted}</div><div style="font-size:11px;color:var(--color-text3)">重点工作</div></div>
+    <div style="text-align:center"><div style="font-size:24px;font-weight:700;color:var(--color-teal)">${monthRecCompleted}</div><div style="font-size:11px;color:var(--color-text3)">周期工作</div></div>
+    <div style="text-align:center"><div style="font-size:24px;font-weight:700;color:var(--color-text2)">${monthPendingCompleted}</div><div style="font-size:11px;color:var(--color-text3)">待办转化</div></div>
+  </div>`;
+  taskHtml+=`<div style="font-size:12px;color:var(--color-text2);line-height:1.8">
+    · 逾期未完成 <strong style="color:var(--color-danger)">${monthOverdue.length}</strong> 项 &nbsp;
+    · 平均滞留 <strong>${avgDwell}</strong> 天
+    ${completionRate>0?`&nbsp; · 本月到期完成率 <strong>${completionRate}%</strong>`:''}
+  </div>`;
+  document.getElementById('summaryTaskOverview').innerHTML=taskHtml;
+
+  // 本月完成明细（钻取）
+  document.getElementById('summaryTaskDetail').innerHTML=monthCompleted.length
+    ? monthCompleted.sort((a,b)=>(b.completeDate||'').localeCompare(a.completeDate||'')).map(t=>{
+      const typeLabel=t._prevType==='key'?'⭐':t._prevType==='recurring'?'🔄':'📋';
+      return `<div class="todo-item" style="cursor:pointer" onclick="navigate('todo');setTimeout(()=>switchTodoTab('record'),100)">
+        <div class="priority-dot" style="background:${PRIORITY_COLOR[t.priority]||PRIORITY_COLOR['mid']}"></div>
+        <div class="todo-text">${typeLabel} ${esc(t.name)}</div>
+        <span class="badge badge-green" style="font-size:10px">✓ ${t.completeDate}</span>
+      </div>`;
+    }).join('')
+    : '<div class="empty-state" style="padding:16px"><p>本月暂无完成任务</p></div>';
+
+  // ----- 4. 堵点卡点 -----
+  document.getElementById('summaryBlockers').innerHTML=monthBlockers.length
+    ? monthBlockers.map(b=>`<div class="blocker-item" style="padding:8px 0;border-bottom:1px solid var(--color-border)">
+      <div style="font-weight:500;margin-bottom:4px">⚠️ ${esc(b.name)} <span class="badge badge-gray" style="font-size:10px">${b.status||'进行中'}</span></div>
+      <div style="font-size:12px;color:var(--color-text2)">${esc(b.blocker)}</div>
+      ${b.deadline?`<div style="font-size:10px;color:var(--color-text3);margin-top:2px">截止: ${b.deadline}</div>`:''}
+    </div>`).join('')
+    : '<div class="empty-state" style="padding:16px"><p>✅ 无堵点卡点，工作进展顺利</p></div>';
+
+  // ----- 5. 台账汇总 -----
+  const monthContracts=contracts.filter(c=>c.signDate&&inMonth(c.signDate));
+  const monthPurchases=purchases.filter(p=>p.date&&inMonth(p.date));
+  const monthExpensesApp=expenses.filter(e=>e.appDate&&inMonth(e.appDate));
+  const monthExpensesReimb=expenses.filter(e=>e.reimbDate&&inMonth(e.reimbDate));
+
+  const contractAmt=monthContracts.reduce((s,c)=>s+(+c.amount||0),0);
+  const purchaseAmt=monthPurchases.reduce((s,p)=>s+(+p.amount||0),0);
+  const expenseAmt=monthExpensesApp.reduce((s,e)=>s+(+e.amount||0),0);
+  const reimbAmt=monthExpensesReimb.reduce((s,e)=>s+(+e.amount||0),0);
+
+  document.getElementById('summaryLedger').innerHTML=`
+    <div class="metric metric-clickable" onclick="toggleSummaryDetail('contractDetail')">
+      <div class="metric-label">📝 合同签署</div>
+      <div class="metric-value" style="font-size:20px;color:var(--color-primary)">${monthContracts.length} 份</div>
+      <div class="metric-sub">金额 ${fmtCNY(contractAmt)}</div>
+    </div>
+    <div class="metric metric-clickable" onclick="toggleSummaryDetail('purchaseDetail')">
+      <div class="metric-label">🛒 采购申请</div>
+      <div class="metric-value" style="font-size:20px;color:var(--color-teal)">${monthPurchases.length} 笔</div>
+      <div class="metric-sub">金额 ${fmtCNY(purchaseAmt)}</div>
+    </div>
+    <div class="metric metric-clickable" onclick="toggleSummaryDetail('expenseDetail')">
+      <div class="metric-label">🧾 报销申请/到账</div>
+      <div class="metric-value" style="font-size:20px;color:var(--color-purple)">${monthExpensesApp.length}/${monthExpensesReimb.length}</div>
+      <div class="metric-sub">${fmtCNY(expenseAmt)} / ${fmtCNY(reimbAmt)}</div>
+    </div>
+  `;
+  // 台账钻取容器
+  const existingDrill=document.getElementById('summaryLedgerDrill');
+  if(existingDrill) existingDrill.remove();
+  let ledgerDetailHTML=`<div id="summaryLedgerDrill" style="margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px">`;
+  ledgerDetailHTML+=`<div id="summaryContractDetail" style="display:none;margin-bottom:8px"><strong style="font-size:12px">合同明细：</strong>`+
+    (monthContracts.length?monthContracts.map(c=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('contract')">
+      <span>${esc(c.name)} · ${esc(c.party||'')}</span><span class="badge badge-gray" style="font-size:10px">${c.status}</span><span style="font-size:12px;color:var(--color-text2);margin-left:auto">${fmtCNY(c.amount)}</span>
+    </div>`).join(''):'<div class="empty-state" style="padding:8px"><p>本月无合同签署</p></div>')+'</div>';
+  ledgerDetailHTML+=`<div id="summaryPurchaseDetail" style="display:none;margin-bottom:8px"><strong style="font-size:12px">采购明细：</strong>`+
+    (monthPurchases.length?monthPurchases.map(p=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('purchase')">
+      <span>${esc(p.name)} · ${esc(p.supplier||'')}</span><span class="badge badge-gray" style="font-size:10px">${p.status}</span><span style="font-size:12px;color:var(--color-text2);margin-left:auto">${fmtCNY(p.amount)}</span>
+    </div>`).join(''):'<div class="empty-state" style="padding:8px"><p>本月无采购记录</p></div>')+'</div>';
+  ledgerDetailHTML+=`<div id="summaryExpenseDetail" style="display:none;margin-bottom:8px"><strong style="font-size:12px">报销明细：</strong>`+
+    (monthExpensesApp.length?monthExpensesApp.map(e=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('expense')">
+      <span>${esc(e.content||'报销').slice(0,30)} · ${esc(e.supplier||'')}</span><span class="badge badge-gray" style="font-size:10px">${e.status}</span><span style="font-size:12px;color:var(--color-text2);margin-left:auto">${fmtCNY(e.amount)}</span>
+    </div>`).join(''):'<div class="empty-state" style="padding:8px"><p>本月无报销记录</p></div>')+'</div>';
+  ledgerDetailHTML+=`</div>`;
+  document.getElementById('summaryLedger').insertAdjacentHTML('afterend',ledgerDetailHTML);
+
+  // ----- 6. 会议统计 -----
+  const monthMeetings=meetings.filter(m=>m.date&&inMonth(m.date));
+  const totalActionItems=monthMeetings.reduce((s,m)=>s+(m.actionItems||[]).length,0);
+  const pendingActionItems=monthMeetings.reduce((s,m)=>s+(m.actionItems||[]).filter(a=>!a.done).length,0);
+  document.getElementById('summaryMeeting').innerHTML=`
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div style="text-align:center"><div style="font-size:24px;font-weight:700;color:var(--color-primary)">${monthMeetings.length}</div><div style="font-size:11px;color:var(--color-text3)">场会议</div></div>
+      <div style="text-align:center"><div style="font-size:24px;font-weight:700;color:var(--color-warning)">${pendingActionItems}</div><div style="font-size:11px;color:var(--color-text3)">待完成行动项</div></div>
+      <div style="text-align:center"><div style="font-size:24px;font-weight:700;color:var(--color-text2)">${totalActionItems-pendingActionItems}</div><div style="font-size:11px;color:var(--color-text3)">已完成</div></div>
+    </div>
+  `;
+  document.getElementById('summaryMeetingDetail').innerHTML=monthMeetings.length
+    ? monthMeetings.sort((a,b)=>a.date.localeCompare(b.date)).map(m=>{
+      const typeColors={线上:'#3b82f6',线下:'#10b981',混合:'#8b5cf6'};
+      return `<div class="todo-item" style="cursor:pointer" onclick="navigate('meeting')">
+        <span style="display:inline-block;width:3px;height:14px;border-radius:2px;background:${typeColors[m.type]||'#6366f1'};margin-right:6px;flex-shrink:0"></span>
+        <span>${esc(m.name)}</span>
+        <span class="badge badge-gray" style="font-size:10px">${m.date}</span>
+        ${m.actionItems&&m.actionItems.length?`<span class="badge badge-yellow" style="font-size:10px">${m.actionItems.filter(a=>!a.done).length}项待办</span>`:''}
+      </div>`;
+    }).join('')
+    : '<div class="empty-state" style="padding:16px"><p>本月无会议</p></div>';
+
+  // ----- 7. 培训统计 -----
+  const monthTrainings=trainings.filter(t=>t.startDate&&inMonth(t.startDate));
+  const totalCredits=monthTrainings.reduce((s,t)=>s+(t.credits||0),0);
+  const expiringCert=monthTrainings.filter(t=>t.hasCertificate&&t.certificateExpiry).length;
+  document.getElementById('summaryTraining').innerHTML=`
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div style="text-align:center"><div style="font-size:24px;font-weight:700;color:var(--color-primary)">${monthTrainings.length}</div><div style="font-size:11px;color:var(--color-text3)">场培训</div></div>
+      <div style="text-align:center"><div style="font-size:24px;font-weight:700;color:var(--color-success)">${totalCredits}</div><div style="font-size:11px;color:var(--color-text3)">总学分</div></div>
+      <div style="text-align:center"><div style="font-size:24px;font-weight:700;color:var(--color-purple)">${expiringCert}</div><div style="font-size:11px;color:var(--color-text3)">涉及证书</div></div>
+    </div>
+  `;
+  document.getElementById('summaryTrainingDetail').innerHTML=monthTrainings.length
+    ? monthTrainings.sort((a,b)=>a.startDate.localeCompare(b.startDate)).map(t=>{
+      const typeBadge={线上:'badge-blue',线下:'badge-green',混合:'badge-purple'};
+      return `<div class="todo-item" style="cursor:pointer" onclick="navigate('training')">
+        <span class="badge ${typeBadge[t.type]||'badge-gray'}" style="font-size:10px">${t.type}</span>
+        <span>${esc(t.name)}</span>
+        <span style="font-size:11px;color:var(--color-text3)">${t.startDate}${t.endDate?'→'+t.endDate:''}</span>
+        ${t.credits?`<span class="badge badge-green" style="font-size:10px">${t.credits}学分</span>`:''}
+      </div>`;
+    }).join('')
+    : '<div class="empty-state" style="padding:16px"><p>本月无培训</p></div>';
+
+  // ----- 8. 下月计划 -----
+  const nextMonth=summaryMonth===12?1:summaryMonth+1;
+  const nextYear=summaryMonth===12?summaryYear+1:summaryYear;
+  const nextPrefix=fmtMonthKey(nextYear,nextMonth);
+  const nextMonthTasks=todos.filter(t=>t.type!=='record'&&t.status!=='已完成'&&t.status!=='已取消'&&t.deadline&&t.deadline.startsWith(nextPrefix));
+  document.getElementById('summaryNextMonthPlan').innerHTML=nextMonthTasks.length
+    ? nextMonthTasks.sort((a,b)=>a.deadline.localeCompare(b.deadline)).map(t=>`
+      <div class="todo-item" style="cursor:pointer" onclick="navigate('todo');setTimeout(()=>switchTodoTab('${t.type}'),100)">
+        <div class="priority-dot" style="background:${PRIORITY_COLOR[t.priority]||PRIORITY_COLOR['mid']}"></div>
+        <div class="todo-text">${esc(t.name)}</div>
+        <span class="badge badge-gray" style="font-size:10px">${t.deadline}</span>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:16px"><p>下月暂无到期任务</p></div>';
+
+  // 重置钻取按钮状态
+  toggleSummaryDetailState={};
+  ['btnTaskToggle','btnMeetingToggle','btnTrainingToggle'].forEach(id=>{
+    const el=document.getElementById(id); if(el)el.textContent='展开明细';
   });
+}
 
-  // Contract status chart
-  const statuses=['执行中','已完成','待签','已过期'];
-  const colors=['#3b6bde','#22c55e','#f59e0b','#e24b4a'];
-  const cData=statuses.map(s=>contracts.filter(c=>c.status===s).length);
-  if(contractChartInst)contractChartInst.destroy();
-  contractChartInst=new Chart(document.getElementById('contractChart'),{
-    type:'doughnut',
-    data:{labels:statuses,datasets:[{data:cData,backgroundColor:colors,borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:10,padding:8}}}}
-  });
-
-  // Recent pending todos
-  const recent=todos.filter(t=>t.type==='pending').slice(0,5);
-  document.getElementById('dashRecentTodo').innerHTML=recent.length?
-    recent.map(t=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('todo');setTimeout(()=>switchTodoTab('pending'),100)">
-      <div class="priority-dot" style="background:${PRIORITY_COLOR[t.priority]||PRIORITY_COLOR['mid']}"></div>
-      <div class="todo-text">${esc(t.name)}</div>
-      ${t.deadline?`<span class="badge badge-gray" style="font-size:11px;flex-shrink:0">${t.deadline}</span>`:''}
-    </div>`).join(''):
-    '<div class="empty-state" style="padding:20px"><p>暂无待办工作</p></div>';
-
-  // Key todos
-  const keyItems=todos.filter(t=>t.type==='key').slice(0,4);
-  document.getElementById('dashKeyTodo').innerHTML=keyItems.length?
-    keyItems.map(t=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('todo');setTimeout(()=>switchTodoTab('key'),100)">
-      <div class="priority-dot" style="background:${PRIORITY_COLOR[t.priority]||PRIORITY_COLOR['mid']}"></div>
-      <div class="todo-text">${esc(t.name)}</div>
-      ${t.deadline?`<span class="badge" style="font-size:10px;flex-shrink:0;background:#f3e8ff;color:#7c3aed">${t.deadline}</span>`:''}
-    </div>`).join(''):
-    '<div class="empty-state" style="padding:20px"><p>暂无重点工作</p></div>';
-
-  // Recurring todos
-  const recItems=todos.filter(t=>t.type==='recurring').slice(0,4);
-  document.getElementById('dashRecurringTodo').innerHTML=recItems.length?
-    recItems.map(t=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('todo');setTimeout(()=>switchTodoTab('recurring'),100)">
-      <div class="priority-dot" style="background:${PRIORITY_COLOR[t.priority]||PRIORITY_COLOR['mid']}"></div>
-      <div class="todo-text">${esc(t.name)}</div>
-      ${t.deadline?`<span class="badge" style="font-size:10px;flex-shrink:0;background:#ccfbf1;color:#0f766e">${t.deadline}</span>`:''}
-    </div>`).join(''):
-    '<div class="empty-state" style="padding:20px"><p>暂无周期工作</p></div>';
-
-  // Done todos
-  const doneItems=todos.filter(t=>t.type==='record').slice(0,5);
-  document.getElementById('dashDoneTodo').innerHTML=doneItems.length?
-    doneItems.map(t=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('todo');setTimeout(()=>switchTodoTab('record'),100)">
-      <div class="priority-dot" style="background:${PRIORITY_COLOR[t.priority]||PRIORITY_COLOR['mid']}"></div>
-      <div class="todo-text">${esc(t.name)}</div>
-      ${t.completeDate?`<span class="badge" style="font-size:10px;flex-shrink:0;background:#dcfce7;color:#166534">✓ ${t.completeDate}</span>`:''}
-    </div>`).join(''):
-    '<div class="empty-state" style="padding:20px"><p>暂无已完成工作</p></div>';
-  // Deadline reminders on dashboard
-  const dashReminders=checkDeadlineReminders().slice(0,4);
-  const rCard=document.getElementById('dashReminderCard');
-  const rDiv=document.getElementById('dashReminders');
-  if(rDiv&&rCard){
-    if(dashReminders.length){
-      rCard.style.display='';
-      rDiv.innerHTML=dashReminders.map(r=>{
-        const diff=Math.ceil((new Date(r.deadline)-new Date())/86400000);
-        const days=r.urgency==='today'?'今天到期':'还剩'+diff+'天';
-        return '<div class="todo-item" style="border-left:3px solid '+(r.urgency==='today'?'var(--color-danger)':'var(--color-warning)')+';padding-left:10px;cursor:pointer" onclick="navigate(\'todo\',document.querySelector(\'.nav-item:nth-child(2)\'));setTimeout(()=>switchTodoTab(\''+r.type+'\'),100)">'
-          +'<div class="priority-dot" style="background:'+(PRIORITY_COLOR[r.priority]||PRIORITY_COLOR.mid)+'"></div>'
-          +'<div class="todo-text">'+esc(r.name)+'</div>'
-          +'<span class="reminder-badge" style="margin-right:4px">'+(TYPE_LABEL[r.type]||r.type)+'</span>'
-          +'<span class="badge" style="font-size:10px;flex-shrink:0;background:'+(r.urgency==='today'?'#fee2e2':'#fef3c7')+';color:'+(r.urgency==='today'?'#991b1b':'#92400e')+'">'+days+'</span>'
-          +'</div>';
-      }).join('');
-    }else{
-      rCard.style.display='none';
-    }
+// 钻取面板切换
+let toggleSummaryDetailState={};
+function toggleSummaryDetail(sectionId){
+  // sectionId: 'taskDetail' | 'meetingDetail' | 'trainingDetail' | 'contractDetail' | 'purchaseDetail' | 'expenseDetail'
+  const el=document.getElementById('summary'+sectionId.charAt(0).toUpperCase()+sectionId.slice(1));
+  if(!el)return;
+  if(el.style.display==='none'){
+    el.style.display='block';
+    toggleSummaryDetailState[sectionId]=true;
+  }else{
+    el.style.display='none';
+    toggleSummaryDetailState[sectionId]=false;
   }
+  // 更新按钮文字（仅 task/meeting/training 有按钮）
+  const btnMap={taskDetail:'btnTaskToggle',meetingDetail:'btnMeetingToggle',trainingDetail:'btnTrainingToggle'};
+  const btn=document.getElementById(btnMap[sectionId]);
+  if(btn)btn.textContent=toggleSummaryDetailState[sectionId]?'收起明细':'展开明细';
 }
 
 // ============================================================
@@ -2625,6 +2788,7 @@ function saveInspiration(){
   };
   if(id){const i=insps.findIndex(x=>x.id===id);if(i>-1){item.deleted=insps[i].deleted;insps[i]=item;}else insps.push(item);}
   else insps.push(item);
+  DB.set('inspirations',insps);
   closeModal('inspModal');
   clearInspForm();
   renderInspiration();
@@ -5529,7 +5693,7 @@ function smartSave(){
 //  RENDER CURRENT PAGE
 // ============================================================
 function renderCurrentPage(){
-  if(currentPage==='dashboard')renderDashboard();
+  if(currentPage==='dashboard')renderSummary();
   if(currentPage==='todo')renderTodo();
   if(currentPage==='inspiration')renderInspiration();
   if(currentPage==='contract')renderContracts();
@@ -5563,16 +5727,16 @@ repairData(); // 自动修复第一版智能录入产生的旧格式数据
     await GITEE.pull();
     repairData(); // 拉取云端数据后也跑一次修复
   }
-  renderDashboard();
+  renderSummary();
   // 每小时检查一次截止提醒
   setInterval(()=>{
-    if(currentPage==='dashboard')renderDashboard();
+    if(currentPage==='dashboard')renderSummary();
     if(currentPage==='todo')renderTodo();
   },3600000);
   // 切回标签页时刷新提醒
   document.addEventListener('visibilitychange',()=>{
     if(!document.hidden){
-      if(currentPage==='dashboard')renderDashboard();
+      if(currentPage==='dashboard')renderSummary();
       if(currentPage==='todo')renderTodo();
     }
   });
