@@ -1796,19 +1796,25 @@ function renderDashboard() {
 
   // --- 核心指标 ---
   const totalCompleted = todos.filter(t => t.type === 'record').length;
-  const activeTasks = todos.filter(t => t.type !== 'record' && t.status !== '已完成' && t.status !== '已取消').length;
+  const activeTasks = todos.filter(t => t.type !== 'record' && t.type !== 'recurring' && t.status !== '已完成' && t.status !== '已取消').length;
   const overdueTasks = todos.filter(t => t.type !== 'record' && t.status !== '已完成' && t.status !== '已取消' && t.deadline && t.deadline < new Date().toISOString().slice(0, 10)).length;
+
+  // 临期预警：截止日在未来 3 天内（不含逾期），且未完成、非 record、非周期
+  { const today = new Date(); today.setHours(0,0,0,0);
+    const t3 = new Date(today); t3.setDate(t3.getDate()+3);
+    const t3Str = t3.toISOString().slice(0,10);
+    const todayStr = today.toISOString().slice(0,10);
+    var imminentTasks = todos.filter(function(t) {
+      return t.type !== 'record' && t.type !== 'recurring' && t.status !== '已完成' && t.status !== '已取消'
+        && t.deadline && t.deadline >= todayStr && t.deadline <= t3Str;
+    }).length;
+  }
 
   // 台账汇总
   const totalContractAmt = contracts.reduce((s, c) => s + (+c.amount || 0), 0);
   const totalPurchaseAmt = purchases.reduce((s, p) => s + (+p.amount || 0), 0);
   const totalExpenseAmt = expenses.reduce((s, e) => s + (+e.amount || 0), 0);
   const pendingExpenses = expenses.filter(e => e.status !== '已到账' && e.status !== '已报销').length;
-
-  // 总体完成率（有截止日期的任务中）
-  const allWithDeadline = todos.filter(t => t.type !== 'record' && t.deadline).length;
-  const completedWithDeadline = todos.filter(t => t.type === 'record' && t.deadline && t.completeDate).length;
-  const overallRate = allWithDeadline > 0 ? Math.round(completedWithDeadline / allWithDeadline * 100) : 0;
 
   // --- 渲染核心 KPI 卡片 ---
   document.getElementById('dashboardMetrics').innerHTML = `
@@ -1822,10 +1828,10 @@ function renderDashboard() {
       <div class="metric-value" style="color:var(--color-primary)">${activeTasks}</div>
       <div class="metric-sub">项活跃任务</div>
     </div>
-    <div class="metric">
-      <div class="metric-label">总体完成率</div>
-      <div class="metric-value" style="color:var(--color-warning)">${overallRate}%</div>
-      <div class="metric-sub">有截止期任务</div>
+    <div class="metric" style="cursor:pointer" onclick="navigate('todo');setTimeout(function(){switchTodoTab('pending')},100)">
+      <div class="metric-label">临期预警</div>
+      <div class="metric-value" style="color:var(--color-warning)">${imminentTasks}</div>
+      <div class="metric-sub">项3日内到期</div>
     </div>
     <div class="metric" style="cursor:pointer" onclick="navigate('todo');setTimeout(function(){switchTodoTab('pending')},100)">
       <div class="metric-label">逾期未完成</div>
@@ -5399,10 +5405,15 @@ const GITEE={
       ['todos','inspirations','contracts','purchases','expenses','meetings','trainings'].forEach(k=>{
         if(Array.isArray(data[k])){
           const local=DB.get(k);
+          const localRaw=DB.raw(k);
+          const deletedIds=new Set(localRaw.filter(r=>r.deleted).map(r=>r.id));
           const localMap={};
           local.forEach(item=>{localMap[item.id]=item;});
-          // cloud overwrites local items with same id
-          data[k].forEach(item=>{localMap[item.id]=item;});
+          // cloud overwrites local items with same id, but skip locally deleted ids
+          data[k].forEach(item=>{
+            if(deletedIds.has(item.id))return;
+            localMap[item.id]=item;
+          });
           const merged=Object.values(localMap);
           // safety: never wipe local data with empty cloud data
           if(merged.length===0&&local.length>0){
