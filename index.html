@@ -75,6 +75,18 @@
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
       报销台账
     </div>
+    <div class="nav-item" onclick="navigate('agency',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd"/></svg>
+      委托台账
+    </div>
+    <div class="nav-item" onclick="navigate('handover',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+      交接台账
+    </div>
+    <div class="nav-item" onclick="navigate('fund',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.51-1.31c-.562-.649-1.413-1.076-2.353-1.253V5z" clip-rule="evenodd"/></svg>
+      经费台账
+    </div>
   </nav>
 
   <div class="sidebar-footer" id="clockDisplay">加载中…</div>
@@ -115,56 +127,78 @@
         <span style="font-size:11px;color:var(--color-text3)">全部时间数据汇总</span>
       </div>
 
-      <!-- 核心 KPI 卡片 -->
-      <div class="grid-4 dash-metrics grid-2" style="margin-bottom:20px" id="dashboardMetrics"></div>
+      <!-- Row 1: KPI 指标块 -->
+      <div class="dash-kpi-row" id="dashboardMetrics" style="display:flex;gap:12px;margin-bottom:20px"></div>
 
-      <!-- 各模块概览卡片 -->
+      <!-- Row 2: 工作记录 - 3卡片 -->
+      <div class="grid-3" style="margin-bottom:16px">
+        <div class="card" id="dashKeyCard">
+          <div class="card-header" style="margin-bottom:10px">
+            <span class="card-title">⭐ 重点工作</span>
+            <button class="btn btn-sm btn-outline" onclick="navigate('todo')">查看</button>
+          </div>
+          <div id="dashKeyTasks"></div>
+        </div>
+        <div class="card" id="dashPendingCard">
+          <div class="card-header" style="margin-bottom:10px">
+            <span class="card-title">📋 待办工作</span>
+            <button class="btn btn-sm btn-outline" onclick="navigate('todo')">查看</button>
+          </div>
+          <div id="dashPendingTasks"></div>
+        </div>
+        <div class="card" id="dashRecurringCard">
+          <div class="card-header" style="margin-bottom:10px">
+            <span class="card-title">🔄 周期工作</span>
+            <button class="btn btn-sm btn-outline" onclick="navigate('todo')">查看</button>
+          </div>
+          <div id="dashRecurringTasks"></div>
+        </div>
+      </div>
+
+    <!-- Row 3: 台账总览 - 4独立板块 -->
+    <div class="dash-ledger-row" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="card" style="flex:1;min-width:150px" id="dashLgContract" onclick="navigate('contract')">
+        <div id="dashLgContractInner"></div>
+      </div>
+      <div class="card" style="flex:1;min-width:150px" id="dashLgPurchase" onclick="navigate('purchase')">
+        <div id="dashLgPurchaseInner"></div>
+      </div>
+      <div class="card" style="flex:1;min-width:150px" id="dashLgExpense" onclick="navigate('expense')">
+        <div id="dashLgExpenseInner"></div>
+      </div>
+      <div class="card" style="flex:1;min-width:150px" id="dashLgAgency" onclick="navigate('agency')">
+        <div id="dashLgAgencyInner"></div>
+      </div>
+    </div>
+
+      <!-- Row 4: 经费预算进度 | 会议+培训 (两栏) -->
       <div class="grid-2" style="margin-bottom:16px">
         <div class="card">
           <div class="card-header">
-            <span class="card-title">📋 工作记录</span>
-            <button class="btn btn-sm btn-outline" onclick="navigate('todo')">进入工作记录</button>
+            <span class="card-title">💰 经费预算进度</span>
+            <button class="btn btn-sm btn-outline" onclick="navigate('fund')">进入</button>
           </div>
-          <div id="dashboardTasks"></div>
+          <div id="dashboardFunds"></div>
         </div>
         <div class="card">
           <div class="card-header">
-            <span class="card-title">💰 台账总览</span>
-            <span style="font-size:11px;color:var(--color-text3)">合同 · 采购 · 报销</span>
+            <span class="card-title">📅 会议日程 · 🎓 培训学分</span>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-sm btn-outline" onclick="navigate('meeting')">会议</button>
+              <button class="btn btn-sm btn-outline" onclick="navigate('training')">培训</button>
+            </div>
           </div>
-          <div id="dashboardLedger"></div>
+          <div id="dashboardMeetingTraining"></div>
         </div>
       </div>
 
-      <!-- 会议 + 培训 + 灵感 概览 -->
-      <div class="grid-3" style="margin-bottom:16px">
-        <div class="card card-sm">
-          <div class="card-header">
-            <span class="card-title">📅 会议</span>
-            <button class="btn btn-sm btn-outline" onclick="navigate('meeting')">进入</button>
-          </div>
-          <div id="dashboardMeetings"></div>
-        </div>
-        <div class="card card-sm">
-          <div class="card-header">
-            <span class="card-title">🎓 培训</span>
-            <button class="btn btn-sm btn-outline" onclick="navigate('training')">进入</button>
-          </div>
-          <div id="dashboardTrainings"></div>
-        </div>
-        <div class="card card-sm">
-          <div class="card-header">
-            <span class="card-title">💡 灵感</span>
-            <button class="btn btn-sm btn-outline" onclick="navigate('inspiration')">进入</button>
-          </div>
-          <div id="dashboardInspirations"></div>
-        </div>
-      </div>
-
-      <!-- 快速入口 -->
+      <!-- Row 5: 灵感 -->
       <div class="card">
-        <div class="card-header"><span class="card-title">⚡ 快速操作</span></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap" id="dashboardQuickActions"></div>
+        <div class="card-header">
+          <span class="card-title">💡 灵感</span>
+          <button class="btn btn-sm btn-outline" onclick="navigate('inspiration')">查看全部</button>
+        </div>
+        <div id="dashboardInspirations"></div>
       </div>
     </div>
 
@@ -214,9 +248,9 @@
       <div class="card" style="margin-bottom:16px">
         <div class="card-header">
           <span class="card-title">💰 台账汇总</span>
-          <span style="font-size:11px;color:var(--color-text3)">合同 · 采购 · 报销</span>
+          <span style="font-size:11px;color:var(--color-text3)">合同 · 采购 · 报销 · 交接 · 经费</span>
         </div>
-        <div class="grid-3" id="summaryLedger"></div>
+        <div id="summaryLedger"></div>
       </div>
 
       <!-- 会议 + 培训 -->
@@ -378,6 +412,12 @@
         <button class="btn btn-primary btn-sm" onclick="openModal('inspModal')">+ 记录灵感</button>
       </div>
       <div id="inspTagFilter" class="tag-filter"></div>
+      <div class="insp-status-filter" style="display:flex;gap:4px;margin-bottom:12px;font-size:12px">
+        <button class="insp-status-btn active" data-status="active" onclick="filterInspStatus('active',this)" style="padding:3px 12px;border-radius:var(--radius-sm);border:1px solid var(--color-border);background:transparent;cursor:pointer;font-family:inherit;transition:.15s">✨ 当前灵感</button>
+        <button class="insp-status-btn" data-status="archived" onclick="filterInspStatus('archived',this)" style="padding:3px 12px;border-radius:var(--radius-sm);border:1px solid var(--color-border);background:transparent;cursor:pointer;font-family:inherit;transition:.15s">📦 已归档</button>
+        <button class="insp-status-btn" data-status="abandoned" onclick="filterInspStatus('abandoned',this)" style="padding:3px 12px;border-radius:var(--radius-sm);border:1px solid var(--color-border);background:transparent;cursor:pointer;font-family:inherit;transition:.15s">🗑 已放弃</button>
+        <button class="insp-status-btn" data-status="all" onclick="filterInspStatus('all',this)" style="padding:3px 12px;border-radius:var(--radius-sm);border:1px solid var(--color-border);background:transparent;cursor:pointer;font-family:inherit;transition:.15s">全部</button>
+      </div>
       <div class="insp-grid" id="inspList"></div>
     </div>
 
@@ -596,7 +636,7 @@
         <div class="section-header-right">
           <button class="filter-toggle" onclick="toggleFilterPanel('expense')" id="expenseFilterToggle">筛选<span class="filter-badge" id="expenseFilterBadge" style="display:none">0</span></button>
           <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('expense')">导出</button>
-          <button class="btn btn-primary btn-sm" onclick="openModal('expenseModal')">+ 新增报销</button>
+          <button class="btn btn-primary btn-sm" onclick="clearExpenseForm();openModal('expenseModal')">+ 新增报销</button>
           <button class="btn btn-outline btn-sm" onclick="document.getElementById('invoiceUploadBtn').click()">📎 上传发票</button>
           <input type="file" id="invoiceUploadBtn" accept="image/*,.pdf" onchange="uploadInvoiceFromBtn(this)" style="display:none" multiple>
         </div>
@@ -650,11 +690,151 @@
       <div class="card" style="padding:0">
         <div class="table-wrap">
           <table>
-            <thead><tr><th>申请时间</th><th>供应商</th><th>发票号码</th><th>开票日期</th><th>发票内容</th><th>金额</th><th>报销状态</th><th>报销日期</th><th>操作</th></tr></thead>
+            <thead><tr><th>申请时间</th><th>供应商</th><th>发票号码</th><th>开票日期</th><th>发票内容</th><th>经费项目</th><th>金额</th><th>报销状态</th><th>报销日期</th><th>操作</th></tr></thead>
             <tbody id="expenseTable"></tbody>
           </table>
         </div>
       </div>
+    </div>
+
+    <!-- ====== AGENCY PAGE ====== -->
+    <div class="page" id="page-agency">
+      <div class="section-header">
+        <div class="section-header-right">
+          <button class="filter-toggle" onclick="this.classList.toggle('active');toggleFilterPanel('agency')">🔍 筛选</button>
+          <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('agency')">导出</button>
+          <button class="btn btn-primary btn-sm" onclick="clearAgencyForm();openModal('agencyModal')">+ 新增委托</button>
+        </div>
+      </div>
+      <div class="filter-panel collapsed" id="agencyFilterPanel">
+        <div class="filter-grid">
+          <div class="filter-item"><label>项目名称</label><input id="agencyF_name" oninput="applyAgencyFilter()" placeholder="关键词"></div>
+          <div class="filter-item"><label>比选方式</label><input id="agencyF_method" oninput="applyAgencyFilter()" placeholder="关键词"></div>
+          <div class="filter-item"><label>代理机构</label><input id="agencyF_agent" oninput="applyAgencyFilter()" placeholder="关键词"></div>
+          <div class="filter-item"><label>需求科室</label><input id="agencyF_dept" oninput="applyAgencyFilter()" placeholder="关键词"></div>
+          <div class="filter-item"><label>项目状态</label><select id="agencyF_status" onchange="applyAgencyFilter()"><option value="">全部</option><option>待委托</option><option>已委托</option><option>已完成</option><option>已流标</option><option>已取消</option></select></div>
+          <div class="filter-item"><label>类别</label><input id="agencyF_category" oninput="applyAgencyFilter()" placeholder="关键词"></div>
+          <div class="filter-item"><label>成交供应商</label><input id="agencyF_supplier" oninput="applyAgencyFilter()" placeholder="关键词"></div>
+          <div class="filter-item"><label>预算金额</label><div class="filter-range"><input type="number" id="agencyF_budgetMin" placeholder="最低" oninput="applyAgencyFilter()"><span>—</span><input type="number" id="agencyF_budgetMax" placeholder="最高" oninput="applyAgencyFilter()"></div></div>
+          <div class="filter-item"><label>委托时间</label><div class="filter-range"><input type="date" id="agencyF_dateFrom" onchange="applyAgencyFilter()"><span>—</span><input type="date" id="agencyF_dateTo" onchange="applyAgencyFilter()"></div></div>
+        </div>
+        <div class="filter-actions-bottom">
+          <span id="agencyFilterCount"></span>
+          <button onclick="resetAgencyFilter()">重置</button>
+          <button onclick="toggleFilterPanel('agency')">收起筛选 ▲</button>
+        </div>
+      </div>
+      <div id="agencyStats"></div>
+      <div class="card" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>项目名称</th><th>比选方式</th><th>采购方式</th><th>评审方法</th><th>预算金额</th><th>委托时间</th><th>代理机构</th><th>需求科室</th><th>联系人</th><th>状态</th><th>成交金额</th><th>成交供应商</th><th>节省率</th><th>操作</th></tr></thead>
+            <tbody id="agencyTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== HANDOVER PAGE (交接台账) ====== -->
+    <div class="page" id="page-handover">
+      <div class="section-header">
+        <div class="section-header-right">
+          <button class="filter-toggle" onclick="toggleFilterPanel('handover')" id="handoverFilterToggle">筛选<span class="filter-badge" id="handoverFilterBadge" style="display:none">0</span></button>
+          <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('handover')">导出</button>
+          <button class="btn btn-primary btn-sm" onclick="clearHandoverForm();openModal('handoverModal')">+ 新增交接</button>
+        </div>
+      </div>
+      <div class="filter-panel collapsed" id="handoverFilterPanel">
+        <div class="filter-grid">
+          <div class="filter-item">
+            <label>交出人</label>
+            <input placeholder="交出人关键词..." id="handoverF_giver" oninput="applyHandoverFilter()">
+          </div>
+          <div class="filter-item">
+            <label>接收人</label>
+            <input placeholder="接收人关键词..." id="handoverF_receiver" oninput="applyHandoverFilter()">
+          </div>
+          <div class="filter-item">
+            <label>交接内容</label>
+            <input placeholder="内容关键词..." id="handoverF_content" oninput="applyHandoverFilter()">
+          </div>
+          <div class="filter-item">
+            <label>原件/复印件</label>
+            <select id="handoverF_docType" onchange="applyHandoverFilter()">
+              <option value="">全部</option>
+              <option value="原件">原件</option>
+              <option value="复印件">复印件</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label>交接日期</label>
+            <div class="filter-range">
+              <input type="date" id="handoverF_dateFrom" onchange="applyHandoverFilter()">
+              <span class="range-sep">至</span>
+              <input type="date" id="handoverF_dateTo" onchange="applyHandoverFilter()">
+            </div>
+          </div>
+        </div>
+        <div class="filter-actions-bottom">
+          <span style="flex:1;color:var(--color-text3);font-size:11px" id="handoverFilterCount"></span>
+          <button class="btn btn-sm btn-outline" onclick="resetHandoverFilter()">重置</button>
+          <button class="btn btn-sm btn-outline" onclick="toggleFilterPanel('handover')">收起筛选 ▲</button>
+        </div>
+      </div>
+      <div id="handoverStats"></div>
+      <div class="card" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>交接日期</th><th>交出人</th><th>接收人</th><th>交接内容</th><th>数量</th><th>原件/复印件</th><th>操作</th></tr></thead>
+            <tbody id="handoverTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== FUND PAGE (经费台账) ====== -->
+    <div class="page" id="page-fund">
+      <div class="section-header">
+        <div class="section-header-right">
+          <button class="filter-toggle" onclick="toggleFilterPanel('fund')" id="fundFilterToggle">筛选<span class="filter-badge" id="fundFilterBadge" style="display:none">0</span></button>
+          <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('fund')">导出</button>
+          <button class="btn btn-primary btn-sm" onclick="clearFundForm();openModal('fundModal')">+ 新增经费</button>
+        </div>
+      </div>
+      <div class="filter-panel collapsed" id="fundFilterPanel">
+        <div class="filter-grid">
+          <div class="filter-item">
+            <label>经费名称</label>
+            <input placeholder="名称关键词..." id="fundF_name" oninput="applyFundFilter()">
+          </div>
+          <div class="filter-item">
+            <label>经费类别</label>
+            <input placeholder="类别关键词..." id="fundF_category" oninput="applyFundFilter()">
+          </div>
+          <div class="filter-item">
+            <label>预算金额</label>
+            <div class="filter-range">
+              <input type="number" placeholder="最低" id="fundF_budgetMin" oninput="applyFundFilter()">
+              <span class="range-sep">至</span>
+              <input type="number" placeholder="最高" id="fundF_budgetMax" oninput="applyFundFilter()">
+            </div>
+          </div>
+          <div class="filter-item">
+            <label>剩余金额</label>
+            <select id="fundF_lowBalance" onchange="applyFundFilter()">
+              <option value="">全部</option>
+              <option value="low">余额不足（&lt;20%）</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-actions-bottom">
+          <span style="flex:1;color:var(--color-text3);font-size:11px" id="fundFilterCount"></span>
+          <button class="btn btn-sm btn-outline" onclick="resetFundFilter()">重置</button>
+          <button class="btn btn-sm btn-outline" onclick="toggleFilterPanel('fund')">收起筛选 ▲</button>
+        </div>
+      </div>
+      <div id="fundStats"></div>
+      <div id="fundList"></div>
     </div>
 
   </div><!-- page-content end -->
@@ -1067,6 +1247,12 @@
           <input type="date" class="form-control" id="expenseReimbDate">
         </div>
       </div>
+      <div class="form-group">
+        <label class="form-label">经费项目</label>
+        <select class="form-control" id="expenseFundItem">
+          <option value="">— 不关联经费项目 —</option>
+        </select>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('expenseModal')">取消</button>
@@ -1412,6 +1598,281 @@
   </div>
 </div>
 
+<!-- Agency Modal -->
+<div class="modal-overlay" id="agencyModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <span class="modal-title" id="agencyModalTitle">新增委托</span>
+      <button class="close-btn" onclick="closeModal('agencyModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="agencyId">
+      <div class="form-group">
+        <label class="form-label">项目名称 *</label>
+        <input class="form-control" id="agencyName" placeholder="委托采购项目名称">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">比选方式</label>
+          <div class="multi-select" id="agencyMethodSelect" onclick="event.stopPropagation();toggleMultiSelect('agencyMethod')">
+            <div class="multi-select-placeholder" id="agencyMethodPlaceholder" data-selected="">请选择或新增比选方式…</div>
+            <div class="multi-select-dropdown" id="agencyMethodDropdown">
+              <div class="multi-select-list" id="agencyMethodList"></div>
+              <div class="multi-dropdown-add">
+                <input class="subtask-input" id="agencyMethodNew" placeholder="新增比选方式" onkeydown="if(event.key==='Enter')addMultiOption('agencyMethod')">
+                <button class="btn btn-sm btn-primary" onclick="addMultiOption('agencyMethod')">新增</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">类别</label>
+          <select class="form-control" id="agencyCategory">
+            <option value="">请选择</option>
+            <option>货物类</option>
+            <option>服务类</option>
+            <option>工程类</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">采购方式</label>
+          <select class="form-control" id="agencyProcType" onchange="toggleAgencyAgent()">
+            <option value="自行组织">自行组织</option>
+            <option value="委托第三方">委托第三方</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">评审方法</label>
+          <select class="form-control" id="agencyEvalMethod">
+            <option value="">请选择</option>
+            <option>最低价法</option>
+            <option>综合评分法</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row" id="agencyAgentRow" style="display:flex">
+        <div class="form-group">
+          <label class="form-label">代理机构</label>
+          <div class="multi-select" id="agencyAgentSelect" onclick="event.stopPropagation();toggleMultiSelect('agencyAgent')">
+            <div class="multi-select-placeholder" id="agencyAgentPlaceholder" data-selected="">请选择或新增代理机构…</div>
+            <div class="multi-select-dropdown" id="agencyAgentDropdown">
+              <div class="multi-select-list" id="agencyAgentList"></div>
+              <div class="multi-dropdown-add">
+                <input class="subtask-input" id="agencyAgentNew" placeholder="新增代理机构" onkeydown="if(event.key==='Enter')addMultiOption('agencyAgent')">
+                <button class="btn btn-sm btn-primary" onclick="addMultiOption('agencyAgent')">新增</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">需求科室</label>
+          <div class="multi-select" id="agencyDeptSelect" onclick="event.stopPropagation();toggleMultiSelect('agencyDept')">
+            <div class="multi-select-placeholder" id="agencyDeptPlaceholder" data-selected="">请选择或新增需求科室…</div>
+            <div class="multi-select-dropdown" id="agencyDeptDropdown">
+              <div class="multi-select-list" id="agencyDeptList"></div>
+              <div class="multi-dropdown-add">
+                <input class="subtask-input" id="agencyDeptNew" placeholder="新增需求科室" onkeydown="if(event.key==='Enter')addMultiOption('agencyDept')">
+                <button class="btn btn-sm btn-primary" onclick="addMultiOption('agencyDept')">新增</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">预算金额（元）</label>
+          <input type="number" class="form-control" id="agencyBudget" placeholder="0" oninput="calcAgencySavings()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">委托时间</label>
+          <input type="date" class="form-control" id="agencyDate">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">联系人</label>
+          <input class="form-control" id="agencyContact" placeholder="联系人姓名">
+        </div>
+        <div class="form-group">
+          <label class="form-label">项目状态</label>
+          <select class="form-control" id="agencyStatus">
+            <option value="待委托">待委托</option>
+            <option value="已委托">已委托</option>
+            <option value="已完成">已完成</option>
+            <option value="已流标">已流标</option>
+            <option value="已取消">已取消</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">成交金额（元）</label>
+          <input type="number" class="form-control" id="agencyDealAmount" placeholder="0" oninput="calcAgencySavings()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">资金节省率</label>
+          <input class="form-control" id="agencySavingsRate" readonly style="background:var(--color-bg);color:var(--color-text3)" placeholder="自动计算">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">成交供应商</label>
+          <div class="multi-select" id="agencySupplierSelect" onclick="event.stopPropagation();toggleMultiSelect('agencySupplier')">
+            <div class="multi-select-placeholder" id="agencySupplierPlaceholder" data-selected="">请选择或新增成交供应商…</div>
+            <div class="multi-select-dropdown" id="agencySupplierDropdown">
+              <div class="multi-select-list" id="agencySupplierList"></div>
+              <div class="multi-dropdown-add">
+                <input class="subtask-input" id="agencySupplierNew" placeholder="新增成交供应商" onkeydown="if(event.key==='Enter')addMultiOption('agencySupplier')">
+                <button class="btn btn-sm btn-primary" onclick="addMultiOption('agencySupplier')">新增</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">采购资料到位时间</label>
+          <input type="date" class="form-control" id="agencyDocDate">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('agencyModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveAgency()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Handover Modal -->
+<div class="modal-overlay" id="handoverModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <span class="modal-title" id="handoverModalTitle">新增交接记录</span>
+      <button class="close-btn" onclick="closeModal('handoverModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="handoverId">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">交接日期 *</label>
+          <input type="date" class="form-control" id="handoverDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">备注</label>
+          <input class="form-control" id="handoverNote" placeholder="可选备注">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">交出人 *</label>
+          <input class="form-control" id="handoverGiver" placeholder="交出人姓名">
+        </div>
+        <div class="form-group">
+          <label class="form-label">接收人 *</label>
+          <input class="form-control" id="handoverReceiver" placeholder="接收人姓名">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;align-items:center;gap:8px">
+          交接物品
+          <button class="btn btn-ghost btn-sm" onclick="addHandoverItem()" style="color:var(--color-primary);font-size:11px">+ 添加物品</button>
+        </label>
+        <div id="handoverItems"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('handoverModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveHandover()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fund Modal (新增/编辑经费) -->
+<div class="modal-overlay" id="fundModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <span class="modal-title" id="fundModalTitle">新增经费</span>
+      <button class="close-btn" onclick="closeModal('fundModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="fundId">
+      <div class="form-group">
+        <label class="form-label">经费名称 *</label>
+        <input class="form-control" id="fundName" placeholder="如：2026年办公经费">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">经费类别 *</label>
+          <div class="multi-select" id="fundCategorySelect" onclick="event.stopPropagation();toggleMultiSelect('fundCategory')">
+            <div class="multi-select-placeholder" id="fundCategoryPlaceholder" data-selected="">请选择或新增经费类别…</div>
+            <div class="multi-select-dropdown" id="fundCategoryDropdown">
+              <div class="multi-select-list" id="fundCategoryList"></div>
+              <div class="multi-dropdown-add">
+                <input class="subtask-input" id="fundCategoryNew" placeholder="新增经费类别" onkeydown="if(event.key==='Enter')addMultiOption('fundCategory')">
+                <button class="btn btn-sm btn-primary" onclick="addMultiOption('fundCategory')">新增</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">总预算（元）</label>
+          <input type="number" class="form-control" id="fundBudget" placeholder="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注</label>
+        <textarea class="form-control" id="fundNote" rows="2" placeholder="经费说明…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('fundModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveFund()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fund Record Modal (新增/编辑经费开支记录) -->
+<div class="modal-overlay" id="fundRecordModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <span class="modal-title" id="fundRecordModalTitle">新增开支记录</span>
+      <button class="close-btn" onclick="closeModal('fundRecordModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="fundRecordId">
+      <input type="hidden" id="fundRecordFundId">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">开支日期 *</label>
+          <input type="date" class="form-control" id="fundRecordDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">金额（元） *</label>
+          <input type="number" class="form-control" id="fundRecordAmount" placeholder="0" step="0.01">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">开支内容 *</label>
+        <textarea class="form-control" id="fundRecordContent" rows="3" placeholder="开支的具体内容…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">关联报销</label>
+        <select class="form-control" id="fundRecordExpenseRef" onchange="onFundRecordExpenseRefChange()">
+          <option value="">— 不关联 —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注</label>
+        <input class="form-control" id="fundRecordNote" placeholder="可选备注">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('fundRecordModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveFundRecord()">保存</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // pdf.js worker (deferred, init on DOMContentLoaded)
 document.addEventListener('DOMContentLoaded',()=>{
@@ -1438,7 +1899,7 @@ const DB = {
 
 // 自动修复历史数据（格式迁移 + ID修复 + 字段补齐 + 日期标准化 + 软删除）
 function repairData(){
-  const keys=['todos','inspirations','contracts','purchases','expenses','meetings','trainings'];
+  const keys=['todos','inspirations','contracts','purchases','expenses','meetings','trainings','agencys','handovers','funds','fundRecords'];
   let repaired=false;
 
   keys.forEach(key=>{
@@ -1522,6 +1983,7 @@ function repairData(){
           rec.title=rec.title||'未命名灵感';
           rec.content=rec.content||'';
           rec.tags=Array.isArray(rec.tags)?rec.tags:['想法'];
+          rec.status=rec.status||'active';
           rec.createdAt=normalizeDate(rec.createdAt);
           break;
         case 'contracts':
@@ -1540,6 +2002,18 @@ function repairData(){
           rec.todoRef=rec.todoRef||null;
           rec.createdAt=normalizeDate(rec.createdAt);
           break;
+        case 'agencys':
+          rec.name=rec.name||'';rec.method=rec.method||'';
+          rec.category=rec.category||'';rec.budget=rec.budget||0;
+          rec.date=rec.date||'';rec.agent=rec.agent||'';
+          rec.status=rec.status||'待委托';rec.dealAmount=rec.dealAmount||0;
+          rec.savingsRate=rec.savingsRate||null;
+          rec.winSupplier=rec.winSupplier||'';rec.docDate=rec.docDate||'';
+          rec.dept=rec.dept||'';rec.contact=rec.contact||'';
+          rec.procType=rec.procType||'自行组织';rec.evalMethod=rec.evalMethod||'';
+          rec.todoRef=rec.todoRef||null;
+          rec.createdAt=normalizeDate(rec.createdAt);
+          break;
         case 'expenses':
           rec.appDate=rec.appDate||'';rec.content=rec.content||'';rec.note=rec.note||'';
           rec.supplier=rec.supplier||'';
@@ -1548,6 +2022,7 @@ function repairData(){
           rec.status=rec.status||'待报销';rec.reimbDate=rec.reimbDate||'';
           rec.category=rec.category||'其他';
           rec.todoRef=rec.todoRef||null;
+          rec.fundItem=rec.fundItem||null;
           rec.createdAt=normalizeDate(rec.createdAt);
           break;
         case 'meetings':
@@ -1565,6 +2040,28 @@ function repairData(){
           rec.actionItems=Array.isArray(rec.actionItems)?rec.actionItems:[];
           rec.nextMeetingDate=rec.nextMeetingDate||'';
           rec.todoRef=rec.todoRef||null;
+          rec.createdAt=normalizeDate(rec.createdAt);
+          break;
+        case 'handovers':
+          rec.date=rec.date||'';rec.giver=rec.giver||'';
+          rec.receiver=rec.receiver||'';
+          rec.note=rec.note||'';
+          // 兼容旧格式：单字段转为 items 数组
+          if(!rec.items||!rec.items.length){
+            rec.items=[{content:rec.content||'',quantity:rec.quantity||'',docType:rec.docType||''}];
+          }
+          delete rec.content;delete rec.quantity;delete rec.docType;
+          rec.createdAt=normalizeDate(rec.createdAt);
+          break;
+        case 'funds':
+          rec.name=rec.name||'';rec.category=rec.category||'';
+          rec.budget=rec.budget||0;rec.note=rec.note||'';
+          rec.createdAt=normalizeDate(rec.createdAt);
+          break;
+        case 'fundRecords':
+          rec.fundId=rec.fundId||0;rec.date=rec.date||'';
+          rec.content=rec.content||'';rec.amount=rec.amount||0;
+          rec.expenseRef=rec.expenseRef||null;rec.note=rec.note||'';
           rec.createdAt=normalizeDate(rec.createdAt);
           break;
         case 'trainings':
@@ -1613,7 +2110,7 @@ function repairData(){
 // ============================================================
 //  NAVIGATION
 // ============================================================
-const pageTitles={dashboard:'驾驶舱',todo:'工作记录',inspiration:'灵感收集',meeting:'会议日程',training:'培训记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账','monthly-summary':'本月摘要'};
+const pageTitles={dashboard:'驾驶舱',todo:'工作记录',inspiration:'灵感收集',meeting:'会议日程',training:'培训记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账','monthly-summary':'本月摘要',agency:'委托管理',handover:'交接台账',fund:'经费台账'};
 let currentPage='dashboard';
 
 function navigate(page,el){
@@ -1633,6 +2130,9 @@ function navigate(page,el){
   if(page==='expense')renderExpenses();
   if(page==='meeting')renderMeetings();
   if(page==='training')renderTrainings();
+  if(page==='agency')renderAgencys();
+  if(page==='handover')renderHandovers();
+  if(page==='fund')renderFunds();
 }
 
 function toggleSidebar(){
@@ -1782,6 +2282,7 @@ function updateDateRangeUI() {
   }
 }
 
+// Helper: renderDashboard replacement
 // ============================================================
 //  DASHBOARD (全时驾驶舱 - 所有时间汇总)
 // ============================================================
@@ -1793,137 +2294,232 @@ function renderDashboard() {
   const meetings = DB.get('meetings');
   const trainings = DB.get('trainings');
   const inspirations = DB.get('inspirations');
+  const agencys = DB.get('agencys');
+  const handovers = DB.get('handovers');
+  const funds = DB.get('funds');
+  const fundRecords = DB.get('fundRecords');
 
-  // --- 核心指标 ---
+  // === 1. KPI ===
   const totalCompleted = todos.filter(t => t.type === 'record').length;
   const activeTasks = todos.filter(t => t.type !== 'record' && t.type !== 'recurring' && t.status !== '已完成' && t.status !== '已取消').length;
   const overdueTasks = todos.filter(t => t.type !== 'record' && t.status !== '已完成' && t.status !== '已取消' && t.deadline && t.deadline < new Date().toISOString().slice(0, 10)).length;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const t3 = new Date(today); t3.setDate(t3.getDate()+3);
+  const t3Str = t3.toISOString().slice(0,10);
+  const todayStr = today.toISOString().slice(0,10);
+  const imminentTasks = todos.filter(t => t.type !== 'record' && t.type !== 'recurring' && t.status !== '已完成' && t.status !== '已取消' && t.deadline && t.deadline >= todayStr && t.deadline <= t3Str).length;
+  document.getElementById('dashboardMetrics').innerHTML = `
+    <div class="kpi-block kpi-active" onclick="navigate('todo')">
+      <div class="kpi-icon">📋</div>
+      <div class="kpi-content">
+        <div class="kpi-value">${activeTasks}</div>
+        <div class="kpi-label">进行中</div>
+        <div class="kpi-sub">项活跃任务</div>
+      </div>
+    </div>
+    <div class="kpi-block kpi-warning" onclick="navigate('todo');setTimeout(function(){switchTodoTab('pending')},100)">
+      <div class="kpi-icon">⏰</div>
+      <div class="kpi-content">
+        <div class="kpi-value">${imminentTasks}</div>
+        <div class="kpi-label">临期预警</div>
+        <div class="kpi-sub">项 3 日内到期</div>
+      </div>
+    </div>
+    <div class="kpi-block kpi-danger" onclick="navigate('todo');setTimeout(function(){switchTodoTab('pending')},100)">
+      <div class="kpi-icon">🚫</div>
+      <div class="kpi-content">
+        <div class="kpi-value">${overdueTasks}</div>
+        <div class="kpi-label">逾期未完成</div>
+        <div class="kpi-sub">项截止已过</div>
+      </div>
+    </div>
+  `;
 
-  // 临期预警：截止日在未来 3 天内（不含逾期），且未完成、非 record、非周期
-  { const today = new Date(); today.setHours(0,0,0,0);
-    const t3 = new Date(today); t3.setDate(t3.getDate()+3);
-    const t3Str = t3.toISOString().slice(0,10);
-    const todayStr = today.toISOString().slice(0,10);
-    var imminentTasks = todos.filter(function(t) {
-      return t.type !== 'record' && t.type !== 'recurring' && t.status !== '已完成' && t.status !== '已取消'
-        && t.deadline && t.deadline >= todayStr && t.deadline <= t3Str;
-    }).length;
-  }
+  // === 2. 工作记录：3 卡片 ===
+  const keyTodos = todos.filter(t => t.type === 'key');
+  const pendingTodos = todos.filter(t => t.type === 'pending');
+  const recTodos = todos.filter(t => t.type === 'recurring');
+  // 重点 - 环形图
+  const keyDone = todos.filter(t => t.type==='record' && t._prevType==='key').length;
+  const keyTotal = keyDone + keyTodos.filter(t=>t.status!=='已完成').length;
+  const pctKeyDone = keyTotal>0 ? Math.round(keyDone/keyTotal*100) : 0;
+  const keyRing = 150.8, keyDash = Math.min(pctKeyDone * keyRing / 100, keyRing);
+  document.getElementById('dashKeyTasks').innerHTML = `
+    <div style="display:flex;gap:10px;align-items:center">
+      <div style="flex-shrink:0;position:relative;width:60px;height:60px">
+        <svg width="60" height="60" viewBox="0 0 60 60">
+          <circle cx="30" cy="30" r="24" fill="none" stroke="var(--color-bg2)" stroke-width="5"/>
+          <circle cx="30" cy="30" r="24" fill="none" stroke="#8b5cf6" stroke-width="5"
+            stroke-dasharray="${keyDash} ${keyRing-keyDash}" stroke-linecap="round"
+            transform="rotate(-90,30,30)"/>
+        </svg>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:14px;font-weight:700;color:#8b5cf6">${pctKeyDone}%</div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;color:var(--color-text2)">已完成 <strong style="color:#8b5cf6;font-size:16px">${keyDone}</strong> / ${keyTotal}</div>
+        <div style="margin-top:6px;max-height:120px;overflow-y:auto">${keyTodos.filter(t=>t.status!=='已完成').slice(0,4).map(t=>
+          `<div style="display:flex;align-items:center;gap:4px;font-size:11px;padding:3px 0;border-bottom:1px solid var(--color-bg)">
+            <span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:${t.priority==='high'?'var(--color-danger)':'var(--color-warning)'}"></span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.name)}</span>
+            ${t.deadline?`<span style="color:${t.deadline<todayStr?'var(--color-danger)':'var(--color-text3)'};font-size:10px">${t.deadline}</span>`:''}
+          </div>`
+        ).join('')||'<div style="color:var(--color-text3);font-size:11px;padding:6px 0">暂无活跃重点工作</div>'}${keyTodos.filter(t=>t.status!=='已完成').length>4?`<div style="font-size:10px;color:var(--color-text3);text-align:center;padding-top:4px">还有 ${keyTodos.filter(t=>t.status!=='已完成').length-4} 项...</div>`:''}</div>
+    </div>
+  `;
+  // 待办 - 紧迫条形图
+  const pendingItems = pendingTodos.filter(t=>t.status!=='已完成');
+  const urgentSoon = pendingItems.filter(t=>t.deadline&&t.deadline<todayStr);
+  const urgent3d = pendingItems.filter(t=>t.deadline&&t.deadline>=todayStr&&t.deadline<=t3Str);
+  const normal = pendingItems.filter(t=>!t.deadline||t.deadline>t3Str);
+  document.getElementById('dashPendingTasks').innerHTML = `
+    <div style="font-size:12px;color:var(--color-text2);margin-bottom:6px">共 <strong style="font-size:16px">${pendingItems.length}</strong> 项待办</div>
+    <div style="display:flex;height:22px;border-radius:4px;overflow:hidden;margin-bottom:8px">
+      ${urgentSoon.length>0?`<div style="background:#ef4444;flex:${urgentSoon.length};display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:600;min-width:28px">${urgentSoon.length}</div>`:''}
+      ${urgent3d.length>0?`<div style="background:#f59e0b;flex:${urgent3d.length};display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:600;min-width:28px">${urgent3d.length}</div>`:''}
+      ${normal.length>0?`<div style="background:var(--color-bg2);flex:${normal.length};display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--color-text2);font-weight:500;min-width:28px">${normal.length}</div>`:''}
+    </div>
+    <div style="display:flex;gap:8px;font-size:10px;color:var(--color-text3);margin-bottom:6px;flex-wrap:wrap">
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#ef4444;vertical-align:middle;margin-right:2px"></span>已逾期 ${urgentSoon.length}</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f59e0b;vertical-align:middle;margin-right:2px"></span>3日内 ${urgent3d.length}</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--color-bg2);vertical-align:middle;margin-right:2px"></span>其他 ${normal.length}</span>
+    </div>
+    <div style="max-height:100px;overflow-y:auto">${[...urgentSoon,...urgent3d,...normal].slice(0,4).map(t=>
+      `<div style="display:flex;align-items:center;gap:4px;font-size:11px;padding:3px 0;border-bottom:1px solid var(--color-bg)">
+        <span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:${t.deadline&&t.deadline<todayStr?'var(--color-danger)':t.deadline&&t.deadline<=t3Str?'var(--color-warning)':'var(--color-bg2)'}"></span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.name)}</span>
+        ${t.deadline?`<span style="font-size:10px;color:${t.deadline<todayStr?'var(--color-danger)':'var(--color-text3)'}">${t.deadline}</span>`:''}
+      </div>`
+    ).join('')||'<div style="color:var(--color-text3);font-size:11px;padding:8px 0;text-align:center">暂无待办工作</div>'}${pendingItems.length>4?`<div style="font-size:10px;color:var(--color-text3);text-align:center;padding-top:4px">还有 ${pendingItems.length-4} 项...</div>`:''}</div>
+  `;
+  // 周期 - 月度柱状图
+  const recTotal = recTodos.length;
+  const recDone = todos.filter(t=>t.type==='record'&&t._prevType==='recurring').length;
+  const recActive = recTodos.filter(t=>t.status!=='已完成').length;
+  const recPct = recTotal>0?Math.round(recDone/recTotal*100):0;
+  const recByMonth = {};
+  recTodos.forEach(t=>{if(t.deadline){const m=t.deadline.slice(0,7);recByMonth[m]=(recByMonth[m]||0)+1;}});
+  const recMonthKeys = Object.keys(recByMonth).sort().slice(0,6);
+  const maxRecMonth = Math.max(...Object.values(recByMonth),1);
+  document.getElementById('dashRecurringTasks').innerHTML = `
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px">
+      <div style="flex-shrink:0;text-align:center">
+        <div style="font-size:20px;font-weight:700;color:#14b8a6">${recTotal}</div>
+        <div style="font-size:10px;color:var(--color-text3)">共 ${recActive} 项活跃</div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:4px"><span style="flex:1">完成进度</span><span style="font-weight:600">${recDone}/${recTotal}</span></div>
+        <div style="height:6px;background:var(--color-bg2);border-radius:3px;overflow:hidden"><div style="height:100%;width:${recPct}%;background:#14b8a6;border-radius:3px"></div></div>
+      </div>
+    </div>
+    ${recMonthKeys.length>0?`<div style="display:flex;gap:2px;align-items:flex-end;height:32px;padding:0 4px">${recMonthKeys.map(m=>{
+      const cnt=recByMonth[m];const h=Math.max(4,Math.round(cnt/maxRecMonth*24));
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">
+        <div style="width:100%;height:${h}px;background:#14b8a6;border-radius:2px 2px 0 0;min-height:4px;cursor:pointer" title="${m}: ${cnt}项到期"></div>
+        <div style="font-size:8px;color:var(--color-text3);margin-top:2px">${m.slice(5)}月</div>
+      </div>`;
+    }).join('')}</div>`:'<div style="color:var(--color-text3);font-size:11px;padding:8px 0;text-align:center">暂无周期工作</div>'}
+  `;
 
-  // 台账汇总
+  // === 3. 台账总览：5独立板块 ===
   const totalContractAmt = contracts.reduce((s, c) => s + (+c.amount || 0), 0);
   const totalPurchaseAmt = purchases.reduce((s, p) => s + (+p.amount || 0), 0);
   const totalExpenseAmt = expenses.reduce((s, e) => s + (+e.amount || 0), 0);
-  const pendingExpenses = expenses.filter(e => e.status !== '已到账' && e.status !== '已报销').length;
+  const totalAgencyBudget = agencys.reduce((s, a) => s + (+a.budget || 0), 0);
+  const totalFundBudget = funds.reduce((s, f) => s + (+f.budget || 0), 0);
+  const totalFundUsed = fundRecords.reduce((s, r) => s + (+r.amount || 0), 0);
+  const maxLedger = Math.max(totalContractAmt, totalPurchaseAmt, totalExpenseAmt, totalAgencyBudget) || 1;
+  const contractPct = Math.round(totalContractAmt/maxLedger*100);
+  const contractStroke = 125.7; const contractLen = Math.min(contractPct*contractStroke/100, contractStroke);
+  document.getElementById('dashLgContractInner').innerHTML = `<div style="display:flex;flex-direction:column;align-items:center">
+    <div style="font-size:11px;color:var(--color-text2);margin-bottom:4px"><strong>📝 合同</strong> ${contracts.length}笔</div>
+    <div style="position:relative;width:56px;height:56px"><svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="20" fill="none" stroke="var(--color-bg2)" stroke-width="6"/><circle cx="28" cy="28" r="20" fill="none" stroke="var(--color-primary)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${contractLen} ${contractStroke-contractLen}" transform="rotate(-90,28,28)"/></svg><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:11px;font-weight:600;color:var(--color-primary)">${contractPct}%</div></div>
+    <div style="font-size:12px;font-weight:600;margin-top:4px;color:var(--color-text)">${fmtCNY(totalContractAmt)}</div>
+  </div>`;
+  document.getElementById('dashLgPurchaseInner').innerHTML = `<div style="display:flex;flex-direction:column;align-items:center">
+    <div style="font-size:11px;color:var(--color-text2);margin-bottom:4px"><strong>🛒 采购</strong> ${purchases.length}笔</div>
+    <div style="font-size:22px;font-weight:700;color:var(--color-teal)">${fmtCNY(totalPurchaseAmt)}</div>
+    <div style="width:100%;height:5px;background:var(--color-bg2);border-radius:3px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${Math.round(totalPurchaseAmt/maxLedger*100)}%;background:var(--color-teal);border-radius:3px"></div></div>
+  </div>`;
+  const reimbSum = expenses.filter(e=>e.status==='已报销').reduce((s,e)=>s+(+e.amount||0),0);
+  const pendingSum = expenses.filter(e=>e.status!=='已报销').reduce((s,e)=>s+(+e.amount||0),0);
+  const fullExp = reimbSum+pendingSum||1;const reimbPct = Math.round(reimbSum/fullExp*100);
+  const reimbArc = 125.7;const reimbLen = Math.min(reimbPct*reimbArc/100, reimbArc);
+  document.getElementById('dashLgExpenseInner').innerHTML = `<div style="display:flex;flex-direction:column;align-items:center">
+    <div style="font-size:11px;color:var(--color-text2);margin-bottom:4px"><strong>🧾 报销</strong> ${expenses.length}笔</div>
+    <div style="position:relative;width:56px;height:56px"><svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="20" fill="none" stroke="#f3f4f6" stroke-width="6"/><circle cx="28" cy="28" r="20" fill="none" stroke="#22c55e" stroke-width="6" stroke-linecap="round" stroke-dasharray="${reimbLen} ${reimbArc-reimbLen}" transform="rotate(-90,28,28)"/></svg><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:11px;font-weight:600;color:#22c55e">${reimbPct}%</div></div>
+    <div style="display:flex;gap:4px;font-size:10px;color:var(--color-text3);margin-top:4px"><span>已报 ${fmtCNY(reimbSum)}</span><span>待报 ${fmtCNY(pendingSum)}</span></div>
+  </div>`;
+  const dealAmt = agencys.reduce((s,a)=>s+(+a.dealAmount||0),0);
+  const savingsRate = totalAgencyBudget>0 ? Math.round((totalAgencyBudget-dealAmt)/totalAgencyBudget*100) : 0;
+  const dealBarPct = totalAgencyBudget>0 ? Math.min(Math.round(dealAmt/totalAgencyBudget*100), 100) : 0;
+  document.getElementById('dashLgAgencyInner').innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;padding:2px 0">
+    <div style="font-size:11px;color:var(--color-text2);margin-bottom:6px"><strong>📋 委托</strong> ${agencys.length}笔</div>
+    <div style="width:100%;font-size:11px;margin-bottom:2px"><span style="color:var(--color-text2)">预算</span> <strong>${fmtCNY(totalAgencyBudget)}</strong></div>
+    <div style="width:100%;height:6px;background:var(--color-bg2);border-radius:3px;overflow:hidden;margin-bottom:6px"><div style="height:100%;width:100%;background:var(--color-warning);border-radius:3px"></div></div>
+    <div style="width:100%;font-size:11px;margin-bottom:2px"><span style="color:var(--color-text2)">成交</span> <strong>${fmtCNY(dealAmt)}</strong></div>
+    <div style="width:100%;height:6px;background:var(--color-bg2);border-radius:3px;overflow:hidden;margin-bottom:2px"><div style="height:100%;width:${Math.max(1,dealBarPct)}%;background:var(--color-teal);border-radius:3px"></div></div>
+    ${totalAgencyBudget>0?`<div style="font-size:10px;color:${savingsRate>0?'var(--color-success)':'var(--color-text3)'};margin-top:2px">节省率 ${savingsRate}%</div>`:''}
+  </div>`;
 
-  // --- 渲染核心 KPI 卡片 ---
-  document.getElementById('dashboardMetrics').innerHTML = `
-    <div class="metric metric-clickable" onclick="navigate('todo')">
-      <div class="metric-label">累计完成</div>
-      <div class="metric-value" style="color:var(--color-success)">${totalCompleted}</div>
-      <div class="metric-sub">项工作记录</div>
-    </div>
-    <div class="metric metric-clickable" onclick="navigate('todo')">
-      <div class="metric-label">进行中</div>
-      <div class="metric-value" style="color:var(--color-primary)">${activeTasks}</div>
-      <div class="metric-sub">项活跃任务</div>
-    </div>
-    <div class="metric" style="cursor:pointer" onclick="navigate('todo');setTimeout(function(){switchTodoTab('pending')},100)">
-      <div class="metric-label">临期预警</div>
-      <div class="metric-value" style="color:var(--color-warning)">${imminentTasks}</div>
-      <div class="metric-sub">项3日内到期</div>
-    </div>
-    <div class="metric" style="cursor:pointer" onclick="navigate('todo');setTimeout(function(){switchTodoTab('pending')},100)">
-      <div class="metric-label">逾期未完成</div>
-      <div class="metric-value" style="color:var(--color-danger)">${overdueTasks}</div>
-      <div class="metric-sub">项截止已过</div>
-    </div>
-  `;
-
-  // --- 工作记录概览 ---
-  const keyTodoCount = todos.filter(t => t.type === 'key').length;
-  const recTodoCount = todos.filter(t => t.type === 'recurring').length;
-  const pendingCount = todos.filter(t => t.type === 'pending').length;
-  document.getElementById('dashboardTasks').innerHTML = `
-    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">
-      <div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--color-success)">${totalCompleted}</div><div style="font-size:11px;color:var(--color-text3)">已完成</div></div>
-      <div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--color-purple)">${keyTodoCount}</div><div style="font-size:11px;color:var(--color-text3)">重点工作</div></div>
-      <div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--color-teal)">${recTodoCount}</div><div style="font-size:11px;color:var(--color-text3)">周期工作</div></div>
-      <div style="text-align:center"><div style="font-size:22px;font-weight:700;color:var(--color-text2)">${pendingCount}</div><div style="font-size:11px;color:var(--color-text3)">待办工作</div></div>
-    </div>
-    <div style="font-size:12px;color:var(--color-text2)">
-      ${overdueTasks > 0 ? '· <strong style="color:var(--color-danger)">' + overdueTasks + '</strong> 项逾期未完成 ' : '· 无逾期任务 ✅ '}
-      ${inspirations.length > 0 ? '· <strong>' + inspirations.length + '</strong> 条灵感收集' : ''}
-    </div>
-  `;
-
-  // --- 台账总览 ---
-  const contractCount = contracts.length;
-  const purchaseCount = purchases.length;
-  const expenseCount = expenses.length;
-  document.getElementById('dashboardLedger').innerHTML = `
-    <div class="grid-3" style="margin-top:8px">
-      <div class="metric metric-clickable" onclick="navigate('contract')" style="text-align:center">
-        <div class="metric-label">📝 合同</div>
-        <div class="metric-value" style="font-size:20px;color:var(--color-primary)">${contractCount}</div>
-        <div class="metric-sub">${fmtCNY(totalContractAmt)}</div>
+  // === 4. 经费预算进度 ===
+  const fundPct = totalFundBudget > 0 ? Math.round(totalFundUsed / totalFundBudget * 100) : 0;
+  const fundRingC = 138.2; const fundDashC = Math.min(fundPct * fundRingC / 100, fundRingC);
+  document.getElementById('dashboardFunds').innerHTML = `
+    <div style="display:flex;gap:16px;align-items:center;padding:2px 0">
+      <div style="flex-shrink:0;position:relative;width:70px;height:70px">
+        <svg width="70" height="70" viewBox="0 0 70 70"><circle cx="35" cy="35" r="22" fill="none" stroke="var(--color-bg2)" stroke-width="7"/><circle cx="35" cy="35" r="22" fill="none" stroke="${fundPct<50?'var(--color-success)':fundPct<80?'var(--color-warning)':'var(--color-danger)'}" stroke-width="7" stroke-dasharray="${fundDashC} ${fundRingC-fundDashC}" stroke-linecap="round" transform="rotate(-90,35,35)"/></svg>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:16px;font-weight:700">${fundPct}%</div>
       </div>
-      <div class="metric metric-clickable" onclick="navigate('purchase')" style="text-align:center">
-        <div class="metric-label">🛒 采购</div>
-        <div class="metric-value" style="font-size:20px;color:var(--color-teal)">${purchaseCount}</div>
-        <div class="metric-sub">${fmtCNY(totalPurchaseAmt)}</div>
-      </div>
-      <div class="metric metric-clickable" onclick="navigate('expense')" style="text-align:center">
-        <div class="metric-label">🧾 报销</div>
-        <div class="metric-value" style="font-size:20px;color:var(--color-purple)">${expenseCount}</div>
-        <div class="metric-sub">${pendingExpenses > 0 ? pendingExpenses + '笔待处理' : '全部完成'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;gap:12px;font-size:12px;color:var(--color-text2);margin-bottom:8px">
+          <span>总预算 <strong style="color:var(--color-text)">${fmtCNY(totalFundBudget)}</strong></span>
+          <span>已用 <strong style="color:${fundPct<50?'var(--color-success)':fundPct<80?'var(--color-warning)':'var(--color-danger)'}">${fmtCNY(totalFundUsed)}</strong></span>
+          <span>剩余 <strong style="color:${totalFundBudget-totalFundUsed>0?'var(--color-teal)':'var(--color-danger)'}">${fmtCNY(totalFundBudget-totalFundUsed)}</strong></span>
+        </div>
+        ${funds.slice(0,5).map(f=>{const used=fundRecords.filter(r=>r.fundId===f.id).reduce((s,r)=>s+(+r.amount||0),0);const fpct=+f.budget>0?Math.round(used/+f.budget*100):0;const fcol=fpct<50?'var(--color-success)':fpct<80?'var(--color-warning)':'var(--color-danger)';return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:56px;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--color-text2)" title="${esc(f.name)}">${esc(f.name)}</span><div style="flex:1;height:5px;background:var(--color-bg2);border-radius:3px;overflow:hidden"><div style="height:100%;width:${fpct}%;background:${fcol};border-radius:3px"></div></div><span style="width:32px;text-align:right;font-size:10px;color:var(--color-text3)">${fpct}%</span></div>`;}).join('')||'<div style="font-size:11px;color:var(--color-text3);text-align:center;padding:8px 0">暂无经费数据</div>'}
+        ${funds.length>5?`<div style="font-size:10px;color:var(--color-text3);text-align:center;margin-top:4px">还有 ${funds.length-5} 项...</div>`:''}
       </div>
     </div>
   `;
 
-  // --- 会议 ---
-  const meetingCount = meetings.length;
-  const upcomingMeetings = meetings.filter(m => m.date && m.date >= new Date().toISOString().slice(0, 10)).length;
-  document.getElementById('dashboardMeetings').innerHTML = `
-    <div style="text-align:center;margin-top:8px">
-      <div style="font-size:28px;font-weight:700;color:var(--color-primary)">${meetingCount}</div>
-      <div style="font-size:12px;color:var(--color-text2);margin-top:4px">总会议场次</div>
-      <div style="font-size:11px;color:var(--color-text3);margin-top:2px">${upcomingMeetings} 场即将举行</div>
-    </div>
-  `;
-
-  // --- 培训 ---
+  // === 5. 会议日程 · 培训学分（合并） ===
+  const upMeetings = meetings.filter(m=>m.date&&m.date>=todayStr).slice(0,3);
+  const pastMeetings = meetings.filter(m=>m.date&&m.date<todayStr).slice(0,2);
   const trainingCount = trainings.length;
-  const totalCredits = trainings.reduce((s, t) => s + (t.credits || 0), 0);
-  document.getElementById('dashboardTrainings').innerHTML = `
-    <div style="text-align:center;margin-top:8px">
-      <div style="font-size:28px;font-weight:700;color:var(--color-success)">${trainingCount}</div>
-      <div style="font-size:12px;color:var(--color-text2);margin-top:4px">培训场次</div>
-      <div style="font-size:11px;color:var(--color-text3);margin-top:2px">累计 ${totalCredits} 学分</div>
+  const totalCredits = trainings.reduce((s,t)=>s+(t.credits||0),0);
+  const bizCredits = trainings.filter(t=>t.category==='业务培训').reduce((s,t)=>s+(t.credits||0),0);
+  const contCredits = trainings.filter(t=>t.category==='继续教育').reduce((s,t)=>s+(t.credits||0),0);
+  const maxCredit = Math.max(bizCredits,contCredits,1);
+  document.getElementById('dashboardMeetingTraining').innerHTML = `
+    <div style="display:flex;gap:16px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;font-weight:500;color:var(--color-primary);margin-bottom:6px">即将举行的会议</div>
+        ${upMeetings.length>0?`<div style="position:relative;padding-left:14px;border-left:2px solid var(--color-primary)">${upMeetings.map(m=>`<div style="position:relative;padding:0 0 8px 8px"><div style="position:absolute;left:-6px;top:3px;width:8px;height:8px;border-radius:50%;background:var(--color-primary);border:2px solid #fff"></div><div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.name)}</div><div style="font-size:10px;color:var(--color-text3)">${m.date}${m.startTime?' '+m.startTime:''}</div></div>`).join('')}</div>`:'<div style="font-size:11px;color:var(--color-text3);padding:4px 0">暂无即将举行的会议</div>'}
+        ${pastMeetings.length>0?`<div style="font-size:10px;color:var(--color-text3);margin-top:4px">最近：${pastMeetings.map(m=>esc(m.name)).join('、')}</div>`:''}
+        ${meetings.length===0?'<div style="font-size:11px;color:var(--color-text3);padding:8px 0;text-align:center">暂无会议记录</div>':''}
+      </div>
+      <div style="width:1px;background:var(--color-border);flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;font-weight:500;margin-bottom:6px">培训学分</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--color-success)">${trainingCount}</div><div style="font-size:9px;color:var(--color-text3)">场次</div></div>
+          <div style="width:1px;height:28px;background:var(--color-border)"></div>
+          <div style="flex:1"><div style="font-size:20px;font-weight:700;color:var(--color-primary)">${totalCredits}</div><div style="font-size:9px;color:var(--color-text3)">总学分</div></div>
+        </div>
+        ${bizCredits>0?`<div style="display:flex;align-items:center;gap:4px;font-size:10px;margin-bottom:4px"><span style="width:48px;color:var(--color-text3)">业务</span><div style="flex:1;height:5px;background:var(--color-bg2);border-radius:3px"><div style="height:100%;width:${Math.round(bizCredits/maxCredit*100)}%;background:#3b82f6;border-radius:3px"></div></div><span style="width:28px;text-align:right;font-weight:500">${bizCredits}</span></div>`:''}
+        ${contCredits>0?`<div style="display:flex;align-items:center;gap:4px;font-size:10px"><span style="width:48px;color:var(--color-text3)">继教</span><div style="flex:1;height:5px;background:var(--color-bg2);border-radius:3px"><div style="height:100%;width:${Math.round(contCredits/maxCredit*100)}%;background:#14b8a6;border-radius:3px"></div></div><span style="width:28px;text-align:right;font-weight:500">${contCredits}</span></div>`:''}
+        ${trainingCount===0?'<div style="font-size:11px;color:var(--color-text3);text-align:center;padding:8px 0">暂无培训记录</div>':''}
+      </div>
     </div>
   `;
 
-  // --- 灵感 ---
-  const inspirationCount = inspirations.length;
-  const recentInspirations = inspirations.sort(function(a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); }).slice(0, 3);
-  document.getElementById('dashboardInspirations').innerHTML = `
-    <div style="text-align:center;margin-top:8px">
-      <div style="font-size:28px;font-weight:700;color:var(--color-purple)">${inspirationCount}</div>
-      <div style="font-size:12px;color:var(--color-text2);margin-top:4px">灵感记录</div>
-      ${recentInspirations.length > 0 ? recentInspirations.map(function(i) {
-        return '<div style="font-size:10px;color:var(--color-text3);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">' + esc(i.content || '') + '</div>';
-      }).join('') : ''}
-    </div>
-  `;
-
-  // --- 快速操作 ---
-  document.getElementById('dashboardQuickActions').innerHTML = `
-    <button class="btn btn-sm btn-outline" onclick="openModal('todoModal')">+ 新工作记录</button>
-    <button class="btn btn-sm btn-outline" onclick="openModal('meetingModal')">+ 新会议</button>
-    <button class="btn btn-sm btn-outline" onclick="openModal('inspModal')">+ 灵感收集</button>
-    <button class="btn btn-sm btn-outline" onclick="navigate('monthly-summary')">📊 本月摘要</button>
-  `;
+  // === 6. 灵感 ===
+  const activeInspirations = inspirations.filter(i=>!i.status||i.status==='active').slice(0,6);
+  document.getElementById('dashboardInspirations').innerHTML = activeInspirations.length>0
+    ? `<div style="display:flex;flex-wrap:wrap;gap:8px">${activeInspirations.map(i=>`<div class="inspo-card" onclick="navigate('inspiration')" style="flex:1;min-width:140px;max-width:calc(33.33% - 6px);padding:10px 12px;background:var(--color-bg);border-radius:8px;border:1px solid var(--color-border);cursor:pointer"><div style="font-size:12px;font-weight:500;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(i.title)}</div><div style="font-size:10px;color:var(--color-text3);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4">${esc(i.content||'')}</div>${i.tags&&i.tags.length?`<div style="margin-top:3px;display:flex;gap:2px;flex-wrap:wrap">${i.tags.slice(0,3).map(t=>`<span style="font-size:9px;padding:1px 5px;background:var(--color-bg2);border-radius:3px;color:var(--color-text3)">${esc(t)}</span>`).join('')}</div>`:''}</div>`).join('')}</div>`
+    : '<div style="text-align:center;padding:16px;font-size:12px;color:var(--color-text3)">暂无灵感记录</div>';
 }
+
 
 function renderSummary(){
   const rangeStart = summaryDateRange.start;
@@ -2023,6 +2619,12 @@ function renderSummary(){
   const monthPurchases=purchases.filter(p=>p.date&&inRange(p.date));
   const monthExpensesApp=expenses.filter(e=>e.appDate&&inRange(e.appDate));
   const monthExpensesReimb=expenses.filter(e=>e.reimbDate&&inRange(e.reimbDate));
+  const handovers_render=DB.get('handovers');
+  const monthHandovers=handovers_render.filter(h=>h.date&&inRange(h.date));
+  const funds_render=DB.get('funds');
+  const fundRecords_render=DB.get('fundRecords');
+  const monthFundUsed=fundRecords_render.filter(r=>r.date&&inRange(r.date)).reduce((s,r)=>s+(+r.amount||0),0);
+  const totalFundBudget=funds_render.reduce((s,f)=>s+(+f.budget||0),0);
 
   const contractAmt=monthContracts.reduce((s,c)=>s+(+c.amount||0),0);
   const purchaseAmt=monthPurchases.reduce((s,p)=>s+(+p.amount||0),0);
@@ -2030,20 +2632,32 @@ function renderSummary(){
   const reimbAmt=monthExpensesReimb.reduce((s,e)=>s+(+e.amount||0),0);
 
   document.getElementById('summaryLedger').innerHTML=`
-    <div class="metric metric-clickable" onclick="toggleSummaryDetail('contractDetail')">
-      <div class="metric-label">📝 合同签署</div>
-      <div class="metric-value" style="font-size:20px;color:var(--color-primary)">${monthContracts.length} 份</div>
-      <div class="metric-sub">金额 ${fmtCNY(contractAmt)}</div>
-    </div>
-    <div class="metric metric-clickable" onclick="toggleSummaryDetail('purchaseDetail')">
-      <div class="metric-label">🛒 采购申请</div>
-      <div class="metric-value" style="font-size:20px;color:var(--color-teal)">${monthPurchases.length} 笔</div>
-      <div class="metric-sub">金额 ${fmtCNY(purchaseAmt)}</div>
-    </div>
-    <div class="metric metric-clickable" onclick="toggleSummaryDetail('expenseDetail')">
-      <div class="metric-label">🧾 报销申请/到账</div>
-      <div class="metric-value" style="font-size:20px;color:var(--color-purple)">${monthExpensesApp.length}/${monthExpensesReimb.length}</div>
-      <div class="metric-sub">${fmtCNY(expenseAmt)} / ${fmtCNY(reimbAmt)}</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+      <div class="metric metric-clickable" onclick="toggleSummaryDetail('contractDetail')" style="text-align:center">
+        <div class="metric-label">📝 合同签署</div>
+        <div class="metric-value" style="font-size:20px;color:var(--color-primary)">${monthContracts.length} 份</div>
+        <div class="metric-sub">金额 ${fmtCNY(contractAmt)}</div>
+      </div>
+      <div class="metric metric-clickable" onclick="toggleSummaryDetail('purchaseDetail')" style="text-align:center">
+        <div class="metric-label">🛒 采购申请</div>
+        <div class="metric-value" style="font-size:20px;color:var(--color-teal)">${monthPurchases.length} 笔</div>
+        <div class="metric-sub">金额 ${fmtCNY(purchaseAmt)}</div>
+      </div>
+      <div class="metric metric-clickable" onclick="toggleSummaryDetail('expenseDetail')" style="text-align:center">
+        <div class="metric-label">🧾 报销申请/到账</div>
+        <div class="metric-value" style="font-size:20px;color:var(--color-purple)">${monthExpensesApp.length}/${monthExpensesReimb.length}</div>
+        <div class="metric-sub">${fmtCNY(expenseAmt)} / ${fmtCNY(reimbAmt)}</div>
+      </div>
+      <div class="metric metric-clickable" onclick="toggleSummaryDetail('handoverDetail')" style="text-align:center">
+        <div class="metric-label">📄 交接</div>
+        <div class="metric-value" style="font-size:20px;color:var(--color-primary)">${monthHandovers.length} 条</div>
+        <div class="metric-sub">本月交接</div>
+      </div>
+      <div class="metric metric-clickable" onclick="toggleSummaryDetail('fundDetail')" style="text-align:center">
+        <div class="metric-label">💰 经费</div>
+        <div class="metric-value" style="font-size:20px;color:var(--color-success)">${fmtCNY(monthFundUsed)}</div>
+        <div class="metric-sub">本月开支 / 总预算 ${fmtCNY(totalFundBudget)}</div>
+      </div>
     </div>
   `;
   // 台账钻取容器
@@ -2062,6 +2676,17 @@ function renderSummary(){
     (monthExpensesApp.length?monthExpensesApp.map(e=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('expense')">
       <span>${esc(e.content||'报销').slice(0,30)} · ${esc(e.supplier||'')}</span><span class="badge badge-gray" style="font-size:10px">${e.status}</span><span style="font-size:12px;color:var(--color-text2);margin-left:auto">${fmtCNY(e.amount)}</span>
     </div>`).join(''):'<div class="empty-state" style="padding:8px"><p>本月无报销记录</p></div>')+'</div>';
+  ledgerDetailHTML+=`<div id="summaryHandoverDetail" style="display:none;margin-bottom:8px"><strong style="font-size:12px">交接明细：</strong>`+
+    (monthHandovers.length?monthHandovers.map(h=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('handover')">
+      <span>${esc(h.content).slice(0,30)} · ${esc(h.giver)}→${esc(h.receiver)}</span><span class="badge badge-gray" style="font-size:10px">${h.date}</span>
+    </div>`).join(''):'<div class="empty-state" style="padding:8px"><p>本月无交接记录</p></div>')+'</div>';
+  ledgerDetailHTML+=`<div id="summaryFundDetail" style="display:none;margin-bottom:8px"><strong style="font-size:12px">经费开支明细：</strong>`+
+    (monthFundUsed>0?fundRecords_render.filter(r=>r.date&&inRange(r.date)).map(r=>{
+      const fname=funds_render.find(f=>f.id===r.fundId);
+      return `<div class="todo-item" style="cursor:pointer" onclick="navigate('fund')">
+        <span>${esc(r.content).slice(0,30)}${fname?' · '+esc(fname.name):''}</span><span style="font-size:12px;color:var(--color-text2);margin-left:auto">${fmtCNY(r.amount)}</span>
+      </div>`;
+    }).join(''):'<div class="empty-state" style="padding:8px"><p>本月无经费开支</p></div>')+'</div>';
   ledgerDetailHTML+=`</div>`;
   document.getElementById('summaryLedger').insertAdjacentHTML('afterend',ledgerDetailHTML);
 
@@ -2904,7 +3529,7 @@ function updateGenericFilterCount(section){
 const OPTIONS_STORE={};
 
 function getOptionStore(name){
-  const defaults={todoCategory:'["报告","会议","审批","调研","培训","材料"]',todoSource:'["上级交办","自研","协作","会议部署","文件要求","其他来源"]'};
+  const defaults={todoCategory:'["报告","会议","审批","调研","培训","材料"]',todoSource:'["上级交办","自研","协作","会议部署","文件要求","其他来源"]',fundCategory:'["办公经费","差旅费","培训费","会议费","设备购置费","劳务费","其他"]'};
   // 筛选面板共享表单的备选项，保证两边同步
   const baseName=(name==='todoF_cat')?'todoCategory':(name==='todoF_src')?'todoSource':name;
   if(!OPTIONS_STORE[baseName]){
@@ -2926,6 +3551,7 @@ function renderMultiOptions(name){
     <div class="multi-dropdown-item" onclick="event.stopPropagation();toggleMultiOption('${name}',this.querySelector('.multi-opt-label').textContent)">
       <input type="checkbox" ${sel.includes(o)?'checked':''} tabindex="-1">
       <span class="multi-opt-label">${esc(o)}</span>
+      <span class="multi-opt-edit" title="重命名此选项" onclick="event.stopPropagation();editOptionItem('${name}',${i})">✎</span>
       <span class="multi-opt-del" title="删除此选项" onclick="event.stopPropagation();deleteOptionItem('${name}',${i})">×</span>
     </div>
   `).join('');
@@ -2944,16 +3570,36 @@ function setMultiSelected(name,ary){
   if(arySanitized.length){
     el.className='';el.innerHTML=arySanitized.map(v=>`<span class="multi-select-tag">${esc(v)}<span class="tag-close" onclick="event.stopPropagation();removeMultiOption('${name}',this.parentElement.textContent.slice(0,-1))">×</span></span>`).join('');
   }else{
-    const isCat=name==='todoCategory'||name==='todoF_cat';el.className='multi-select-placeholder';el.textContent=isCat?'选择类别…':'选择来源…';
+    const isCat=name==='todoCategory'||name==='todoF_cat';
+    const isAgencyMethod=name==='agencyMethod';
+    const isAgencyAgent=name==='agencyAgent';
+    const isAgencySupplier=name==='agencySupplier';
+    const isAgencyDept=name==='agencyDept';
+    const isFundCat=name==='fundCategory';
+    el.className='multi-select-placeholder';
+    if(isCat)el.textContent='选择类别…';
+    else if(isAgencyMethod)el.textContent='请选择或新增比选方式…';
+    else if(isAgencyAgent)el.textContent='请选择或新增代理机构…';
+    else if(isAgencySupplier)el.textContent='请选择或新增成交供应商…';
+    else if(isAgencyDept)el.textContent='请选择或新增需求科室…';
+    else if(isFundCat)el.textContent='请选择或新增经费类别…';
+    else el.textContent='选择来源…';
   }
   renderMultiOptions(name);
 }
 
 function toggleMultiOption(name,value){
-  const sel=getMultiSelected(name);
-  const idx=sel.indexOf(value);
-  if(idx>-1)sel.splice(idx,1);else sel.push(value);
-  setMultiSelected(name,sel);
+  // single-select for agency fields
+  if(name==='agencyMethod'||name==='agencyAgent'||name==='agencySupplier'||name==='agencyDept'||name==='fundCategory'){
+    const sel=getMultiSelected(name);
+    if(sel.length===1&&sel[0]===value){setMultiSelected(name,[]);}
+    else{setMultiSelected(name,[value]);}
+  }else{
+    const sel=getMultiSelected(name);
+    const idx=sel.indexOf(value);
+    if(idx>-1)sel.splice(idx,1);else sel.push(value);
+    setMultiSelected(name,sel);
+  }
   if(name.startsWith('todoF_'))applyTodoFilter();
 }
 
@@ -2996,6 +3642,24 @@ function deleteOptionItem(name,idx){
   if(name.startsWith('todoF_'))applyTodoFilter();
 }
 
+function editOptionItem(name,idx){
+  const opts=getOptionStore(name);
+  if(idx<0||idx>=opts.length)return;
+  const oldVal=opts[idx];
+  const newVal=prompt('重命名选项：',oldVal);
+  if(!newVal||newVal.trim()===oldVal)return;
+  const trimmed=newVal.trim();
+  if(opts.includes(trimmed)){toast('该名称已存在');return;}
+  opts[idx]=trimmed;
+  saveOptionStore(name);
+  // 如果旧值被选中，更新选中列表中的名称
+  const sel=getMultiSelected(name);
+  const selIdx=sel.indexOf(oldVal);
+  if(selIdx>-1){sel[selIdx]=trimmed;setMultiSelected(name,sel);}
+  renderMultiOptions(name);
+  document.getElementById(name+'Dropdown').classList.add('open');
+}
+
 function clearMultiOptions(name){
   if(!confirm('确认清空所有备选项？此操作不可撤销'))return;
   getOptionStore(name).length=0; // 原地清空，保持别名引用
@@ -3026,6 +3690,7 @@ document.addEventListener('click',function(e){
 //  INSPIRATION
 // ============================================================
 let activeInspTag='';
+let activeInspStatus='active';
 
 function renderInspiration(){
   const insps=DB.get('inspirations');
@@ -3033,10 +3698,13 @@ function renderInspiration(){
   const filtered=insps.filter(i=>{
     if(q&&!(i.title+i.content).toLowerCase().includes(q))return false;
     if(activeInspTag&&!(i.tags||[]).includes(activeInspTag))return false;
+    if(activeInspStatus==='active'&&i.status&&i.status!=='active')return false;
+    if(activeInspStatus==='archived'&&i.status!=='archived')return false;
+    if(activeInspStatus==='abandoned'&&i.status!=='abandoned')return false;
     return true;
   }).sort((a,b)=>b.createdAt>a.createdAt?1:-1);
 
-  // tags
+  // tags — based on current filtered set
   const allTags=[...new Set(insps.flatMap(i=>i.tags||[]))];
   document.getElementById('inspTagFilter').innerHTML=[
     `<button class="tag-pill ${!activeInspTag?'active':''}" onclick="filterInspTag('')">全部</button>`,
@@ -3051,21 +3719,53 @@ function renderInspiration(){
   const tagColors=['badge-blue','badge-purple','badge-teal','badge-green','badge-yellow'];
   document.getElementById('inspList').innerHTML=filtered.map((x,ci)=>`
     <div class="insp-card" onclick="viewInsp(${x.id})">
-      <div class="insp-card-title">${esc(x.title)}</div>
+      <div class="insp-card-title">${esc(x.title)}${x.status&&x.status!=='active'?' <span class="badge '+(x.status==='archived'?'badge-blue':'badge-gray')+'">'+(x.status==='archived'?'已归档':'已放弃')+'</span>':''}</div>
       <div class="insp-card-body">${esc(x.content||'')}</div>
-      <div class="insp-card-footer">
-        <div class="insp-tags">${(x.tags||[]).map((t,i)=>`<span class="badge ${tagColors[i%tagColors.length]}">${esc(t)}</span>`).join('')}</div>
-        <div style="display:flex;gap:4px;flex-shrink:0">
-          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editInsp(${x.id})" title="编辑">✏️</button>
-          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteInsp(${x.id})" style="color:var(--color-danger)" title="删除">🗑</button>
-        </div>
+      <div class="insp-tags" style="margin-top:10px">${(x.tags||[]).map((t,i)=>`<span class="badge ${tagColors[i%tagColors.length]}">${esc(t)}</span>`).join('')}</div>
+      <div class="insp-card-actions" style="margin-top:8px">
+        ${(x.status==='active'||!x.status)?
+          `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();archiveInsp(${x.id})" title="归档（已实现）">📦</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();abandonInsp(${x.id})" title="放弃">🚫</button>`
+          :`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();restoreInsp(${x.id})" title="撤回">↩️</button>`}
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editInsp(${x.id})" title="编辑">✏️</button>
       </div>
-      <div style="font-size:11px;color:var(--color-text3);margin-top:6px">${x.createdAt?x.createdAt.slice(0,10):''}</div>
+      <div style="font-size:11px;color:var(--color-text3);margin-top:8px">${x.createdAt?x.createdAt.slice(0,10):''}</div>
     </div>
   `).join('');
 }
 
 function filterInspTag(t){activeInspTag=t;renderInspiration();}
+
+function filterInspStatus(status,el){
+  activeInspStatus=status;
+  document.querySelectorAll('.insp-status-btn').forEach(b=>b.classList.remove('active'));
+  if(el)el.classList.add('active');
+  activeInspTag='';
+  document.querySelectorAll('.tag-pill').forEach(b=>b.classList.remove('active'));
+  const allBtn=document.querySelector('#inspTagFilter .tag-pill:first-child');
+  if(allBtn)allBtn.classList.add('active');
+  renderInspiration();
+}
+
+function archiveInsp(id){
+  if(!confirm('确认归档此灵感？'))return;
+  const insps=DB.raw('inspirations');
+  const x=insps.find(i=>i.id===id);
+  if(x){x.status='archived';DB.set('inspirations',insps);toast('已归档');renderInspiration();}
+}
+
+function abandonInsp(id){
+  if(!confirm('确认放弃此灵感？'))return;
+  const insps=DB.raw('inspirations');
+  const x=insps.find(i=>i.id===id);
+  if(x){x.status='abandoned';DB.set('inspirations',insps);toast('已放弃');renderInspiration();}
+}
+
+function restoreInsp(id){
+  const insps=DB.raw('inspirations');
+  const x=insps.find(i=>i.id===id);
+  if(x){x.status='active';DB.set('inspirations',insps);toast('已撤回');renderInspiration();}
+}
 
 function handleTagInput(e,hiddenId){
   if(e.key==='Enter'||e.key===','){
@@ -3111,9 +3811,10 @@ function saveInspiration(){
     content:document.getElementById('inspContent').value,
     tags:JSON.parse(document.getElementById('inspTags').value||'[]'),
     createdAt:new Date().toISOString().slice(0,10),
+    status:'active',
     deleted:false
   };
-  if(id){const i=insps.findIndex(x=>x.id===id);if(i>-1){item.deleted=insps[i].deleted;insps[i]=item;}else insps.push(item);}
+  if(id){const i=insps.findIndex(x=>x.id===id);if(i>-1){item.deleted=insps[i].deleted;item.status=insps[i].status;insps[i]=item;}else insps.push(item);}
   else insps.push(item);
   DB.set('inspirations',insps);
   closeModal('inspModal');
@@ -3225,8 +3926,8 @@ function renderContracts(){
 //  删除台账时同步软删除关联的工作记录
 // ============================================================
 
-const SYNC_MODULE_LABELS={contract:'合同',purchase:'采购',expenses:'报销',meeting:'会议',training:'培训'};
-const SYNC_MODULE_CATEGORIES={contract:'合同管理',purchase:'采购管理',expenses:'报销管理',meeting:'会议管理',training:'培训管理'};
+const SYNC_MODULE_LABELS={contract:'合同',purchase:'采购',expenses:'报销',meeting:'会议',training:'培训',agency:'委托'};
+const SYNC_MODULE_CATEGORIES={contract:'合同管理',purchase:'采购管理',expenses:'报销管理',meeting:'会议管理',training:'培训管理',agency:'委托管理'};
 
 function syncLedgerTodo(module, ledger, action){
   const todos=DB.raw('todos');
@@ -3242,6 +3943,8 @@ function syncLedgerTodo(module, ledger, action){
     todoName='会议「'+ledger.name+'」';
   }else if(module==='training'){
     todoName='培训「'+ledger.name+'」';
+  }else if(module==='agency'){
+    todoName='委托「'+ledger.name+'」';
   }else{
     todoName='报销「'+(ledger.content||'未知内容').slice(0,20)+'」';
   }
@@ -3252,6 +3955,8 @@ function syncLedgerTodo(module, ledger, action){
   if(module==='contract'&&ledger.party)detailParts.push('对方单位 '+ledger.party);
   if(module==='purchase'&&ledger.supplier)detailParts.push('供应商 '+ledger.supplier);
   if(module==='expenses'&&ledger.supplier)detailParts.push('供应商 '+ledger.supplier);
+  if(module==='agency'&&ledger.agent)detailParts.push('代理机构 '+ledger.agent);
+  if(module==='agency'&&ledger.budget)detailParts.push('预算 ¥'+(+ledger.budget).toLocaleString());
   if(module==='meeting'){
     if(ledger.date)detailParts.push('日期 '+ledger.date);
     if(ledger.location)detailParts.push('地点 '+ledger.location);
@@ -3288,6 +3993,10 @@ function syncLedgerTodo(module, ledger, action){
     if(trainingEnd>now)todoStatus='未开始';
     else if(trainingEnd===now)todoStatus='进行中';
     else todoStatus='已完成';
+  }else if(module==='agency'){
+    if(ledger.status==='已完成')todoStatus='已完成';
+    else if(ledger.status==='已流标'||ledger.status==='已取消')todoStatus='已取消';
+    else todoStatus='进行中';
   }else{
     if(ledger.status==='已报销')todoStatus='已完成';
   }
@@ -3340,6 +4049,7 @@ function syncLedgerTodo(module, ledger, action){
       expenseRef:module==='expenses'?ledger.id:null,
       meetingRef:module==='meeting'?ledger.id:null,
       trainingRef:module==='training'?ledger.id:null,
+      agencyRef:module==='agency'?ledger.id:null,
       deleted:false
     };
     todos.push(newTodo);
@@ -3601,7 +4311,7 @@ function onPurchaseExpenseChange(){
 
 // 采购/合同/报销 通用导出 CSV
 function exportModuleCSV(module){
-  const keyMap={purchase:'purchases',contract:'contracts',expense:'expenses',meeting:'meetings',training:'trainings'};
+  const keyMap={purchase:'purchases',contract:'contracts',expense:'expenses',meeting:'meetings',training:'trainings',agency:'agencys',handover:'handovers',fund:'funds'};
   const data=DB.get(keyMap[module]||'expenses');
   let filtered;
   if(module==='purchase'){
@@ -3658,6 +4368,19 @@ function exportModuleCSV(module){
   }else if(module==='training'){
     csv+='名称,组织方,类型,分类,开始日期,结束日期,学分,学分类型,有证书,证书到期,费用,费用状态,有考核,考核结果\n';
     filtered.forEach(t=>csv+=`"${t.name}","${t.organizer||''}","${t.type}","${t.category||''}","${t.startDate}","${t.endDate||''}","${t.credits||''}","${t.creditType||''}","${t.hasCertificate?'是':'否'}","${t.certificateExpiry||''}","${t.fee||''}","${t.feeStatus||''}","${t.hasExam?'是':'否'}","${t.examResult||''}"\n`);
+  }else if(module==='agency'){
+    csv+='项目名称,比选方式,采购方式,评审方法,预算金额,委托时间,代理机构,需求科室,联系人,项目状态,成交金额,成交供应商,节省率\n';
+    filtered.forEach(a=>csv+=`"${a.name}","${a.method||''}","${a.procType||''}","${a.evalMethod||''}","${a.budget||0}","${a.date||''}","${a.agent||''}","${a.dept||''}","${a.contact||''}","${a.status}","${a.dealAmount||0}","${a.winSupplier||''}","${a.savingsRate!=null?a.savingsRate+'%':''}"\n`);
+  }else if(module==='handover'){
+    csv+='交接日期,交出人,接收人,交接内容,数量,原件/复印件,备注\n';
+    filtered.forEach(h=>csv+=`"${h.date}","${h.giver}","${h.receiver}","${h.content}","${h.quantity||''}","${h.docType||''}","${h.note||''}"\n`);
+  }else if(module==='fund'){
+    csv+='经费名称,经费类别,总预算,已使用,备注\n';
+    const fundRecords_all=DB.get('fundRecords');
+    filtered.forEach(f=>{
+      const used=fundRecords_all.filter(r=>r.fundId===f.id).reduce((s,r)=>s+(+r.amount||0),0);
+      csv+=`"${f.name}","${f.category}","${f.budget||0}","${used}","${f.note||''}"\n`;
+    });
   }else{
     csv+='申请时间,供应商,发票号,开票日期,发票内容,金额,状态,报销日期,备注\n';
     filtered.forEach(e=>csv+=`"${e.appDate||''}","${e.supplier||''}","${e.invoice||''}","${e.invoiceDate||''}","${e.content||''}","${e.amount||0}","${e.status||''}","${e.reimbDate||''}","${e.note||''}"\n`);
@@ -3755,6 +4478,673 @@ function deletePurchase(id){
 }
 
 // ============================================================
+//  AGENCY (委托台账)
+// ============================================================
+const agencyStatusBadge={待委托:'badge-yellow',已委托:'badge-blue',已完成:'badge-green',已流标:'badge-red',已取消:'badge-gray'};
+
+function renderAgencys(){
+  const data=DB.get('agencys');
+  const q=(document.getElementById('agencyF_name')?.value||'').toLowerCase();
+  const qm=(document.getElementById('agencyF_method')?.value||'').toLowerCase();
+  const qa=(document.getElementById('agencyF_agent')?.value||'').toLowerCase();
+  const qd=(document.getElementById('agencyF_dept')?.value||'').toLowerCase();
+  const sf=document.getElementById('agencyF_status')?.value||'';
+  const qc=(document.getElementById('agencyF_category')?.value||'').toLowerCase();
+  const qs=(document.getElementById('agencyF_supplier')?.value||'').toLowerCase();
+  const bMin=+(document.getElementById('agencyF_budgetMin')?.value||0);
+  const bMax=+(document.getElementById('agencyF_budgetMax')?.value||0);
+  const dFrom=document.getElementById('agencyF_dateFrom')?.value||'';
+  const dTo=document.getElementById('agencyF_dateTo')?.value||'';
+  const totalAmt=data.reduce((s,a)=>s+(+a.budget||0),0);
+  const dealAmt=data.reduce((s,a)=>s+(+a.dealAmount||0),0);
+  const pending=data.filter(a=>a.status==='待委托').length;
+  const completed=data.filter(a=>a.status==='已完成').length;
+  const filtered=data.filter(a=>{
+    if(q&&!a.name.toLowerCase().includes(q))return false;
+    if(qm&&!(a.method||'').toLowerCase().includes(qm))return false;
+    if(qa&&!(a.agent||'').toLowerCase().includes(qa))return false;
+    if(qd&&!(a.dept||'').toLowerCase().includes(qd))return false;
+    if(sf&&a.status!==sf)return false;
+    if(qc&&!(a.category||'').toLowerCase().includes(qc))return false;
+    if(qs&&!(a.winSupplier||'').toLowerCase().includes(qs))return false;
+    if(bMin&&(+a.budget||0)<bMin)return false;
+    if(bMax&&(+a.budget||0)>bMax)return false;
+    if(dFrom&&a.date&&a.date<dFrom)return false;
+    if(dTo&&a.date&&a.date>dTo)return false;
+    return true;
+  });
+  document.getElementById('agencyStats').innerHTML=`<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:var(--color-text2)">
+    <span>总委托 <strong style="color:var(--color-text);font-size:14px">${data.length}</strong></span>
+    <span>待委托 <strong style="color:var(--color-warning);font-size:14px">${pending}</strong></span>
+    <span>已完成 <strong style="color:var(--color-success);font-size:14px">${completed}</strong></span>
+    <span>预算总额 <strong style="color:var(--color-text);font-size:14px">${fmtCNY(totalAmt)}</strong></span>
+    <span>成交总额 <strong style="color:var(--color-text);font-size:14px">${fmtCNY(dealAmt)}</strong></span>
+  </div>`;
+  document.getElementById('agencyTable').innerHTML=filtered.map(a=>`
+    <tr>
+      <td><strong>${esc(a.name)}</strong></td>
+      <td>${esc(a.method||'—')}</td>
+      <td>${a.procType||'—'}</td>
+      <td>${esc(a.evalMethod||'—')}</td>
+      <td>${fmtCNY(a.budget)}</td>
+      <td>${a.date||'—'}</td>
+      <td>${esc(a.agent||'—')}</td>
+      <td>${esc(a.dept||'—')}</td>
+      <td>${esc(a.contact||'—')}</td>
+      <td><span class="badge ${agencyStatusBadge[a.status]}">${a.status}</span></td>
+      <td>${fmtCNY(a.dealAmount)}</td>
+      <td>${esc(a.winSupplier||'—')}</td>
+      <td>${a.savingsRate!=null?a.savingsRate+'%':'—'}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="editAgency(${a.id})">✏️</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteAgency(${a.id})">🗑</button>
+      </td>
+    </tr>
+  `).join('');
+  updateGenericFilterCount('agency');
+}
+
+function calcAgencySavings(){
+  const budget=+(document.getElementById('agencyBudget').value||0);
+  const deal=+(document.getElementById('agencyDealAmount').value||0);
+  const el=document.getElementById('agencySavingsRate');
+  if(budget>0&&deal>=0){
+    const rate=((budget-deal)/budget*100).toFixed(1);
+    el.value=rate+'%';
+    el.style.color=rate>=0?'var(--color-success)':'var(--color-danger)';
+  }else{
+    el.value='';el.style.color='var(--color-text3)';
+  }
+}
+
+function toggleAgencyAgent(){
+  var procType=document.getElementById('agencyProcType').value;
+  var agentGroup=document.getElementById('agencyAgentRow').querySelector('.form-group:first-child');
+  if(procType==='委托第三方'){
+    agentGroup.style.display='';
+  }else{
+    agentGroup.style.display='none';
+    setMultiSelected('agencyAgent',[]);
+  }
+}
+
+function saveAgency(){
+  const name=document.getElementById('agencyName').value.trim();
+  if(!name){toast('请输入项目名称');return;}
+  const agencys=DB.raw('agencys');
+  const id=+document.getElementById('agencyId').value;
+  const now=new Date().toISOString().slice(0,10);
+  const budget=+(document.getElementById('agencyBudget').value||0);
+  const deal=+(document.getElementById('agencyDealAmount').value||0);
+  let savingsRate=null;
+  if(budget>0&&deal>=0)savingsRate=+((budget-deal)/budget*100).toFixed(1);
+  const methodEl=document.getElementById('agencyMethodPlaceholder');
+  const agentEl=document.getElementById('agencyAgentPlaceholder');
+  const supplierEl=document.getElementById('agencySupplierPlaceholder');
+  const deptEl=document.getElementById('agencyDeptPlaceholder');
+  const item={
+    id:id||DB.nextId(agencys.filter(a=>!a.deleted)),
+    name:name,
+    method:methodEl&&methodEl.dataset.selected?JSON.parse(methodEl.dataset.selected)[0]||'':'',
+    category:document.getElementById('agencyCategory').value,
+    procType:document.getElementById('agencyProcType').value,
+    evalMethod:document.getElementById('agencyEvalMethod').value,
+    budget:budget,
+    date:document.getElementById('agencyDate').value,
+    agent:agentEl&&agentEl.dataset.selected?JSON.parse(agentEl.dataset.selected)[0]||'':'',
+    status:document.getElementById('agencyStatus').value,
+    dealAmount:deal,
+    savingsRate:savingsRate,
+    winSupplier:supplierEl&&supplierEl.dataset.selected?JSON.parse(supplierEl.dataset.selected)[0]||'':'',
+    dept:deptEl&&deptEl.dataset.selected?JSON.parse(deptEl.dataset.selected)[0]||'':'',
+    contact:document.getElementById('agencyContact').value.trim(),
+    docDate:document.getElementById('agencyDocDate').value,
+    todoRef:null,
+    deleted:false,
+    createdAt:now
+  };
+  if(id){
+    const i=agencys.findIndex(a=>a.id===id);
+    if(i>-1){item.createdAt=agencys[i].createdAt;item.todoRef=agencys[i].todoRef;agencys[i]=item;}
+    else agencys.push(item);
+  }else agencys.push(item);
+  DB.set('agencys',agencys);
+  syncLedgerTodo('agency',item);
+  closeModal('agencyModal');
+  clearAgencyForm();
+  renderAgencys();
+  toast('已保存');
+}
+
+function editAgency(id){
+  const a=DB.get('agencys').find(x=>x.id===id);
+  if(!a)return;
+  document.getElementById('agencyModalTitle').textContent='编辑委托';
+  document.getElementById('agencyId').value=a.id;
+  document.getElementById('agencyName').value=a.name;
+  if(a.method)setMultiSelected('agencyMethod',[a.method]);
+  document.getElementById('agencyCategory').value=a.category||'';
+  document.getElementById('agencyProcType').value=a.procType||'自行组织';
+  toggleAgencyAgent();
+  document.getElementById('agencyEvalMethod').value=a.evalMethod||'';
+  document.getElementById('agencyBudget').value=a.budget||'';
+  document.getElementById('agencyDate').value=a.date||'';
+  if(a.agent)setMultiSelected('agencyAgent',[a.agent]);
+  document.getElementById('agencyStatus').value=a.status||'待委托';
+  document.getElementById('agencyDealAmount').value=a.dealAmount||'';
+  if(a.winSupplier)setMultiSelected('agencySupplier',[a.winSupplier]);
+  if(a.dept)setMultiSelected('agencyDept',[a.dept]);
+  document.getElementById('agencyContact').value=a.contact||'';
+  document.getElementById('agencyDocDate').value=a.docDate||'';
+  calcAgencySavings();
+  openModal('agencyModal');
+}
+
+function deleteAgency(id){
+  if(!confirm('确认删除？'))return;
+  const agencys=DB.raw('agencys');
+  const a=agencys.find(p=>p.id===id);
+  if(a){a.deleted=true;DB.set('agencys',agencys);syncLedgerTodo('agency',a,'delete');}
+  renderAgencys();toast('已删除');
+}
+
+function clearAgencyForm(){
+  ['agencyId','agencyName','agencyBudget','agencyDate','agencyDealAmount','agencyDocDate','agencyContact']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('agencyCategory').value='';
+  document.getElementById('agencyProcType').value='自行组织';
+  document.getElementById('agencyEvalMethod').value='';
+  document.getElementById('agencyStatus').value='待委托';
+  setMultiSelected('agencyMethod',[]);
+  setMultiSelected('agencyAgent',[]);
+  setMultiSelected('agencySupplier',[]);
+  setMultiSelected('agencyDept',[]);
+  document.getElementById('agencySavingsRate').value='';
+  document.getElementById('agencySavingsRate').style.color='var(--color-text3)';
+  document.getElementById('agencyModalTitle').textContent='新增委托';
+  toggleAgencyAgent();
+}
+
+function applyAgencyFilter(){renderAgencys();updateGenericFilterCount('agency');}
+function resetAgencyFilter(){
+  ['agencyF_name','agencyF_method','agencyF_agent','agencyF_dept','agencyF_category','agencyF_supplier','agencyF_budgetMin','agencyF_budgetMax','agencyF_dateFrom','agencyF_dateTo']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const s=document.getElementById('agencyF_status');if(s)s.value='';
+  renderAgencys();updateGenericFilterCount('agency');
+}
+
+// ============================================================
+//  HANDOVER (交接台账) - 多行物品
+// ============================================================
+function addHandoverItem(data){
+  const container=document.getElementById('handoverItems');
+  const idx=container.children.length;
+  const item=data||{content:'',quantity:'',docType:''};
+  const div=document.createElement('div');
+  div.className='handover-item-row';
+  div.style.cssText='display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap';
+  div.innerHTML=`
+    <input class="form-control" placeholder="交接内容" value="${esc(item.content)}" style="flex:2;min-width:120px;font-size:12px;padding:5px" onchange="updateHandoverItemField(${idx},'content',this.value)">
+    <input type="number" class="form-control" placeholder="数量" value="${item.quantity}" style="width:60px;font-size:12px;padding:5px" min="1" onchange="updateHandoverItemField(${idx},'quantity',this.value)">
+    <select class="form-control" style="width:90px;font-size:12px;padding:5px" onchange="updateHandoverItemField(${idx},'docType',this.value)">
+      <option value="">—</option>
+      <option value="原件" ${item.docType==='原件'?'selected':''}>原件</option>
+      <option value="复印件" ${item.docType==='复印件'?'selected':''}>复印件</option>
+    </select>
+    <button class="btn btn-ghost btn-sm" onclick="removeHandoverItem(this)" style="color:var(--color-danger);font-size:16px;padding:0 4px" title="删除">×</button>
+  `;
+  container.appendChild(div);
+}
+let _handoverItems=[];
+function updateHandoverItemField(idx,field,val){
+  if(!_handoverItems[idx])_handoverItems[idx]={content:'',quantity:'',docType:''};
+  _handoverItems[idx][field]=val;
+}
+function removeHandoverItem(btn){
+  const row=btn.parentElement;
+  const container=row.parentElement;
+  const idx=[...container.children].indexOf(row);
+  row.remove();
+  _handoverItems.splice(idx,1);
+  // re-index onchange handlers
+  [...container.children].forEach((el,i)=>{
+    const inputs=el.querySelectorAll('input,select');
+    inputs[0].onchange=function(v){updateHandoverItemField(i,'content',this.value)};
+    inputs[1].onchange=function(v){updateHandoverItemField(i,'quantity',this.value)};
+    inputs[2].onchange=function(v){updateHandoverItemField(i,'docType',this.value)};
+  });
+}
+
+function renderHandovers(){
+  const data=DB.get('handovers');
+  const giver=(document.getElementById('handoverF_giver')?.value||'').toLowerCase();
+  const receiver=(document.getElementById('handoverF_receiver')?.value||'').toLowerCase();
+  const content=(document.getElementById('handoverF_content')?.value||'').toLowerCase();
+  const docType=document.getElementById('handoverF_docType')?.value||'';
+  const dFrom=document.getElementById('handoverF_dateFrom')?.value||'';
+  const dTo=document.getElementById('handoverF_dateTo')?.value||'';
+  const totalCount=data.length;
+
+  // Build item-level search index
+  const filtered=data.filter(h=>{
+    const items=getHandoverItems(h);
+    const allContent=items.map(i=>(i.content||'')).join(' ');
+    const allDocTypes=items.map(i=>i.docType||'').join(' ');
+    if(giver&&!(h.giver||'').toLowerCase().includes(giver))return false;
+    if(receiver&&!(h.receiver||'').toLowerCase().includes(receiver))return false;
+    if(content&&!allContent.toLowerCase().includes(content))return false;
+    if(docType&&!allDocTypes.includes(docType))return false;
+    if(dFrom&&h.date&&h.date<dFrom)return false;
+    if(dTo&&h.date&&h.date>dTo)return false;
+    return true;
+  });
+
+  // Stats
+  let totalOriginals=0,totalCopies=0;
+  filtered.forEach(h=>{getHandoverItems(h).forEach(i=>{if(i.docType==='原件')totalOriginals++;else if(i.docType==='复印件')totalCopies++;});});
+  document.getElementById('handoverStats').innerHTML=`<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:var(--color-text2)">
+    <span>总记录 <strong style="color:var(--color-text);font-size:14px">${totalCount}</strong></span>
+    <span>原件 <strong style="color:var(--color-text);font-size:14px">${totalOriginals}</strong></span>
+    <span>复印件 <strong style="color:var(--color-text);font-size:14px">${totalCopies}</strong></span>
+  </div>`;
+
+  // Group items by handover for rowspan rendering
+  if(!filtered.length){
+    document.getElementById('handoverTable').innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--color-text3)">暂无交接记录</td></tr>';
+    updateGenericFilterCount('handover');
+    return;
+  }
+  let html='';
+  [...filtered].reverse().forEach(h=>{
+    const items=getHandoverItems(h);
+    const rowspan=items.length||1;
+    items.forEach((item,i)=>{
+      html+=`<tr>
+        ${i===0?`
+          <td rowspan="${rowspan}" style="white-space:nowrap;vertical-align:top">${h.date||'—'}</td>
+          <td rowspan="${rowspan}" style="vertical-align:top">${esc(h.giver)}</td>
+          <td rowspan="${rowspan}" style="vertical-align:top">${esc(h.receiver)}</td>
+        `:''}
+        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(item.content||'—')}</td>
+        <td>${item.quantity||'—'}</td>
+        <td>${item.docType?`<span class="badge ${item.docType==='原件'?'badge-blue':'badge-yellow'}">${item.docType}</span>`:'—'}</td>
+        ${i===0?`
+          <td rowspan="${rowspan}" style="vertical-align:top">
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-ghost btn-sm" onclick="editHandover(${h.id})" title="编辑">✏️</button>
+              <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteHandover(${h.id})" title="删除">🗑</button>
+            </div>
+            ${h.note?`<div style="font-size:10px;color:var(--color-text3);margin-top:4px">${esc(h.note)}</div>`:''}
+          </td>
+        `:''}
+      </tr>`;
+    });
+  });
+  document.getElementById('handoverTable').innerHTML=html;
+  updateGenericFilterCount('handover');
+}
+
+function getHandoverItems(h){
+  return (h.items&&h.items.length)?h.items:[{content:h.content||'',quantity:h.quantity||'',docType:h.docType||''}];
+}
+
+function saveHandover(){
+  const date=document.getElementById('handoverDate').value;
+  const giver=document.getElementById('handoverGiver').value.trim();
+  const receiver=document.getElementById('handoverReceiver').value.trim();
+  if(!date||!giver||!receiver){toast('请填写日期、交出人和接收人');return;}
+  // Collect items
+  if(!_handoverItems.length){toast('请添加至少一项交接物品');return;}
+  const items=_handoverItems.map((it,i)=>{
+    const container=document.getElementById('handoverItems');
+    if(!it.content){
+      const input=container.children[i]?.querySelector('input');
+      it.content=input?.value?.trim()||'';
+    }
+    return it;
+  });
+  if(!items.some(it=>it.content)){toast('请填写交接物品内容');return;}
+  const handovers=DB.raw('handovers');
+  const id=+document.getElementById('handoverId').value;
+  const now=new Date().toISOString().slice(0,10);
+  const item={
+    id:id||DB.nextId(handovers.filter(h=>!h.deleted)),
+    date:date,
+    giver:giver,
+    receiver:receiver,
+    note:document.getElementById('handoverNote').value.trim()||'',
+    items:items,
+    deleted:false,
+    createdAt:now
+  };
+  if(id){
+    const i=handovers.findIndex(h=>h.id===id);
+    if(i>-1){item.createdAt=handovers[i].createdAt;handovers[i]=item;}
+    else handovers.push(item);
+  }else handovers.push(item);
+  DB.set('handovers',handovers);
+  closeModal('handoverModal');
+  clearHandoverForm();
+  renderHandovers();
+  toast('已保存');
+}
+
+function editHandover(id){
+  const h=DB.get('handovers').find(x=>x.id===id);
+  if(!h)return;
+  document.getElementById('handoverModalTitle').textContent='编辑交接记录';
+  document.getElementById('handoverId').value=h.id;
+  document.getElementById('handoverDate').value=h.date;
+  document.getElementById('handoverGiver').value=h.giver;
+  document.getElementById('handoverReceiver').value=h.receiver;
+  document.getElementById('handoverNote').value=h.note||'';
+  // Restore items
+  _handoverItems=[];
+  const items=getHandoverItems(h);
+  items.forEach(it=>addHandoverItem(it));
+  openModal('handoverModal');
+}
+
+function deleteHandover(id){
+  if(!confirm('确认删除？'))return;
+  const handovers=DB.raw('handovers');
+  const h=handovers.find(p=>p.id===id);
+  if(h){h.deleted=true;DB.set('handovers',handovers);}
+  renderHandovers();toast('已删除');
+}
+
+function clearHandoverForm(){
+  ['handoverId','handoverDate','handoverGiver','handoverReceiver','handoverNote']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('handoverItems').innerHTML='';
+  _handoverItems=[];
+  document.getElementById('handoverModalTitle').textContent='新增交接记录';
+}
+
+function applyHandoverFilter(){renderHandovers();updateGenericFilterCount('handover');}
+function resetHandoverFilter(){
+  ['handoverF_giver','handoverF_receiver','handoverF_content','handoverF_dateFrom','handoverF_dateTo']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const s=document.getElementById('handoverF_docType');if(s)s.value='';
+  renderHandovers();updateGenericFilterCount('handover');
+}
+
+// ============================================================
+//  FUND (经费台账)
+// ============================================================
+const FUND_CATEGORIES=['办公经费','差旅费','培训费','会议费','设备购置费','劳务费','其他'];
+
+function renderFunds(){
+  const funds=DB.get('funds');
+  const fundRecords_all=DB.get('fundRecords');
+  const nameQ=(document.getElementById('fundF_name')?.value||'').toLowerCase();
+  const catQ=(document.getElementById('fundF_category')?.value||'').toLowerCase();
+  const bMin=+(document.getElementById('fundF_budgetMin')?.value||0);
+  const bMax=+(document.getElementById('fundF_budgetMax')?.value||0);
+  const lowBalance=document.getElementById('fundF_lowBalance')?.value||'';
+
+  const totalBudget=funds.reduce((s,f)=>s+(+f.budget||0),0);
+  const totalUsed=fundRecords_all.reduce((s,r)=>s+(+r.amount||0),0);
+  const totalRemaining=totalBudget-totalUsed;
+
+  const filtered=funds.filter(f=>{
+    if(nameQ&&!(f.name||'').toLowerCase().includes(nameQ))return false;
+    if(catQ&&!(f.category||'').toLowerCase().includes(catQ))return false;
+    if(bMin&&(+f.budget||0)<bMin)return false;
+    if(bMax&&(+f.budget||0)>bMax)return false;
+    if(lowBalance==='low'){
+      const used=fundRecords_all.filter(r=>r.fundId===f.id).reduce((s,r)=>s+(+r.amount||0),0);
+      const remaining=(+f.budget||0)-used;
+      if(remaining/(+f.budget||1)>0.2)return false;
+    }
+    return true;
+  });
+  // 对应关联报销下拉选择
+  const expenses=DB.get('expenses');
+  // 拆分关联的报销
+  const expenseOpts=expenses.map(e=>`<option value="${e.id}">${e.appDate||''} ${e.content?esc(e.content).slice(0,30):''} ¥${fmt(e.amount)}</option>`).join('');
+
+  document.getElementById('fundStats').innerHTML=`
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:var(--color-text2)">
+      <span>经费总数 <strong style="color:var(--color-text);font-size:14px">${funds.length}</strong></span>
+      <span>总预算 <strong style="color:var(--color-text);font-size:14px">${fmtCNY(totalBudget)}</strong></span>
+      <span>已使用 <strong style="color:var(--color-danger);font-size:14px">${fmtCNY(totalUsed)}</strong></span>
+      <span>剩余 <strong style="color:${totalRemaining>0?'var(--color-success)':'var(--color-danger)'};font-size:14px">${fmtCNY(totalRemaining)}</strong></span>
+    </div>`;
+
+  if(!filtered.length){
+    document.getElementById('fundList').innerHTML='<div class="card"><div class="empty-state" style="padding:40px"><p>暂无经费记录，点击右上角新增</p></div></div>';
+    return;
+  }
+
+  document.getElementById('fundList').innerHTML=filtered.map(f=>{
+    const records=fundRecords_all.filter(r=>r.fundId===f.id);
+    const used=records.reduce((s,r)=>s+(+r.amount||0),0);
+    const remaining=(+f.budget||0)-used;
+    const pct=+f.budget>0?Math.round(used/+f.budget*100):0;
+    const barColor=pct<50?'var(--color-success)':pct<80?'var(--color-warning)':'var(--color-danger)';
+    return `<div class="card" style="margin-bottom:12px">
+      <div class="card-header" style="cursor:pointer" onclick="toggleFundDetail(${f.id})">
+        <div style="display:flex;align-items:center;gap:12px;flex:1;flex-wrap:wrap">
+          <span style="font-weight:600;font-size:14px">${esc(f.name)}</span>
+          <span class="badge badge-blue">${esc(f.category)}</span>
+          <div style="flex:1;min-width:120px;height:6px;background:var(--color-bg2);border-radius:3px;max-width:200px">
+            <div style="height:6px;border-radius:3px;background:${barColor};width:${pct}%"></div>
+          </div>
+          <span style="font-size:12px;color:var(--color-text2);white-space:nowrap">
+            ${fmtCNY(used)} / ${fmtCNY(f.budget)} (${pct}%)
+          </span>
+          <span style="font-size:12px;color:${remaining>0?'var(--color-success)':'var(--color-danger)'};white-space:nowrap">
+            余 ${fmtCNY(remaining)}
+          </span>
+        </div>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openFundRecordModal(${f.id})">+ 开支</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editFund(${f.id})">✏️</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="event.stopPropagation();deleteFund(${f.id})">🗑</button>
+        </div>
+      </div>
+      <div id="fundDetail-${f.id}" style="display:none;border-top:1px solid var(--color-border);padding-top:12px;margin-top:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-weight:500;font-size:13px">开支明细（共 ${records.length} 条）</span>
+          <button class="btn btn-sm btn-outline" onclick="openFundRecordModal(${f.id})">+ 新增开支</button>
+        </div>
+        ${records.length?`<div class="table-wrap"><table>
+          <thead><tr><th>日期</th><th>内容</th><th>金额</th><th>关联报销</th><th>备注</th><th>操作</th></tr></thead>
+          <tbody>${records.map(r=>`<tr>
+            <td style="white-space:nowrap">${r.date||'—'}</td>
+            <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.content)}</td>
+            <td style="font-weight:600;color:var(--color-danger);white-space:nowrap">${fmtCNY(r.amount)}</td>
+            <td>${r.expenseRef?(()=>{const _e=expenses.find(x=>x.id===r.expenseRef);return _e?`<span class="badge badge-green" title="${esc(_e.content||'')} ¥${fmt(_e.amount)}">${_e.appDate||''} ${esc((_e.supplier||'').slice(0,8))}</span>`:'<span class="badge badge-gray">已失效</span>';})():'—'}</td>
+            <td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.note||'')||'—'}</td>
+            <td><button class="btn btn-ghost btn-sm" onclick="editFundRecord(${r.id})">✏️</button><button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteFundRecord(${r.id})">🗑</button></td>
+          </tr>`).join('')}</tbody>
+        </table></div>`:`<div style="padding:16px;text-align:center;color:var(--color-text3);font-size:13px">暂无开支记录</div>`}
+      </div>
+    </div>`;
+  }).join('');
+  updateGenericFilterCount('fund');
+  // Store expense options for fund record modal
+  window._fundExpenseOpts=expenseOpts;
+}
+
+function toggleFundDetail(id){
+  const el=document.getElementById('fundDetail-'+id);
+  if(el)el.style.display=el.style.display==='none'?'block':'none';
+}
+
+function saveFund(){
+  const name=document.getElementById('fundName').value.trim();
+  const catSel=getMultiSelected('fundCategory');
+  const category=catSel.length?catSel[0]:'';
+  if(!name){toast('请输入经费名称');return;}
+  if(!category){toast('请选择经费类别');return;}
+  const funds=DB.raw('funds');
+  const id=+document.getElementById('fundId').value;
+  const now=new Date().toISOString().slice(0,10);
+  const item={
+    id:id||DB.nextId(funds.filter(f=>!f.deleted)),
+    name:name,
+    category:category,
+    budget:+(document.getElementById('fundBudget').value||0),
+    note:document.getElementById('fundNote').value.trim()||'',
+    deleted:false,
+    createdAt:now
+  };
+  if(id){
+    const i=funds.findIndex(f=>f.id===id);
+    if(i>-1){item.createdAt=funds[i].createdAt;funds[i]=item;}
+    else funds.push(item);
+  }else funds.push(item);
+  DB.set('funds',funds);
+  closeModal('fundModal');
+  clearFundForm();
+  renderFunds();
+  toast('已保存');
+}
+
+function editFund(id){
+  const f=DB.get('funds').find(x=>x.id===id);
+  if(!f)return;
+  document.getElementById('fundModalTitle').textContent='编辑经费';
+  document.getElementById('fundId').value=f.id;
+  document.getElementById('fundName').value=f.name;
+  if(f.category)setMultiSelected('fundCategory',[f.category]);
+  document.getElementById('fundBudget').value=f.budget||'';
+  document.getElementById('fundNote').value=f.note||'';
+  openModal('fundModal');
+}
+
+function deleteFund(id){
+  if(!confirm('确认删除该经费及其所有开支记录？'))return;
+  const funds=DB.raw('funds');
+  const f=funds.find(p=>p.id===id);
+  if(f){f.deleted=true;DB.set('funds',funds);}
+  // Also mark all related fundRecords as deleted
+  const records=DB.raw('fundRecords');
+  let changed=false;
+  records.forEach(r=>{if(r.fundId===id&&!r.deleted){r.deleted=true;changed=true;}});
+  if(changed)DB.set('fundRecords',records);
+  renderFunds();toast('已删除');
+}
+
+function clearFundForm(){
+  ['fundId','fundName','fundBudget','fundNote']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  setMultiSelected('fundCategory',[]);
+  document.getElementById('fundModalTitle').textContent='新增经费';
+}
+
+function applyFundFilter(){renderFunds();updateGenericFilterCount('fund');}
+function resetFundFilter(){
+  ['fundF_name','fundF_category','fundF_budgetMin','fundF_budgetMax']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const s=document.getElementById('fundF_lowBalance');if(s)s.value='';
+  renderFunds();updateGenericFilterCount('fund');
+}
+
+// 经费开支记录 CRUD
+function openFundRecordModal(fundId){
+  clearFundRecordForm();
+  document.getElementById('fundRecordFundId').value=fundId;
+  // Populate expense reference dropdown
+  const sel=document.getElementById('fundRecordExpenseRef');
+  sel.innerHTML='<option value="">— 不关联 —</option>'+(window._fundExpenseOpts||'');
+  openModal('fundRecordModal');
+}
+
+function onFundRecordExpenseRefChange(){
+  const val=document.getElementById('fundRecordExpenseRef').value;
+  if(!val){
+    // 清空自动填充
+    if(!document.getElementById('fundRecordId').value){
+      document.getElementById('fundRecordDate').value='';
+      document.getElementById('fundRecordAmount').value='';
+      document.getElementById('fundRecordContent').value='';
+    }
+    return;
+  }
+  const expenses=DB.get('expenses');
+  const exp=expenses.find(e=>e.id===+val);
+  if(!exp)return;
+  // 仅新增模式才自动填充，编辑模式保留原有值
+  if(!document.getElementById('fundRecordId').value){
+    if(exp.appDate)document.getElementById('fundRecordDate').value=exp.appDate;
+    if(exp.amount)document.getElementById('fundRecordAmount').value=exp.amount;
+    if(exp.content)document.getElementById('fundRecordContent').value=exp.content;
+  }
+}
+
+function saveFundRecord(){
+  const fundId=+document.getElementById('fundRecordFundId').value;
+  const date=document.getElementById('fundRecordDate').value;
+  const content=document.getElementById('fundRecordContent').value.trim();
+  const amount=+(document.getElementById('fundRecordAmount').value||0);
+  if(!fundId){toast('缺少经费ID');return;}
+  if(!date||!content||!amount){toast('请填写日期、内容和金额');return;}
+  const records=DB.raw('fundRecords');
+  const id=+document.getElementById('fundRecordId').value;
+  const now=new Date().toISOString().slice(0,10);
+  const expenseRef=document.getElementById('fundRecordExpenseRef').value||null;
+  const item={
+    id:id||DB.nextId(records.filter(r=>!r.deleted)),
+    fundId:fundId,
+    date:date,
+    content:content,
+    amount:amount,
+    expenseRef:expenseRef?+expenseRef:null,
+    note:document.getElementById('fundRecordNote').value.trim()||'',
+    deleted:false,
+    createdAt:now
+  };
+  if(id){
+    const i=records.findIndex(r=>r.id===id);
+    if(i>-1){item.createdAt=records[i].createdAt;records[i]=item;}
+    else records.push(item);
+  }else records.push(item);
+  // If expenseRef is set, update the expense's fundItem field
+  if(expenseRef){
+    const expenses=DB.raw('expenses');
+    const exp=expenses.find(e=>e.id===+expenseRef);
+    if(exp){exp.fundItem=fundId;DB.set('expenses',expenses);}
+  }
+  DB.set('fundRecords',records);
+  closeModal('fundRecordModal');
+  renderFunds();
+  toast('已保存');
+}
+
+function editFundRecord(id){
+  const r=DB.get('fundRecords').find(x=>x.id===id);
+  if(!r)return;
+  document.getElementById('fundRecordModalTitle').textContent='编辑开支记录';
+  document.getElementById('fundRecordId').value=r.id;
+  document.getElementById('fundRecordFundId').value=r.fundId;
+  document.getElementById('fundRecordDate').value=r.date;
+  document.getElementById('fundRecordContent').value=r.content;
+  document.getElementById('fundRecordAmount').value=r.amount;
+  document.getElementById('fundRecordNote').value=r.note||'';
+  const sel=document.getElementById('fundRecordExpenseRef');
+  sel.innerHTML='<option value="">— 不关联 —</option>'+(window._fundExpenseOpts||'');
+  if(r.expenseRef)sel.value=r.expenseRef;
+  openModal('fundRecordModal');
+}
+
+function deleteFundRecord(id){
+  if(!confirm('确认删除该开支记录？'))return;
+  const records=DB.raw('fundRecords');
+  const r=records.find(p=>p.id===id);
+  if(r){r.deleted=true;DB.set('fundRecords',records);}
+  renderFunds();toast('已删除');
+}
+
+function clearFundRecordForm(){
+  ['fundRecordId','fundRecordFundId','fundRecordDate','fundRecordContent','fundRecordAmount','fundRecordNote']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('fundRecordModalTitle').textContent='新增开支记录';
+}
+
+// ============================================================
 //  EXPENSE
 // ============================================================
 const expenseStatusBadge={待报销:'badge-yellow',已报销:'badge-green'};
@@ -3796,9 +5186,14 @@ function renderExpenses(){
   renderModuleStats('expense',filtered,expenses);
 
   if(!filtered.length){
-    document.getElementById('expenseTable').innerHTML=`<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--color-text3)">暂无报销记录</td></tr>`;
+    document.getElementById('expenseTable').innerHTML=`<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--color-text3)">暂无报销记录</td></tr>`;
     return;
   }
+
+  // 缓存经费名称
+  const _funds=DB.get('funds');
+  const fundMap={};
+  _funds.forEach(f=>{fundMap[f.id]=f.name;});
 
   document.getElementById('expenseTable').innerHTML=[...filtered].reverse().map(e=>`
     <tr>
@@ -3806,7 +5201,8 @@ function renderExpenses(){
       <td><span style="font-weight:500">${esc(e.supplier||'—')}</span></td>
       <td style="font-family:monospace;font-size:12px">${esc(e.invoice||'—')}</td>
       <td style="color:var(--color-text2);white-space:nowrap">${e.invoiceDate||'—'}</td>
-      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(e.content||'')}">${esc(e.content||'—')}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(e.content||'')}">${esc(e.content||'—')}</td>
+      <td style="font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.fundItem?esc(fundMap[e.fundItem]||'—'):'—'}</td>
       <td style="font-weight:600;white-space:nowrap">¥${fmt(e.amount)}</td>
       <td><span class="badge ${expenseStatusBadge[e.status]||'badge-gray'}">${e.status}</span></td>
       <td style="color:var(--color-text2);white-space:nowrap">${e.reimbDate||'—'}</td>
@@ -3848,6 +5244,7 @@ function saveExpense(){
     status,
     reimbDate,
     category:document.getElementById('expenseCategory')?.value||'其他',
+    fundItem:+(document.getElementById('expenseFundItem')?.value)||null,
     todoRef:null,
     deleted:false,
     createdAt:now
@@ -3878,6 +5275,8 @@ function editExpense(id){
   document.getElementById('expenseNote').value=e.note||'';
   document.getElementById('expenseStatus').value=e.status||'待报销';
   document.getElementById('expenseReimbDate').value=e.reimbDate||'';
+  populateExpenseFundDropdown();
+  document.getElementById('expenseFundItem').value=e.fundItem||'';
   openModal('expenseModal');
 }
 
@@ -4652,9 +6051,20 @@ function onExpenseStatusChange(){
 }
 
 function clearExpenseForm(){
-  ['expenseId','expenseAppDate','expenseAmount','expenseSupplier','expenseSupplierCode','expenseInvoice','expenseInvoiceDate','expenseContent','expenseNote','expenseReimbDate'].forEach(id=>document.getElementById(id).value='');
+  ['expenseId','expenseAppDate','expenseAmount','expenseSupplier','expenseSupplierCode','expenseInvoice','expenseInvoiceDate','expenseContent','expenseNote','expenseReimbDate','expenseFundItem'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('expenseStatus').value='待报销';
   document.getElementById('expenseModalTitle').textContent='新增报销';
+  // 弹出前刷新经费项目下拉
+  populateExpenseFundDropdown();
+}
+
+function populateExpenseFundDropdown(){
+  const sel=document.getElementById('expenseFundItem');
+  if(!sel)return;
+  const funds=DB.get('funds');
+  const curVal=sel.value;
+  sel.innerHTML='<option value="">— 不关联经费项目 —</option>'+funds.map(f=>`<option value="${f.id}">${esc(f.name)} (${esc(f.category)})</option>`).join('');
+  if(curVal)sel.value=curVal;
 }
 
 function deleteExpense(id){
@@ -5173,6 +6583,10 @@ function dumpData(){
     expenses:DB.get('expenses'),
     meetings:DB.get('meetings'),
     trainings:DB.get('trainings'),
+    agencys:DB.get('agencys'),
+    handovers:DB.get('handovers'),
+    funds:DB.get('funds'),
+    fundRecords:DB.get('fundRecords'),
     exportedAt:new Date().toISOString()
   };
 }
@@ -5199,8 +6613,7 @@ function importData(e){
     try{
       const data=JSON.parse(ev.target.result);
       let imported=0;
-      ['todos','inspirations','contracts','purchases','expenses','meetings','trainings'].forEach(k=>{
-        if(Array.isArray(data[k])){DB.set(k,data[k]);imported+=data[k].length;}
+      ['todos','inspirations','contracts','purchases','expenses','meetings','trainings','agencys','handovers','funds','fundRecords'].forEach(k=>{        if(Array.isArray(data[k])){DB.set(k,data[k]);imported+=data[k].length;}
       });
       toast('已导入 '+imported+' 条数据');
       renderCurrentPage();
@@ -5402,8 +6815,7 @@ const GITEE={
   _mergeData(data){
     if(data&&data.todos!==undefined){
       let itemsMerged=0;
-      ['todos','inspirations','contracts','purchases','expenses','meetings','trainings'].forEach(k=>{
-        if(Array.isArray(data[k])){
+      ['todos','inspirations','contracts','purchases','expenses','meetings','trainings','agencys','handovers','funds','fundRecords'].forEach(k=>{        if(Array.isArray(data[k])){
           const local=DB.get(k);
           const localRaw=DB.raw(k);
           const deletedIds=new Set(localRaw.filter(r=>r.deleted).map(r=>r.id));
@@ -5465,7 +6877,7 @@ const _origDBSet=DB.set;
 DB.set=function(key,val){
   _origDBSet(key,val);
   // only sync for main data keys
-  if(['todos','inspirations','contracts','purchases','expenses','meetings','trainings'].includes(key)){
+  if(['todos','inspirations','contracts','purchases','expenses','meetings','trainings','agencys','handovers','funds','fundRecords'].includes(key)){
     triggerSync();
   }
 };
@@ -6034,6 +7446,9 @@ function renderCurrentPage(){
   if(currentPage==='expense')renderExpenses();
   if(currentPage==='meeting')renderMeetings();
   if(currentPage==='training')renderTrainings();
+  if(currentPage==='agency')renderAgencys();
+  if(currentPage==='handover')renderHandovers();
+  if(currentPage==='fund')renderFunds();
 }
 
 // ============================================================
