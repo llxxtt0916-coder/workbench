@@ -1101,6 +1101,26 @@ tr:hover td {
   background: rgba(226,75,74,.08);
 }
 
+.multi-opt-edit {
+  color: var(--color-text3);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  border-radius: 3px;
+  visibility: hidden;
+  transition: color .1s, background .1s;
+}
+
+.multi-dropdown-item:hover .multi-opt-edit {
+  visibility: visible;
+}
+
+.multi-opt-edit:hover {
+  color: var(--color-primary);
+  background: rgba(59,107,222,.08);
+}
+
 .multi-dropdown-add {
   display: flex;
   gap: 4px;
@@ -1179,8 +1199,7 @@ tr:hover td {
 .insp-card-footer {
   margin-top: 10px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 8px;
 }
 
@@ -1188,6 +1207,12 @@ tr:hover td {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+.insp-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 /* ===== SEARCH BAR ===== */
@@ -1625,5 +1650,84 @@ tr:hover td {
 
   .custom-date-range {
     flex-wrap: wrap;
+  }
+}
+
+/* Inspiration status filter buttons */
+.insp-status-btn.active {
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  border-color: var(--color-primary) !important;
+}
+.insp-status-btn:hover {
+  background: var(--color-bg2, #eef1f5);
+}
+
+/* ===== DASHBOARD KPI BLOCKS (差异化驾驶舱) ===== */
+.kpi-block {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+.kpi-block:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.1);
+}
+.kpi-active {
+  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+  border-left: 4px solid #4f46e5;
+}
+.kpi-warning {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border-left: 4px solid #f59e0b;
+}
+.kpi-danger {
+  background: linear-gradient(135deg, #fef2f2, #fecaca);
+  border-left: 4px solid #ef4444;
+}
+.kpi-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.kpi-content {
+  flex: 1;
+  min-width: 0;
+}
+.kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-text);
+}
+.kpi-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text2);
+  margin-top: 2px;
+}
+.kpi-sub {
+  font-size: 11px;
+  color: var(--color-text3);
+  margin-top: 1px;
+}
+
+/* 灵感卡片墙 - 驾驶舱用 */
+.inspo-card {
+  transition: box-shadow .15s, transform .1s;
+}
+.inspo-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+  .dash-kpi-row {
+    flex-direction: column;
   }
 }
