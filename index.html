@@ -1061,6 +1061,17 @@
         <label class="form-label">关闭原因 / 备注（可选）</label>
         <input class="form-control" id="stateReason" placeholder="如：已完成 / 放弃 / 已终止…">
       </div>
+      <div class="form-group" style="margin-top:12px">
+        <label class="form-label">周期（关闭后自动生成下一期）</label>
+        <select class="form-control" id="stateRecurrence" onchange="updateStateRecurrenceHint()">
+          <option value="none">不重复（一次性）</option>
+          <option value="weekly">每周</option>
+          <option value="monthly">每月</option>
+          <option value="quarterly">每季度</option>
+          <option value="yearly">每年</option>
+        </select>
+        <div id="stateRecurrenceHint" style="font-size:12px;color:var(--color-text3);margin-top:4px"></div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('stateModal')">取消</button>
@@ -2016,6 +2027,30 @@ function isOverdue(rec, ledgerKey){
   if(!due) return false;
   return rec.state!==STATE.CLOSED && due < todayStr();
 }
+// 下一期日期计算 + 月末钳制（周期任务 T6，与 tests/v14.test.js 保持一致）
+function fmtLocalDate(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
+function addMonths(year, month0, day, add){
+  let nm=month0+add, ny=year;
+  while(nm>11){ nm-=12; ny++; }
+  const last=new Date(ny, nm+1, 0).getDate(); // 当月最后一天
+  const nd=Math.min(day, last);                // 月末钳制：如 1/31 +1月 → 2/28
+  return fmtLocalDate(new Date(ny, nm, nd));
+}
+function nextDueDate(base, period){
+  if(!base) return '';
+  const parts=base.split('-');
+  if(parts.length!==3) return '';
+  const y=+parts[0], m=+parts[1], d=+parts[2];
+  const date=new Date(y, m-1, d); // 本地时区，避免 UTC 偏移差一天
+  if(period==='weekly'){ date.setDate(date.getDate()+7); return fmtLocalDate(date); }
+  if(period==='monthly'){ return addMonths(y, m-1, d, 1); }
+  if(period==='quarterly'){ return addMonths(y, m-1, d, 3); }
+  if(period==='yearly'){ return addMonths(y, m-1, d, 12); }
+  return '';
+}
 
 // 跨七台账取全部条目（打 _ledger 标签；D3：仅七台账，不含会议/培训）
 function getAllLedgerItems(){
@@ -2116,8 +2151,8 @@ function setState(ledgerKey, id, newState, reason){
   if(newState===STATE.CLOSED){
     rec.closed_at=now; rec.closed_by='user';
     if(reason!==undefined) rec.closed_reason=reason||rec.closed_reason||'';
-    // 周期再生（T6 实现 maybeRegenerate，存在才调用，保持解耦）
-    if(typeof maybeRegenerate==='function') maybeRegenerate(rec);
+    // 周期再生（T6）：关闭周期项时自动生成下一期
+    maybeRegenerate(ledgerKey, records, i, rec);
   } else if(oldState===STATE.CLOSED){
     // 从已关闭退回活跃态（撤销），写审计
     rec.reopened_at=now; rec.reopened_by='user';
@@ -2126,6 +2161,38 @@ function setState(ledgerKey, id, newState, reason){
   DB.set(ledgerKey, records);
   rerenderCurrent();
   toast('状态已更新为：'+newState);
+}
+// 周期再生（T6）：关闭周期项时自动生成下一期；幂等（next_generated 锁防重复）；月末钳制
+function maybeRegenerate(ledgerKey, records, i, rec){
+  if(!rec || rec.recurrence==='none' || !rec.recurrence) return;
+  if(rec.next_generated) return;            // 本实例已再生过，防重复
+  if(!rec.due_date) return;                 // 无截止日无法推算下一期
+  if(!rec.recurrence_group_id){
+    rec.recurrence_group_id='rg_'+ledgerKey+'_'+rec.id+'_'+Date.now();
+  }
+  const next=nextDueDate(rec.due_date, rec.recurrence);
+  if(!next) return;
+  const nrec=ledgerDefaults(ledgerKey);
+  nrec.id=DB.nextId(records);
+  // 复制展示/业务字段，保留上下文
+  nrec.name = rec.name || rec.title || '未命名';
+  nrec.title = rec.title || rec.name || '未命名';
+  nrec.content = rec.content || rec.requirement || '';
+  nrec.note = rec.note || rec.requirement || '';
+  nrec.requirement = rec.requirement || '';
+  nrec.priority = rec.priority || 'normal';
+  nrec.info_complete = rec.info_complete;
+  // 周期链字段
+  nrec.recurrence = rec.recurrence;
+  nrec.recurrence_group_id = rec.recurrence_group_id;
+  nrec.recurrence_index = (rec.recurrence_index||0) + 1;
+  nrec.due_date = next;
+  if(ledgerKey==='todos') nrec.deadline = next;
+  nrec.state = STATE.TODO;
+  // 复制常见业务字段（金额/对方/类别等），其余沿用 ledgerDefaults 默认值
+  ['amount','party','supplier','agent','budget','category','giver','receiver','dealAmount','savingsRate','winSupplier','docDate','dept','contact','procType','evalMethod','expiry','signDate','invoice','invoiceDate','reimbDate','appDate','contractRef','purchaseRef','expenseRef','meetingRef','trainingRef','subtasks','source','issueDate','blocker','todoRef','fundItem'].forEach(k=>{ if(k in rec) nrec[k]=rec[k]; });
+  records.push(nrec);
+  rec.next_generated = true;                // 标记本实例已再生
 }
 // 打开状态设置弹窗
 function openStateModal(ledgerKey, id){
@@ -2139,6 +2206,8 @@ function openStateModal(ledgerKey, id){
     if(b) b.classList.toggle('active', (rec.state||STATE.TODO)===s);
   });
   document.getElementById('stateReason').value=rec.closed_reason||'';
+  const recSel=document.getElementById('stateRecurrence');
+  if(recSel){ recSel.value=rec.recurrence||'none'; updateStateRecurrenceHint(); }
   openModal('stateModal');
 }
 function applyState(){
@@ -2147,8 +2216,28 @@ function applyState(){
   const chosen=document.querySelector('.state-btn.active');
   const ns=chosen?chosen.dataset.state:STATE.TODO;
   const reason=document.getElementById('stateReason').value;
+  const recurrence=document.getElementById('stateRecurrence').value;
+  // 周期设置：启用时分配 group id（保证再生链唯一），落库后再 setState
+  const recs=DB.raw(ledger);
+  const ri=recs.findIndex(r=>r.id===id);
+  if(ri>=0){
+    if(recurrence!=='none' && !recs[ri].recurrence_group_id){
+      recs[ri].recurrence_group_id='rg_'+ledger+'_'+id+'_'+Date.now();
+    }
+    recs[ri].recurrence=recurrence;
+    DB.set(ledger, recs);
+  }
   closeModal('stateModal');
   setState(ledger, id, ns, ns===STATE.CLOSED?reason:undefined);
+}
+// 状态弹窗：周期选择提示
+function updateStateRecurrenceHint(){
+  const k=document.getElementById('stateRecurrence').value;
+  const h=document.getElementById('stateRecurrenceHint');
+  if(!h) return;
+  if(k && k!=='none'){
+    h.textContent='设为周期后，关闭本项将自动生成下一期（进入待办）；想停周期改回"不重复"即可。';
+  } else { h.textContent=''; }
 }
 
 // ============================================================
