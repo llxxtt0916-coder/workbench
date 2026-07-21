@@ -2602,6 +2602,11 @@ function applyOrganize(){
   rec.name=title; rec.title=title; rec.content=requirement; rec.requirement=requirement;
   rec.due_date=due; if(ledger==='todos') rec.deadline=due;
   rec.priority=priority; rec.state=st;
+  // 目标关闭前确认活跃子任务（与 setState 一致）
+  if((st===STATE.DONE||st===STATE.CLOSED) && rec.is_goal){
+    const kids=getAllLedgerItems().filter(r=>r.parent_goal===('todos:'+rec.id) && (r.state===STATE.TODO||r.state===STATE.DOING));
+    if(kids.length && !confirm('该目标还有 '+kids.length+' 个进行中的子任务，确认关闭目标？')){ return; }
+  }
   rec.parent_goal = parentGoal? 'todos:'+parentGoal : '';
   if(extra) Object.assign(rec, extra);
   // todos 备注并入 content（沿用 createLedgerItem 逻辑，保持一致）
@@ -2617,6 +2622,11 @@ function applyOrganize(){
   }
   if(ledger==='funds'){ rec.info_complete=true; rec.note=(rec.note||'').replace(/（经费为两级结构.*?）/g,'')+'（经费为两级结构，转账开支请到经费台账补全）'; }
   recs[i]=rec; DB.set(ledger, recs);
+  // 周期项关闭时自动再生下一期（与 setState 一致）
+  if((st===STATE.DONE||st===STATE.CLOSED) && rec.recurrence && rec.recurrence!=='none' && !rec.next_generated){
+    maybeRegenerate(ledger, recs, i, rec);
+    DB.set(ledger, recs);
+  }
   closeModal('quickArchiveModal');
   renderTodos(); updateTodoBadge();
   if(st==='DONE'||st==='CLOSED') toast('已保存（'+LEDGER_META[ledger].label+'，'+st+'，不进待办）');
@@ -2833,7 +2843,7 @@ function renderDashboardV14(){
   const ledgerRows=LEDGER_KEYS.map(k=>{
     const items=all.filter(r=>r._ledger===k);
     const total=items.length;
-    const closed=items.filter(r=>r.state===STATE.CLOSED).length;
+    const closed=items.filter(r=>r.state===STATE.CLOSED || r.state===STATE.DONE).length;
     const pct=total?Math.round(closed/total*100):0;
     return `<div class="v14-ledger-row"><span class="v14-ledger-name">${LEDGER_META[k].label}</span>
       <span class="v14-ledger-bar"><span style="width:${pct}%"></span></span>
@@ -8517,10 +8527,10 @@ checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/
         <div class="form-group">
           <label class="form-label">状态 *</label>
           <select class="form-control" id="archiveState">
-            <option value="TODO">未开始</option>
-            <option value="DOING">进行中</option>
-            <option value="DONE">已完成</option>
-            <option value="CLOSED">已关闭（取消/终止，直接归档不进待办）</option>
+            <option value="未开始">未开始</option>
+            <option value="进行中">进行中</option>
+            <option value="已完成">已完成</option>
+            <option value="已关闭">已关闭（取消/终止，直接归档不进待办）</option>
           </select>
         </div>
       </div>

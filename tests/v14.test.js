@@ -163,5 +163,14 @@ eq('fmt 1y', formatLedgerRecurrence('1y'), '每1年');
 eq('fmt wd', formatLedgerRecurrence('wd'), '每工作日');
 eq('fmt legacy monthly', formatLedgerRecurrence('monthly'), '每1月');
 
+// 回归：归档/编辑弹窗 archiveState 选项值必须为中文 STATE 值（防四态化漏改）
+(function(){
+  const fs=require('fs'); const path=require('path');
+  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+  const m=html.match(/id="archiveState"[^>]*>([\s\S]*?)<\/select>/);
+  const vals=m?[...m[1].matchAll(/<option value="([^"]+)"/g)].map(x=>x[1]):[];
+  eq('archiveState 四选项值为中文 STATE', JSON.stringify(vals)===JSON.stringify(['未开始','进行中','已完成','已关闭']), true);
+})();
+
 console.log(`\n[v14 逻辑测试] 通过 ${pass} / 失败 ${fail}`);
 process.exit(fail?1:0);
