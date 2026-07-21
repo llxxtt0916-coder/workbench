@@ -2352,6 +2352,10 @@ function createLedgerItem(ledgerKey, {title, requirement, due_date, priority, is
   if(isGoal) rec.is_goal=true;
   if(parentGoal) rec.parent_goal='todos:'+parentGoal;
   if(extra) Object.assign(rec, extra);
+  // 工作台账的"备注"动态字段并入 content，确保界面可见（todos 卡片/详情只读 content）
+  if(ledgerKey==='todos' && extra && extra.note){
+    rec.content = (rec.content ? rec.content+'｜' : '') + '备注：' + extra.note;
+  }
   // 硬台账"事项"单独处理：matter 文本转 items 数组，便于交接台账详情展示
   if(ledgerKey==='handovers' && rec.matter){ rec.items=[{content:String(rec.matter), docType:'', quantity:''}]; }
   // 硬台账信息不全标记（todos 始终完整）；留空必填字段则 info_complete=false 并把提示写进 note 保证可见
@@ -2363,6 +2367,11 @@ function createLedgerItem(ledgerKey, {title, requirement, due_date, priority, is
       const labels=missing.map(k=>{ const f=(LEDGER_FIELDS[ledgerKey]||[]).find(x=>x.key===k); return f?f.label:k; });
       rec.note=(rec.note||'')+'（信息不全：缺'+labels.join('、')+'）';
     }
+  }
+  // 经费为两级结构，归档时只填最小字段，澄清"信息不全"避免误导（设计如此，非缺数据）
+  if(ledgerKey==='funds'){
+    rec.info_complete = true;
+    rec.note = (rec.note ? rec.note+' ' : '') + '（经费为两级结构，转账开支请到经费台账补全）';
   }
   arr.push(rec); DB.set(ledgerKey, arr);
   return rec;
@@ -8521,7 +8530,7 @@ checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('quickArchiveModal')">取消</button>
-      <button class="btn btn-primary" onclick="applyArchive()">归档（进待办）</button>
+      <button class="btn btn-primary" onclick="applyArchive()">确认归档</button>
     </div>
   </div>
 </div>
