@@ -1766,3 +1766,25 @@ tr:hover td {
 .fab-quick:hover{transform:scale(1.06)}
 .quick-compose{width:100%}
 .quick-compose textarea{width:100%;min-height:84px;resize:vertical;font-family:inherit;font-size:14px;padding:8px;border-radius:8px;border:1px solid var(--color-border)}
+
+/* v1.4 驾驶舱聚合卡片 */
+.v14-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.v14-block{background:var(--color-bg);border-radius:8px;padding:10px}
+.v14-block-title{font-size:12px;font-weight:600;color:var(--color-text2);margin-bottom:6px}
+.v14-state-dist{display:flex;gap:6px;flex-wrap:wrap}
+.v14-state-tag{padding:2px 8px;border-radius:10px;font-size:12px;border:1px solid var(--color-border)}
+.v14-state-tag.st-todo{background:#eef2ff;color:#4a6cf7}
+.v14-state-tag.st-doing{background:#fff4e5;color:#d98300}
+.v14-state-tag.st-closed{background:#eef1f4;color:#8a94a6}
+.v14-ledger-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:5px}
+.v14-ledger-name{width:64px;flex-shrink:0;color:var(--color-text2)}
+.v14-ledger-bar{flex:1;height:6px;background:var(--color-bg2);border-radius:3px;overflow:hidden}
+.v14-ledger-bar span{display:block;height:100%;background:var(--color-primary)}
+.v14-ledger-pct{width:36px;text-align:right;color:var(--color-text3)}
+.v14-ledger-num{width:48px;text-align:right;color:var(--color-text3)}
+.v14-goal-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:5px}
+.v14-goal-name{width:120px;flex-shrink:0;color:var(--color-text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v14-ov-item{font-size:12px;padding:4px 0;border-bottom:1px dashed var(--color-border);cursor:pointer}
+.v14-ov-item:hover{color:var(--color-primary)}
+.v14-empty{font-size:12px;color:var(--color-text3)}
+.v14-pending{font-size:13px}

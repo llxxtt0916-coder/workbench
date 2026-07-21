@@ -170,6 +170,15 @@
         </div>
       </div>
 
+      <!-- v1.4 Row: 统一台账状态总览 -->
+      <div class="card" id="dashV14" style="margin-bottom:16px">
+        <div class="card-header" style="margin-bottom:10px">
+          <span class="card-title">🧭 v1.4 台账总览</span>
+          <button class="btn btn-sm btn-outline" onclick="navigate('待办')">进入待办</button>
+        </div>
+        <div id="dashV14Inner"></div>
+      </div>
+
     <!-- Row 3: 台账总览 - 4独立板块 -->
     <div class="dash-ledger-row" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
       <div class="card" style="flex:1;min-width:150px" id="dashLgContract" onclick="navigate('contract')">
@@ -2622,6 +2631,54 @@ function updateRemindBadge(){
   const el=document.getElementById('remindCount');
   if(el){ if(n>0){el.style.display='';el.textContent=n;}else{el.style.display='none';} }
 }
+// 驾驶舱 v1.4 聚合（状态分布 / 各台账进度 / 逾期 / 目标进度 / 速记待整理）
+function renderDashboardV14(){
+  const box=document.getElementById('dashV14Inner');
+  if(!box) return;
+  const all=getAllLedgerItems();
+  const counts={todo:0,doing:0,closed:0};
+  all.forEach(r=>{ if(r.state===STATE.TODO)counts.todo++; else if(r.state===STATE.DOING)counts.doing++; else if(r.state===STATE.CLOSED)counts.closed++; });
+  const ledgerRows=LEDGER_KEYS.map(k=>{
+    const items=all.filter(r=>r._ledger===k);
+    const total=items.length;
+    const closed=items.filter(r=>r.state===STATE.CLOSED).length;
+    const pct=total?Math.round(closed/total*100):0;
+    return `<div class="v14-ledger-row"><span class="v14-ledger-name">${LEDGER_META[k].label}</span>
+      <span class="v14-ledger-bar"><span style="width:${pct}%"></span></span>
+      <span class="v14-ledger-pct">${pct}%</span>
+      <span class="v14-ledger-num">${closed}/${total}</span></div>`;
+  }).join('');
+  const overdue=all.filter(r=>isOverdue(r,r._ledger)).slice(0,8);
+  const overdueHtml = overdue.length? overdue.map(r=>`<div class="v14-ov-item" onclick="openStateModal('${r._ledger}',${r.id})">${esc(r.name||r.title||'未命名')} <span class="tag">${esc(r._ledgerLabel||'')}</span> <span style="color:#d93025">${r.due_date}</span></div>`).join('') : '<div class="v14-empty">无逾期 ✓</div>';
+  const goals=all.filter(r=>r.is_goal && (r.state===STATE.TODO||r.state===STATE.DOING));
+  const goalHtml = goals.length? goals.map(g=>{ const p=goalProgress(g.id); return `<div class="v14-goal-row"><span class="v14-goal-name">${esc(g.name||g.title||'未命名目标')}</span><span class="v14-ledger-bar"><span style="width:${p.pct}%"></span></span><span class="v14-ledger-pct">${p.pct}%</span></div>`; }).join('') : '<div class="v14-empty">暂无进行中的目标</div>';
+  const pending=DB.get('quick_notes').filter(n=>n.status==='inbox').length;
+  box.innerHTML=`
+    <div class="v14-grid">
+      <div class="v14-block">
+        <div class="v14-block-title">状态分布</div>
+        <div class="v14-state-dist">
+          <span class="v14-state-tag st-todo">未开始 ${counts.todo}</span>
+          <span class="v14-state-tag st-doing">进行中 ${counts.doing}</span>
+          <span class="v14-state-tag st-closed">已关闭 ${counts.closed}</span>
+        </div>
+        <div class="v14-block-title" style="margin-top:12px">速记待整理</div>
+        <div class="v14-pending">${pending>0?('<span class="tag" style="background:#eef2ff;color:#4a6cf7">'+pending+' 条</span> <a style="cursor:pointer;color:var(--color-primary)" onclick="navigate(\'quick\')">去速记箱 →</a>'):'已清空 ✓'}</div>
+      </div>
+      <div class="v14-block">
+        <div class="v14-block-title">各台账进度（已关闭/总数）</div>
+        ${ledgerRows}
+      </div>
+      <div class="v14-block">
+        <div class="v14-block-title">逾期事项</div>
+        ${overdueHtml}
+      </div>
+      <div class="v14-block">
+        <div class="v14-block-title">长期目标进度（去重）</div>
+        ${goalHtml}
+      </div>
+    </div>`;
+}
 
 // 自动修复历史数据（格式迁移 + ID修复 + 字段补齐 + 日期标准化 + 软删除）
 function repairData(){
@@ -3066,6 +3123,7 @@ function renderDashboard() {
       </div>
     </div>
   `;
+  renderDashboardV14(); // v1.4 聚合卡片
 
   // === 2. 工作记录：3 卡片 ===
   const keyTodos = todos.filter(t => t.type === 'key');
