@@ -1897,6 +1897,134 @@ const DB = {
   raw(key){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return[]}}
 };
 
+// ============================================================
+//  DATA LAYER v1.4 —— 统一数据源 + 三态状态生命周期
+//  设计裁定（见落地计划 D1）：保留 7 个台账数组原结构，仅追加统一字段；
+//  待办/看板/驾驶舱用跨数组查询实现"统一视图"，不复制不搬家。
+// ============================================================
+const LEDGER_META = {
+  todos:     { key:'todos',     label:'工作台账', page:'todo',     hard:false },
+  contracts: { key:'contracts', label:'合同台账', page:'contract', hard:true  },
+  purchases: { key:'purchases', label:'采购台账', page:'purchase', hard:true  },
+  expenses:  { key:'expenses',  label:'报销台账', page:'expense',  hard:true  },
+  agencys:   { key:'agencys',   label:'委托台账', page:'agency',   hard:true  },
+  handovers: { key:'handovers', label:'交接台账', page:'handover', hard:true  },
+  funds:     { key:'funds',     label:'经费台账', page:'fund',     hard:true  },
+};
+const LEDGER_KEYS = Object.keys(LEDGER_META); // 七大台账的 localStorage key
+const STATE = { TODO:'未开始', DOING:'进行中', CLOSED:'已关闭' };
+const PERIOD = { none:'none', weekly:'weekly', monthly:'monthly', quarterly:'quarterly', yearly:'yearly' };
+
+// 原生 status → 统一 state 映射（历史迁移用，规格 §7 + 计划 3.2）
+function mapStatusToState(ledgerKey, status){
+  const s=String(status||'').trim();
+  switch(ledgerKey){
+    case 'todos':     return s==='进行中' ? STATE.DOING : (s==='已完成'||s==='已取消') ? STATE.CLOSED : STATE.TODO;
+    case 'contracts': return s==='执行中' ? STATE.DOING : (s==='已完成'||s==='已终止') ? STATE.CLOSED : STATE.TODO;
+    case 'purchases': return s==='申请中' ? STATE.TODO : (s==='已采购'||s==='已完成'||s==='已取消') ? STATE.CLOSED : STATE.DOING;
+    case 'expenses':  return s==='待报销' ? STATE.TODO : (s==='已报销'||s==='已取消') ? STATE.CLOSED : STATE.DOING;
+    case 'agencys':   return s==='待委托' ? STATE.TODO : s==='已委托' ? STATE.DOING : (s==='已完成'||s==='已流标'||s==='已取消') ? STATE.CLOSED : STATE.DOING;
+    case 'handovers': return (s==='进行中'||s==='交接中') ? STATE.DOING : (s==='已完成'||s==='已取消'||s==='已结束') ? STATE.CLOSED : STATE.TODO;
+    case 'funds':     return s==='进行中' ? STATE.DOING : (s==='已完成'||s==='已关闭') ? STATE.CLOSED : STATE.TODO;
+    default:          return STATE.TODO;
+  }
+}
+
+// 取某台账条目的"截止日期"（统一字段 due_date 优先，回退到各台账原生日期）
+function getDueDate(rec, ledgerKey){
+  if(rec.due_date) return rec.due_date;
+  switch(ledgerKey){
+    case 'todos':     return rec.deadline||'';
+    case 'contracts': return rec.expiry||'';
+    case 'purchases': return rec.date||'';
+    case 'expenses':  return rec.appDate||'';
+    case 'agencys':   return rec.date||'';
+    case 'handovers': return rec.date||'';
+    case 'funds':     return rec.deadline||'';
+    default:          return '';
+  }
+}
+// 本地"今天"（YYYY-MM-DD），用本地时区，避免 toISOString 的 UTC 偏移导致差一天
+function todayStr(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+// 是否逾期：有截止日且未关闭且已过今天
+function isOverdue(rec, ledgerKey){
+  const due=getDueDate(rec, ledgerKey);
+  if(!due) return false;
+  return rec.state!==STATE.CLOSED && due < todayStr();
+}
+
+// 跨七台账取全部条目（打 _ledger 标签；D3：仅七台账，不含会议/培训）
+function getAllLedgerItems(){
+  const out=[];
+  LEDGER_KEYS.forEach(key=>{
+    DB.get(key).forEach(r=>{
+      out.push(Object.assign({ _ledger:key, _ledgerLabel:LEDGER_META[key].label, _ledgerPage:LEDGER_META[key].page }, r));
+    });
+  });
+  return out;
+}
+// 待办 = 活跃态（未开始 ∪ 进行中）过滤视图
+function getActiveItems(){
+  return getAllLedgerItems().filter(r=> r.state===STATE.TODO || r.state===STATE.DOING );
+}
+
+// v1.4 数据层保障：追加统一生命周期字段 + 首次运行快照 localStorage（回退 safety）
+function ensureV14(){
+  // 首次运行：把当前全部 localStorage 快照到 wb_v14_restore，作为 localStorage 级回退
+  if(!localStorage.getItem('wb_v14_snapshot')){
+    const snap={};
+    for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); snap[k]=localStorage.getItem(k); }
+    try{ localStorage.setItem('wb_v14_restore', JSON.stringify(snap)); localStorage.setItem('wb_v14_snapshot','1'); }catch(e){}
+  }
+  // 速记箱 key 保障
+  if(!localStorage.getItem('quick_notes')) DB.set('quick_notes',[]);
+  // 七台账：追加统一字段并据原生 status 计算 state（只追加，不改原有）
+  LEDGER_KEYS.forEach(key=>{
+    const records=DB.raw(key);
+    if(!records.length) return;
+    const fixed=records.map(r=>{
+      const rec=Object.assign({}, r);
+      if(rec.state===undefined||rec.state==='') rec.state=mapStatusToState(key, rec.status);
+      if(rec.closed_reason===undefined) rec.closed_reason='';
+      if(rec.due_date===undefined) rec.due_date=getDueDate(rec, key);
+      if(rec.recurrence===undefined) rec.recurrence='none';
+      if(rec.recurrence_group_id===undefined) rec.recurrence_group_id='';
+      if(rec.recurrence_index===undefined) rec.recurrence_index=0;
+      if(rec.parent_goal===undefined) rec.parent_goal='';
+      if(rec.is_goal===undefined) rec.is_goal=false;
+      if(rec.info_complete===undefined) rec.info_complete=true; // 老数据视为已补全
+      if(rec.next_generated===undefined) rec.next_generated=false;
+      if(rec.priority===undefined) rec.priority='normal';
+      if(key==='todos' && rec.priority && rec.priority!=='normal' && rec.priority!=='important'){
+        rec.priority=(rec.priority==='high'||rec.priority==='urgent') ? 'important' : 'normal';
+      }
+      if(rec.closed_by===undefined) rec.closed_by='';
+      if(rec.closed_at===undefined) rec.closed_at='';
+      if(rec.reopened_by===undefined) rec.reopened_by='';
+      if(rec.reopened_at===undefined) rec.reopened_at='';
+      return rec;
+    });
+    DB.set(key, fixed);
+  });
+  // 灵感：追加 archived_to（转台账移动语义）
+  const insp=DB.raw('inspirations');
+  if(insp.length){
+    const fixed=insp.map(r=>{ const rec=Object.assign({},r); if(rec.archived_to===undefined) rec.archived_to=null; return rec; });
+    DB.set('inspirations', fixed);
+  }
+}
+// 从快照恢复 localStorage（回退用）
+function restoreV14(){
+  const raw=localStorage.getItem('wb_v14_restore');
+  if(!raw) return false;
+  const snap=JSON.parse(raw);
+  Object.keys(snap).forEach(k=>localStorage.setItem(k, snap[k]));
+  return true;
+}
+
 // 自动修复历史数据（格式迁移 + ID修复 + 字段补齐 + 日期标准化 + 软删除）
 function repairData(){
   const keys=['todos','inspirations','contracts','purchases','expenses','meetings','trainings','agencys','handovers','funds','fundRecords'];
@@ -2105,6 +2233,9 @@ function repairData(){
     missing.forEach(r=>syncLedgerTodo(mod,r));
     console.log('🔗 '+key+'：为 '+missing.length+' 条历史记录补全了工作记录联动');
   });
+
+  // v1.4：追加统一生命周期字段并按原生 status 计算 state（幂等，只加不改）
+  ensureV14();
 }
 
 // ============================================================
