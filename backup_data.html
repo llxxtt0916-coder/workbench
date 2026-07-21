@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkBench 本地数据导出/恢复助手</title>
+<style>
+  body{font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif;margin:24px;color:#222;line-height:1.6}
+  h1{font-size:18px}
+  .box{border:1px solid #ddd;border-radius:8px;padding:12px;margin:12px 0;background:#fafafa}
+  button{font-family:inherit;padding:8px 14px;border:1px solid #4a6cf7;background:#4a6cf7;color:#fff;border-radius:6px;cursor:pointer;margin-right:8px}
+  button.ghost{background:#fff;color:#4a6cf7}
+  textarea{width:100%;height:200px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+  .hint{color:#666;font-size:13px}
+  code{background:#eee;padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<h1>WorkBench 本地数据导出 / 恢复助手</h1>
+<p class="hint">本页用于把浏览器 <code>localStorage</code> 中的全部 WorkBench 数据导出为 JSON 文件（兜底备份），
+或从 JSON 文件恢复。请在升级前、升级后各导出一次，便于回退。</p>
+
+<div class="box">
+  <p><b>1. 导出当前 localStorage 全部数据</b></p>
+  <button onclick="exportAll()">导出为 JSON 文件</button>
+  <p class="hint">也可直接复制下方文本框内容保存。</p>
+  <textarea id="out" readonly placeholder="点击上方按钮后此处显示数据"></textarea>
+</div>
+
+<div class="box">
+  <p><b>2. 从 JSON 文件恢复</b></p>
+  <p class="hint">⚠️ 恢复会覆盖当前同名 localStorage 键。请确认无误。</p>
+  <input type="file" id="file" accept=".json" onchange="loadFile(event)">
+  <br><br>
+  <button class="ghost" onclick="restore()">执行恢复</button>
+  <p id="msg" class="hint"></p>
+</div>
+
+<script>
+// 导出全部 localStorage 为 JSON 文件
+function exportAll(){
+  const dump={};
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    try{dump[k]=JSON.parse(localStorage.getItem(k));}
+    catch{dump[k]=localStorage.getItem(k);}
+  }
+  const text=JSON.stringify(dump,null,2);
+  document.getElementById('out').value=text;
+  const blob=new Blob([text],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='workbench_localdata_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  document.getElementById('msg').textContent='已导出 '+Object.keys(dump).length+' 个键。';
+}
+
+// 读取文件
+let _pending=null;
+function loadFile(ev){
+  const f=ev.target.files[0];
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{_pending=JSON.parse(r.result);document.getElementById('msg').textContent='已读取文件，共 '+Object.keys(_pending).length+' 个键，点"执行恢复"写入。';}catch(e){document.getElementById('msg').textContent='JSON 解析失败：'+e.message;}};
+  r.readAsText(f);
+}
+
+// 恢复
+function restore(){
+  if(!_pending){document.getElementById('msg').textContent='请先选择 JSON 文件。';return;}
+  if(!confirm('确定用文件内容覆盖当前 localStorage 吗？此操作不可撤销。'))return;
+  Object.keys(_pending).forEach(k=>{
+    const v=_pending[k];
+    localStorage.setItem(k, typeof v==='string'?v:JSON.stringify(v));
+  });
+  document.getElementById('msg').textContent='已恢复 '+Object.keys(_pending).length+' 个键。请刷新 WorkBench 主页面查看。';
+}
+</script>
+</body>
+</html>
