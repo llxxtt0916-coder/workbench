@@ -1679,27 +1679,17 @@
       <textarea class="smart-textarea" id="smartInput" placeholder="粘贴一段文字，自动识别类型和字段……&#10;&#10;例如：&#10;• "今天下午3点前完成季度报告" → 任务&#10;• "想到一个优化用户体验的新方案" → 灵感&#10;• "与XX公司签署合同，金额50万" → 合同&#10;• "采购办公设备，供应商报价3000元" → 采购&#10;• "出差餐费128元，发票号12345" → 报销" oninput="smartAnalyze()"></textarea>
 
       <div class="cat-row" id="catRow">
-        <span class="cat-badge" data-cat="todo" onclick="smartSetCat('todo')">✅ 任务</span>
-        <span class="cat-badge" data-cat="inspiration" onclick="smartSetCat('inspiration')">💡 灵感</span>
-        <span class="cat-badge" data-cat="contract" onclick="smartSetCat('contract')">📄 合同</span>
-        <span class="cat-badge" data-cat="purchase" onclick="smartSetCat('purchase')">🛒 采购</span>
-        <span class="cat-badge" data-cat="expense" onclick="smartSetCat('expense')">💰 报销</span>
+        <select id="smartCat" class="form-control" style="margin-top:8px" onchange="smartSetCat(this.value)"></select>
       </div>
 
       <div class="preview-card" id="previewCard" style="display:none">
         <div style="font-weight:600;margin-bottom:8px;color:var(--color-text2);font-size:11px;text-transform:uppercase;letter-spacing:.5px">📋 识别预览</div>
         <div id="previewFields"></div>
       </div>
-
-      <div id="smartInbox" style="margin-top:14px;border-top:1px solid var(--color-border);padding-top:12px">
-        <div style="font-size:13px;font-weight:600;margin-bottom:8px">📥 收件箱（<span id="smartInboxCount">0</span>）— 速记暂存，可稍后整理</div>
-        <div id="smartInboxList"></div>
-      </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-sm btn-outline" onclick="document.getElementById('smartInput').value='';closePreview();">清空</button>
-      <button class="btn btn-sm btn-outline" onclick="smartSaveAsQuick()">📝 仅存为速记</button>
-      <button class="btn btn-primary btn-sm" id="smartSaveBtn" onclick="smartSave()" disabled>确认录入</button>
+      <button class="btn btn-sm btn-outline" onclick="smartClear()">清空</button>
+      <button class="btn btn-primary btn-sm" id="smartSaveBtn" onclick="smartSave()">确认</button>
     </div>
   </div>
 </div>
@@ -2498,6 +2488,8 @@ function saveQuickCompose(){
 function openArchiveModal(id){
   const n=DB.raw('quick_notes').find(x=>x.id===id);
   if(!n) return;
+  document.getElementById('archiveMode').value='quick';
+  document.getElementById('archiveItemId').value='';
   document.getElementById('archiveQuickId').value=id;
   document.getElementById('archiveQuickPreview').textContent=n.content||'';
   document.getElementById('archiveTitle').value=(n.content||'').slice(0,30);
@@ -2507,6 +2499,7 @@ function openArchiveModal(id){
   const stEl=document.getElementById('archiveState');
   if(stEl) stEl.value='TODO';
   const sel=document.getElementById('archiveLedger');
+  sel.disabled=false;
   sel.innerHTML=LEDGER_KEYS.map(k=>`<option value="${k}">${LEDGER_META[k].label}</option>`).join('');
   const goalSel=document.getElementById('archiveGoal');
   if(goalSel) goalSel.innerHTML='<option value="">不关联</option>'+activeGoalOptions();
@@ -2559,9 +2552,75 @@ function applyArchive(){
     DB.set('quick_notes',notes);
   }
   closeModal('quickArchiveModal');
-  renderQuick(); updateQuickBadge(); renderSmartInbox();
-  if(st==='CLOSED') toast('已归档到'+LEDGER_META[ledger].label+'（已关闭，不进待办）');
+  renderQuick(); updateQuickBadge();
+  if(st==='DONE'||st==='CLOSED') toast('已整理到'+LEDGER_META[ledger].label+'（'+st+'，不进待办）');
   else toast('已整理到'+LEDGER_META[ledger].label+'（进待办）');
+}
+// 弹窗确认分发：速记→新建台账项走 applyArchive；台账项编辑走 applyOrganize
+function applyOrganizeDispatch(){
+  const mode=document.getElementById('archiveMode').value;
+  if(mode==='ledger') applyOrganize(); else applyArchive();
+}
+// 打开"待办项编辑/整理"弹窗（改造自原速记归档弹窗，承载问题4"整理在待办完成"+问题2目标编辑）
+function openOrganizeModal(ledgerKey, id){
+  const rec=DB.raw(ledgerKey).find(r=>r.id===id);
+  if(!rec) return;
+  document.getElementById('archiveMode').value='ledger';
+  document.getElementById('archiveQuickId').value='';
+  document.getElementById('archiveItemId').value=id;
+  document.getElementById('archiveLedger').value=ledgerKey;
+  document.getElementById('archiveLedger').disabled=true; // 编辑时不跨台账移动
+  document.getElementById('archiveQuickPreview').textContent=LEDGER_META[ledgerKey].label+' · '+(rec.name||rec.title||'');
+  document.getElementById('archiveTitle').value=rec.name||rec.title||'';
+  document.getElementById('archiveRequirement').value=rec.content||rec.requirement||'';
+  document.getElementById('archiveDue').value=rec.due_date||'';
+  document.getElementById('archivePriority').value=rec.priority||'normal';
+  const stEl=document.getElementById('archiveState'); if(stEl) stEl.value=rec.state||'TODO';
+  const goalSel=document.getElementById('archiveGoal');
+  if(goalSel){ goalSel.innerHTML='<option value="">不关联</option>'+activeGoalOptions();
+    if(rec.parent_goal){ const gid=String(rec.parent_goal).replace('todos:',''); const o=[...goalSel.options].find(o=>o.value==gid); if(o)o.selected=true; } }
+  onArchiveLedgerChange();
+  (LEDGER_FIELDS[ledgerKey]||[]).forEach(f=>{ const el=document.getElementById('af_'+f.key); if(el && rec[f.key]!==undefined && rec[f.key]!==null) el.value=rec[f.key]; });
+  openModal('quickArchiveModal');
+}
+// 保存台账项编辑（不新建、不归档 quick_notes）
+function applyOrganize(){
+  const ledger=document.getElementById('archiveLedger').value;
+  const id=+document.getElementById('archiveItemId').value;
+  const title=document.getElementById('archiveTitle').value.trim();
+  if(!title){ toast('请填写标题'); return; }
+  let requirement=document.getElementById('archiveRequirement').value.trim();
+  const due=document.getElementById('archiveDue').value;
+  const priorityRaw=document.getElementById('archivePriority').value;
+  const st=document.getElementById('archiveState')?document.getElementById('archiveState').value:'TODO';
+  const parentGoal=document.getElementById('archiveGoal').value;
+  const priority=(priorityRaw==='normal' && !due)?'important':priorityRaw;
+  const extra={};
+  (LEDGER_FIELDS[ledger]||[]).forEach(f=>{ const v=document.getElementById('af_'+f.key); if(v){ let val=v.value; if(f.type==='number'){ val=val===''?'':+val; } if(val!==''&&val!==undefined&&val!==null) extra[f.key]=val; } });
+  const recs=DB.raw(ledger); const i=recs.findIndex(r=>r.id===id); if(i<0) return;
+  const rec=recs[i];
+  rec.name=title; rec.title=title; rec.content=requirement; rec.requirement=requirement;
+  rec.due_date=due; if(ledger==='todos') rec.deadline=due;
+  rec.priority=priority; rec.state=st;
+  rec.parent_goal = parentGoal? 'todos:'+parentGoal : '';
+  if(extra) Object.assign(rec, extra);
+  // todos 备注并入 content（沿用 createLedgerItem 逻辑，保持一致）
+  if(ledger==='todos' && extra && extra.note){ rec.content=(rec.content?rec.content+'｜':'')+'备注：'+extra.note; }
+  // 硬台账信息不全重算
+  if(LEDGER_META[ledger] && LEDGER_META[ledger].hard){
+    const reqs=(LEDGER_FIELDS[ledger]||[]).filter(f=>f.required).map(f=>f.key);
+    const missing=reqs.filter(k=> !rec[k] || rec[k]==='' || (typeof rec[k]==='number'&&isNaN(rec[k])));
+    rec.info_complete = missing.length? false : true;
+    if(missing.length){ const labels=missing.map(k=>{const f=(LEDGER_FIELDS[ledger]||[]).find(x=>x.key===k);return f?f.label:k;});
+      rec.note=(rec.note||'').replace(/（信息不全：.*?）/g,'')+'（信息不全：缺'+labels.join('、')+'）'; }
+    else { rec.note=(rec.note||'').replace(/（信息不全：.*?）/g,''); }
+  }
+  if(ledger==='funds'){ rec.info_complete=true; rec.note=(rec.note||'').replace(/（经费为两级结构.*?）/g,'')+'（经费为两级结构，转账开支请到经费台账补全）'; }
+  recs[i]=rec; DB.set(ledger, recs);
+  closeModal('quickArchiveModal');
+  renderTodos(); updateTodoBadge();
+  if(st==='DONE'||st==='CLOSED') toast('已保存（'+LEDGER_META[ledger].label+'，'+st+'，不进待办）');
+  else toast('已保存（'+LEDGER_META[ledger].label+'，进待办）');
 }
 function moveQuickToInspiration(id){
   const notes=DB.raw('quick_notes');
@@ -2613,7 +2672,7 @@ function renderTodos(){
   const sum=document.getElementById('todoActiveSummary');
   if(sum) sum.textContent='共 '+active.length+' 项进行中';
   if(!active.length){
-    box.innerHTML='<div class="empty-state"><p>🎉 没有进行中的事项。收件箱有念头？去「速记箱」记一笔。</p></div>';
+    box.innerHTML='<div class="empty-state"><p>🎉 没有进行中的事项。有念头？去「智能录入」添加一笔吧。</p></div>';
     return;
   }
   const goals=active.filter(r=>r.is_goal);
@@ -2626,10 +2685,10 @@ function renderTodos(){
       html+=`<div class="goal-card">
         <div class="goal-head" onclick="toggleGoal(${g.id})">
           <span class="goal-name">${esc(g.name||g.title||'未命名目标')}</span>
-          <span class="goal-pct">${p.pct}%</span>
+          <span style="display:flex;align-items:center;gap:8px"><span class="goal-pct">${p.pct}%</span><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openOrganizeModal('todos',${g.id})">编辑</button></span>
         </div>
         <div class="goal-bar"><span style="width:${p.pct}%"></span></div>
-        <div class="goal-sub">子任务 ${p.closed}/${p.total}${g.recurrence!=='none'?' · 周期':''}</div>
+        <div class="goal-sub">子任务 ${p.closed}/${p.total}${g.recurrence!=='none'?' · '+formatLedgerRecurrence(g.recurrence):''}</div>
         <div class="goal-children" id="goalChildren-${g.id}" style="display:none"></div>
       </div>`;
     });
@@ -2655,6 +2714,7 @@ function renderTodos(){
           <div class="todo-card-title">${esc(r.name||r.title||'未命名')}${r.recurrence!=='none'?'<span class="tag" style="background:var(--color-teal);color:#fff;margin-left:4px">'+formatLedgerRecurrence(r.recurrence)+'</span>':''}</div>
           <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">${stateBadge(r)}
             <button class="btn btn-ghost btn-sm" onclick="openStateModal('${r._ledger}',${r.id})">状态</button>
+            <button class="btn btn-ghost btn-sm" onclick="openOrganizeModal('${r._ledger}',${r.id})">整理</button>
           </div>
         </div>
         <div class="todo-card-meta">
@@ -8221,16 +8281,15 @@ function smartAnalyze(){
 
   _smartDetected=JSON.stringify({cat:cls.cat,fields});
 
-  // highlight the detected category
-  document.querySelectorAll('#catRow .cat-badge').forEach(b=>b.classList.remove('active'));
-  const activeBadge=document.querySelector(`#catRow .cat-badge[data-cat="${cls.cat}"]`);
-  if(activeBadge)activeBadge.classList.add('active');
+  // 同步识别到的类别到下拉
+  const sb=document.getElementById('smartCat');
+  if(sb) sb.value=cls.cat;
 
   // build preview
-  const catNames={todo:'工作记录',inspiration:'灵感记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
-  const catEmoji={todo:'✅',inspiration:'💡',contract:'📄',purchase:'🛒',expense:'💰'};
+  const catNames={todo:'工作台账',inspiration:'灵感',contract:'合同台账',purchase:'采购台账',expense:'报销台账',agency:'委托台账',handover:'交接台账',fund:'经费台账',reminder:'提醒'};
+  const catEmoji={todo:'✅',inspiration:'💡',contract:'📄',purchase:'🛒',expense:'💰',agency:'🤝',handover:'📦',fund:'💵',reminder:'⏰'};
 
-  let html=`<div class="field"><span class="field-label">类型</span><span class="field-value">${catEmoji[cls.cat]} ${catNames[cls.cat]}</span></div>`;
+  let html=`<div class="field"><span class="field-label">类型</span><span class="field-value">${catEmoji[cls.cat]||''} ${catNames[cls.cat]||cls.cat}</span></div>`;
 
   Object.entries(fields).forEach(([k,v])=>{
     if(v===undefined||v===null)return;
@@ -8247,21 +8306,18 @@ function smartAnalyze(){
 }
 
 function smartSetCat(cat){
+  const c=document.getElementById('smartCat'); if(c) c.value=cat;
   const text=document.getElementById('smartInput').value.trim();
-  if(!text)return;
-  const fields=smartExtract(text,cat);
+  if(!text){ return; }
+  const fields=smartExtract(text, cat);
   _smartDetected=JSON.stringify({cat,fields});
-
-  document.querySelectorAll('#catRow .cat-badge').forEach(b=>b.classList.remove('active'));
-  const target=document.querySelector(`#catRow .cat-badge[data-cat="${cat}"]`);
-  if(target)target.classList.add('active');
 
   // rebuild preview
   const previewFields=document.getElementById('previewFields');
-  const catNames={todo:'工作记录',inspiration:'灵感记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账'};
-  const catEmoji={todo:'✅',inspiration:'💡',contract:'📄',purchase:'🛒',expense:'💰'};
+  const catNames={todo:'工作台账',inspiration:'灵感',contract:'合同台账',purchase:'采购台账',expense:'报销台账',agency:'委托台账',handover:'交接台账',fund:'经费台账',reminder:'提醒'};
+  const catEmoji={todo:'✅',inspiration:'💡',contract:'📄',purchase:'🛒',expense:'💰',agency:'🤝',handover:'📦',fund:'💵',reminder:'⏰'};
 
-  let html=`<div class="field"><span class="field-label">类型</span><span class="field-value">${catEmoji[cat]} ${catNames[cat]} <span style="font-size:10px;color:var(--color-text3)">(手动)</span></span></div>`;
+  let html=`<div class="field"><span class="field-label">类型</span><span class="field-value">${catEmoji[cat]||''} ${catNames[cat]||cat} <span style="font-size:10px;color:var(--color-text3)">(手动)</span></span></div>`;
 
   Object.entries(fields).forEach(([k,v])=>{
     if(v===undefined||v===null)return;
@@ -8277,166 +8333,54 @@ function smartSetCat(cat){
   document.getElementById('smartSaveBtn').disabled=false;
 }
 
+function smartClear(){
+  const t=document.getElementById('smartInput'); if(t) t.value='';
+  closePreview();
+  const c=document.getElementById('smartCat'); if(c) c.value=LEDGER_KEYS[0];
+}
+
 function closePreview(){
   document.getElementById('previewCard').style.display='none';
   document.getElementById('smartSaveBtn').disabled=true;
   _smartDetected=JSON.stringify({cat:'',fields:{}});
-  document.querySelectorAll('#catRow .cat-badge').forEach(b=>b.classList.remove('active'));
 }
 
 function smartSave(){
-  let data;
-  try{data=JSON.parse(_smartDetected);}catch(e){toast('请先输入内容');return;}
-  if(!data.cat||!data.fields){toast('请先输入内容');return;}
-
-  const f=data.fields;
-  const now=new Date().toISOString().slice(0,10);
-  let record;
-
-  switch(data.cat){
-    case 'todo':{
-      const todos=DB.get('todos');
-      record={
-        id:DB.nextId(todos),
-        type:'pending',
-        name:f.title||'未命名工作',
-        category:[],
-        source:[],
-        priority:f.title&&/急|紧急|尽快|马上|立即/.test(f.title)?'high':'medium',
-        content:f.content||'',
-        issueDate:now,
-        deadline:f.deadline||'',
-        completeDate:'',
-        blocker:'',
-        status:'未开始',
-        subtasks:[],
-        createdAt:now,
-        contractRef:null,purchaseRef:null,expenseRef:null,
-        meetingRef:null,trainingRef:null,
-        deleted:false
-      };
-      DB.set('todos',[...todos,record]);
-      break;
-    }
-    case 'inspiration':{
-      const insps=DB.get('inspirations');
-      const title=f.content?f.content.slice(0,30):'未命名灵感';
-      record={
-        id:DB.nextId(insps),
-        title:title,
-        content:f.content||'',
-        tags:Array.isArray(f.tags)?f.tags:['想法'],
-        createdAt:now,
-        deleted:false
-      };
-      DB.set('inspirations',[...insps,record]);
-      break;
-    }
-    case 'contract':{
-      const contracts=DB.get('contracts');
-      record={
-        id:DB.nextId(contracts),
-        name:f.name||'未命名合同',
-        party:f.party||'',
-        amount:f.amount||0,
-        status:'执行中',
-        signDate:f.date||now,
-        expiry:'',
-        no:'',
-        note:'',
-        category:'货物类',
-        todoRef:null,
-        deleted:false,
-        createdAt:now
-      };
-      DB.set('contracts',[...contracts,record]);
-      // P1-2: 智能录入的合同也同步工作记录
-      syncLedgerTodo('contract',record);
-      break;
-    }
-    case 'purchase':{
-      const purchases=DB.get('purchases');
-      record={
-        id:DB.nextId(purchases),
-        name:f.name||'未命名采购',
-        supplier:f.supplier||'',
-        amount:f.amount||0,
-        status:'待审批',
-        date:f.date||now,
-        note:'',
-        category:'货物类',
-        todoRef:null,
-        deleted:false,
-        createdAt:now
-      };
-      DB.set('purchases',[...purchases,record]);
-      // P1-2: 智能录入的采购也同步工作记录
-      syncLedgerTodo('purchase',record);
-      break;
-    }
-    case 'expense':{
-      const expenses=DB.get('expenses');
-      record={
-        id:DB.nextId(expenses),
-        appDate:f.date||now,
-        supplier:f.supplier||'',
-        supplierCode:'',
-        invoice:f.invoice||'',
-        invoiceDate:'',
-        content:f.name||f.content||'未命名报销',
-        amount:f.amount||0,
-        status:'待审批',
-        reimbDate:'',
-        category:'其他',
-        todoRef:null,
-        deleted:false,
-        createdAt:now
-      };
-      DB.set('expenses',[...expenses,record]);
-      // P1-2: 智能录入的报销也同步工作记录
-      syncLedgerTodo('expenses',record);
-      break;
-    }
+  const text=document.getElementById('smartInput').value.trim();
+  if(!text){ toast('写点什么吧'); return; }
+  const cat=document.getElementById('smartCat').value;
+  let fields={};
+  try{ fields=(JSON.parse(_smartDetected).fields)||{}; }catch(e){}
+  const due = fields.deadline||fields.date||'';
+  const prio = (fields.title&&/急|紧急|尽快|马上|立即/.test(fields.title))?'important':'normal';
+  if(cat==='inspiration'){
+    const insps=DB.get('inspirations');
+    insps.push({id:DB.nextId(insps),title:text.slice(0,30),content:text,tags:['想法'],createdAt:todayStr(),archived_to:null,deleted:false});
+    DB.set('inspirations',insps);
+  } else if(cat==='reminder'){
+    createLedgerItem('todos',{title:text,requirement:'',due_date:due,priority:'important',state:STATE.TODO});
+  } else {
+    // 台账类别 → 直接进待办（最小项，稍后在待办整理补全字段）
+    createLedgerItem(cat,{title:text,requirement:'',due_date:due,priority:prio,state:STATE.TODO});
   }
-
   document.getElementById('smartInput').value='';
   closePreview();
   closeModal('smartModal');
-  toast('✓ 已录入到 '+{todo:'工作记录',inspiration:'灵感记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账'}[data.cat]);
+  renderTodos(); updateTodoBadge();   // 确认后自动刷新待办（问题6：不刷新页面即可见）
+  toast('已加入待办');
 }
 
-// 智能录入作为统一入口：零字段速记暂存 + 智能识别直录 + 整理收件箱里的速记
+// 智能录入作为统一入口：输入内容 + 选类别 + 清空 + 确认；确认直接进待办
 function openSmartModal(){
-  renderSmartInbox();
+  const sel=document.getElementById('smartCat');
+  if(sel && !sel.dataset.filled){
+    sel.innerHTML = LEDGER_KEYS.map(k=>`<option value="${k}">${LEDGER_META[k].label}</option>`).join('')
+      + '<option value="inspiration">💡 灵感</option>'
+      + '<option value="reminder">⏰ 提醒</option>';
+    sel.dataset.filled='1';
+  }
+  if(sel) sel.value=LEDGER_KEYS[0];
   openModal('smartModal');
-}
-function renderSmartInbox(){
-  const box=document.getElementById('smartInboxList');
-  if(!box) return;
-  const notes=DB.get('quick_notes').filter(n=>n.status==='inbox').sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||''));
-  const cnt=document.getElementById('smartInboxCount');
-  if(cnt) cnt.textContent=notes.length;
-  if(!notes.length){ box.innerHTML='<div class="empty-state"><p>收件箱是空的</p></div>'; return; }
-  box.innerHTML=notes.map(n=>{
-    const text=(n.content||'').length>60?(n.content||'').slice(0,60)+'…':(n.content||'');
-    return `<div class="insp-card" style="margin-bottom:8px">
-      <div class="insp-card-body">${esc(text)}</div>
-      <div class="insp-card-actions" style="margin-top:8px">
-        <button class="btn btn-ghost btn-sm" onclick="openArchiveModal(${n.id})">整理</button>
-        <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteQuickNote(${n.id})">删除</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-function smartSaveAsQuick(){
-  const t=document.getElementById('smartInput').value.trim();
-  if(!t){toast('写点什么吧');return;}
-  saveQuickNote(t,'quick_add');
-  document.getElementById('smartInput').value='';
-  closePreview();
-  renderSmartInbox();
-  updateQuickBadge();
-  toast('已收入收件箱');
 }
 
 // ============================================================
@@ -8529,13 +8473,15 @@ checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/
 <div class="modal-overlay" id="quickArchiveModal">
   <div class="modal" style="max-width:480px">
     <div class="modal-header">
-      <span class="modal-title">整理到台账</span>
+      <span class="modal-title">整理 / 编辑事项</span>
       <button class="close-btn" onclick="closeModal('quickArchiveModal')">×</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="archiveQuickId">
+      <input type="hidden" id="archiveItemId">
+      <input type="hidden" id="archiveMode" value="quick">
       <div class="form-group">
-        <label class="form-label">速记内容</label>
+        <label class="form-label">当前内容</label>
         <div id="archiveQuickPreview" style="background:var(--color-bg);padding:8px;border-radius:8px;font-size:13px;white-space:pre-wrap"></div>
       </div>
       <div class="form-group">
@@ -8581,7 +8527,7 @@ checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('quickArchiveModal')">取消</button>
-      <button class="btn btn-primary" onclick="applyArchive()">确认归档</button>
+      <button class="btn btn-primary" onclick="applyOrganizeDispatch()">确认</button>
     </div>
   </div>
 </div>
@@ -8666,7 +8612,7 @@ checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/
 </div>
 
 <!-- 全局悬浮速记按钮（v1.4） -->
-<button class="fab-quick" onclick="openSmartModal()" title="快速记录/智能录入">+<span class="fab-badge" id="fabQuickCount" style="display:none">0</span></button>
+<button class="fab-quick" onclick="openSmartModal()" title="快速记录/智能录入">+</button>
 
 </body>
 </html>
