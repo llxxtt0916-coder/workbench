@@ -2656,14 +2656,14 @@ function updateRemindPermBtn(){
 // 扫描活跃条目：今天到期/已逾期的，未提醒过的弹通知 + toast
 function checkReminders(force){
   const today=todayStr();
-  const items=getActiveItems().filter(r=>r.due_date && r.due_date<=today);
+  const items=getActiveItems().map(r=>{const d=getDueDate(r,r._ledger);return Object.assign({},r,{_due:d});}).filter(r=>r._due && r._due<=today);
   let count=0;
   items.forEach(r=>{
     const key=r._ledger+':'+r.id;
     if(!force && remindShown.has(key)) return;
     remindShown.add(key);
-    const overdue=r.due_date<today;
-    const label=overdue?('已逾期 '+r.due_date):('今天到期 '+r.due_date);
+    const overdue=r._due<today;
+    const label=overdue?('已逾期 '+r._due):('今天到期 '+r._due);
     fireNotification('待办提醒 · '+(r._ledgerLabel||''), (r.name||r.title||'未命名')+'（'+label+'）');
     count++;
   });
@@ -2673,8 +2673,8 @@ function checkReminders(force){
 // 提醒中心列表渲染
 function renderRemindCenter(){
   const today=todayStr();
-  const items=getActiveItems().filter(r=>r.due_date && r.due_date<=today)
-    .sort((a,b)=>a.due_date.localeCompare(b.due_date));
+  const items=getActiveItems().map(r=>{const d=getDueDate(r,r._ledger);return Object.assign({},r,{_due:d});}).filter(r=>r._due && r._due<=today)
+    .sort((a,b)=>a._due.localeCompare(b._due));
   const box=document.getElementById('remindList');
   if(!box) return;
   updateRemindPermBtn();
@@ -2684,14 +2684,14 @@ function renderRemindCenter(){
     return;
   }
   box.innerHTML='<div class="todo-group"><div class="todo-group-title">需关注（'+items.length+'）</div>'+items.map(r=>{
-    const overdue=r.due_date<today;
+    const overdue=r._due<today;
     return `<div class="todo-card" style="${overdue?'border-left:3px solid var(--color-danger)':''}">
       <div class="todo-card-header">
         <div class="todo-card-title">${esc(r.name||r.title||'未命名')}</div>
         <div>${stateBadge(r)}</div>
       </div>
       <div class="todo-card-meta">
-        <span>${overdue?'⚠ 已逾期':'⏰ 今天到期'} ${r.due_date}</span>
+        <span>${overdue?'⚠ 已逾期':'⏰ 今天到期'} ${r._due}</span>
         <span class="tag">${esc(r._ledgerLabel||'')}</span>
         ${r.priority==='important'?'<span class="tag" style="background:#fdeaea;color:#d93025">重要</span>':''}
         <button class="btn btn-ghost btn-sm" onclick="openStateModal('${r._ledger}',${r.id})">状态</button>
@@ -2701,7 +2701,7 @@ function renderRemindCenter(){
 }
 function updateRemindBadge(){
   const today=todayStr();
-  const n=getActiveItems().filter(r=>r.due_date && r.due_date<=today).length;
+  const n=getActiveItems().map(r=>({d:getDueDate(r,r._ledger)})).filter(r=>r.d&&r.d<=today).length;
   const el=document.getElementById('remindCount');
   if(el){ if(n>0){el.style.display='';el.textContent=n;}else{el.style.display='none';} }
 }
@@ -3860,13 +3860,14 @@ function checkDeadlineReminders(){
   const in3Days=new Date(now.getTime()+3*86400000).toISOString().slice(0,10);
   const reminders=[];
   todos.forEach(t=>{
-    if(!t.deadline)return;
+    const due=getDueDate(t,'todos'); // v1.4：统一字段优先，回退原生 deadline
+    if(!due)return;
     if(t.type==='record')return;
     if(t.status==='已完成'||t.status==='已取消')return;
-    if(t.deadline===today){
-      reminders.push(Object.assign({},t,{urgency:'today'}));
-    }else if(t.deadline<=in3Days&&t.deadline>today){
-      reminders.push(Object.assign({},t,{urgency:'soon'}));
+    if(due===today){
+      reminders.push(Object.assign({},t,{deadline:due,urgency:'today'}));
+    }else if(due<=in3Days&&due>today){
+      reminders.push(Object.assign({},t,{deadline:due,urgency:'soon'}));
     }
   });
   reminders.sort((a,b)=>{
