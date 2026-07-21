@@ -1008,6 +1008,33 @@
   </div>
 </div>
 
+<!-- 状态设置 Modal（v1.4 统一三态） -->
+<div class="modal-overlay" id="stateModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <span class="modal-title" id="stateModalTitle">设置状态</span>
+      <button class="close-btn" onclick="closeModal('stateModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="stateModalLedger">
+      <input type="hidden" id="stateModalId">
+      <div class="state-btn-row">
+        <button type="button" class="state-btn st-todo" id="stateBtn_未开始" data-state="未开始" onclick="document.querySelectorAll('.state-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">未开始</button>
+        <button type="button" class="state-btn st-doing" id="stateBtn_进行中" data-state="进行中" onclick="document.querySelectorAll('.state-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">进行中</button>
+        <button type="button" class="state-btn st-closed" id="stateBtn_已关闭" data-state="已关闭" onclick="document.querySelectorAll('.state-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">已关闭</button>
+      </div>
+      <div class="form-group" style="margin-top:12px">
+        <label class="form-label">关闭原因 / 备注（可选）</label>
+        <input class="form-control" id="stateReason" placeholder="如：已完成 / 放弃 / 已终止…">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('stateModal')">取消</button>
+      <button class="btn btn-primary" onclick="applyState()">确定</button>
+    </div>
+  </div>
+</div>
+
 <!-- Contract Modal -->
 <div class="modal-overlay" id="contractModal">
   <div class="modal">
@@ -2025,6 +2052,71 @@ function restoreV14(){
   return true;
 }
 
+// ============================================================
+//  状态机 v1.4 —— 三态生命周期 + 撤销退回（带审计）
+//  设计：setState 只写统一 state 字段，不覆盖原有 status，
+//  保证回退到 v1.3 后老列表仍显示原始状态词（可回退红线）。
+// ============================================================
+// 统一状态徽标（含逾期标红）
+function stateBadge(rec){
+  const s=rec.state||STATE.TODO;
+  const cls = s===STATE.CLOSED ? 'st-closed' : s===STATE.DOING ? 'st-doing' : 'st-todo';
+  const overdue = isOverdue(rec, rec._ledger);
+  return `<span class="state-badge ${cls} ${overdue?'st-overdue':''}">${esc(s)}${overdue?' ⚠':''}</span>`;
+}
+// 重新渲染当前页（状态变更后调用）
+function rerenderCurrent(){
+  const active=document.querySelector('.nav-item.active');
+  if(typeof navigate==='function') navigate(currentPage, active);
+}
+// 设置状态（统一入口）
+function setState(ledgerKey, id, newState, reason){
+  const records=DB.raw(ledgerKey);
+  const i=records.findIndex(r=>r.id===id);
+  if(i<0) return;
+  const rec=records[i];
+  const oldState=rec.state||STATE.TODO;
+  if(oldState===newState) return;
+  rec.state=newState;
+  const now=new Date().toISOString();
+  if(newState===STATE.CLOSED){
+    rec.closed_at=now; rec.closed_by='user';
+    if(reason!==undefined) rec.closed_reason=reason||rec.closed_reason||'';
+    // 周期再生（T6 实现 maybeRegenerate，存在才调用，保持解耦）
+    if(typeof maybeRegenerate==='function') maybeRegenerate(rec);
+  } else if(oldState===STATE.CLOSED){
+    // 从已关闭退回活跃态（撤销），写审计
+    rec.reopened_at=now; rec.reopened_by='user';
+  }
+  records[i]=rec;
+  DB.set(ledgerKey, records);
+  rerenderCurrent();
+  toast('状态已更新为：'+newState);
+}
+// 打开状态设置弹窗
+function openStateModal(ledgerKey, id){
+  const rec=DB.raw(ledgerKey).find(r=>r.id===id);
+  if(!rec) return;
+  document.getElementById('stateModalLedger').value=ledgerKey;
+  document.getElementById('stateModalId').value=id;
+  document.getElementById('stateModalTitle').textContent='设置状态：'+(rec.name||rec.title||'未命名');
+  ['未开始','进行中','已关闭'].forEach(s=>{
+    const b=document.getElementById('stateBtn_'+s);
+    if(b) b.classList.toggle('active', (rec.state||STATE.TODO)===s);
+  });
+  document.getElementById('stateReason').value=rec.closed_reason||'';
+  openModal('stateModal');
+}
+function applyState(){
+  const ledger=document.getElementById('stateModalLedger').value;
+  const id=+document.getElementById('stateModalId').value;
+  const chosen=document.querySelector('.state-btn.active');
+  const ns=chosen?chosen.dataset.state:STATE.TODO;
+  const reason=document.getElementById('stateReason').value;
+  closeModal('stateModal');
+  setState(ledger, id, ns, ns===STATE.CLOSED?reason:undefined);
+}
+
 // 自动修复历史数据（格式迁移 + ID修复 + 字段补齐 + 日期标准化 + 软删除）
 function repairData(){
   const keys=['todos','inspirations','contracts','purchases','expenses','meetings','trainings','agencys','handovers','funds','fundRecords'];
@@ -2979,9 +3071,8 @@ function renderTodo(){
           ${t.paused?`<span style="color:var(--color-text3);font-size:10px;margin-left:4px">(已暂停)</span>`:''}
         </div>
         <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap">
-          <select class="status-select" onchange="changeTodoStatus(${t.id},this.value)">
-            ${statusOpts.map(s=>`<option value="${s}" ${status===s?'selected':''}>${s}</option>`).join('')}
-          </select>
+          ${stateBadge(Object.assign({_ledger:'todos'}, t))}
+          <button class="btn btn-ghost btn-sm" onclick="openStateModal('todos',${t.id})" title="设置统一状态">状态</button>
           ${cats.map(c=>`<span class="tag tag-cat">${esc(c)}</span>`).join('')}
           ${srcs.map(s=>`<span class="tag tag-src">${esc(s)}</span>`).join('')}
         </div>
