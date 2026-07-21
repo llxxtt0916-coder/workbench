@@ -2014,6 +2014,42 @@ const LEDGER_KEYS = Object.keys(LEDGER_META); // 七大台账的 localStorage ke
 const STATE = { TODO:'未开始', DOING:'进行中', CLOSED:'已关闭' };
 const PERIOD = { none:'none', weekly:'weekly', monthly:'monthly', quarterly:'quarterly', yearly:'yearly' };
 
+// 各台账归档时动态补字段映射（key 与 save*/详情视图读取的字段名一致，否则值存了却显示不出）
+// required:true 表示硬台账必填，归档时留空则标记 info_complete=false
+const LEDGER_FIELDS = {
+  todos:     [ {key:'note', label:'备注', type:'text'} ],
+  contracts: [ {key:'party', label:'对方单位', type:'text', required:true},
+               {key:'amount', label:'合同金额', type:'number', required:true},
+               {key:'expiry', label:'合同期限', type:'date'},
+               {key:'status', label:'状态', type:'text'} ],
+  purchases: [ {key:'supplier', label:'供应商', type:'text', required:true},
+               {key:'amount', label:'金额', type:'number', required:true},
+               {key:'date', label:'日期', type:'date', required:true},
+               {key:'category', label:'类别', type:'text'},
+               {key:'note', label:'备注', type:'text'} ],
+  expenses:  [ {key:'appDate', label:'申请时间', type:'date', required:true},
+               {key:'supplier', label:'报销人/单位', type:'text'},
+               {key:'amount', label:'金额', type:'number', required:true},
+               {key:'invoice', label:'发票号', type:'text', required:true},
+               {key:'status', label:'审批状态', type:'text'} ],
+  agencys:   [ {key:'method', label:'比选方式', type:'text'},
+               {key:'category', label:'类别', type:'text'},
+               {key:'budget', label:'预算', type:'number', required:true},
+               {key:'agent', label:'代理', type:'text', required:true},
+               {key:'status', label:'状态', type:'text'},
+               {key:'dealAmount', label:'成交金额', type:'number'},
+               {key:'savingsRate', label:'节省率', type:'number'} ],
+  handovers: [ {key:'date', label:'日期', type:'date', required:true},
+               {key:'giver', label:'交出人', type:'text', required:true},
+               {key:'receiver', label:'接收人', type:'text', required:true},
+               {key:'matter', label:'事项', type:'text'},
+               {key:'note', label:'备注', type:'text'} ],
+  funds:     [ {key:'budget', label:'金额', type:'number', required:true},
+               {key:'category', label:'类别', type:'text'},
+               {key:'note', label:'说明', type:'text'} ],
+  // 注：经费为两级结构（经费台账下再记转账开支），此处只填最小字段，转账后到经费台账补全。
+};
+
 // 原生 status → 统一 state 映射（历史迁移用，规格 §7 + 计划 3.2）
 function mapStatusToState(ledgerKey, status){
   const s=String(status||'').trim();
@@ -2302,7 +2338,7 @@ function ledgerDefaults(ledgerKey){
   }
 }
 // 由速记归档创建台账条目（统一入口）
-function createLedgerItem(ledgerKey, {title, requirement, due_date, priority, isGoal, parentGoal}){
+function createLedgerItem(ledgerKey, {title, requirement, due_date, priority, isGoal, parentGoal, state, extra}){
   const arr=DB.raw(ledgerKey);
   const rec=ledgerDefaults(ledgerKey);
   rec.id=DB.nextId(arr);
@@ -2312,9 +2348,22 @@ function createLedgerItem(ledgerKey, {title, requirement, due_date, priority, is
   rec.due_date = due_date||'';
   if(ledgerKey==='todos') rec.deadline = due_date||'';
   rec.priority = priority||'normal';
-  rec.state = isGoal ? STATE.DOING : STATE.TODO;
+  rec.state = state ? state : (isGoal ? STATE.DOING : STATE.TODO);
   if(isGoal) rec.is_goal=true;
   if(parentGoal) rec.parent_goal='todos:'+parentGoal;
+  if(extra) Object.assign(rec, extra);
+  // 硬台账"事项"单独处理：matter 文本转 items 数组，便于交接台账详情展示
+  if(ledgerKey==='handovers' && rec.matter){ rec.items=[{content:String(rec.matter), docType:'', quantity:''}]; }
+  // 硬台账信息不全标记（todos 始终完整）；留空必填字段则 info_complete=false 并把提示写进 note 保证可见
+  if(LEDGER_META[ledgerKey] && LEDGER_META[ledgerKey].hard){
+    const reqs=(LEDGER_FIELDS[ledgerKey]||[]).filter(f=>f.required).map(f=>f.key);
+    const missing=reqs.filter(k=> !rec[k] || rec[k]==='' || (typeof rec[k]==='number' && isNaN(rec[k])));
+    if(missing.length){
+      rec.info_complete=false;
+      const labels=missing.map(k=>{ const f=(LEDGER_FIELDS[ledgerKey]||[]).find(x=>x.key===k); return f?f.label:k; });
+      rec.note=(rec.note||'')+'（信息不全：缺'+labels.join('、')+'）';
+    }
+  }
   arr.push(rec); DB.set(ledgerKey, arr);
   return rec;
 }
@@ -2394,9 +2443,11 @@ function openArchiveModal(id){
   document.getElementById('archiveQuickId').value=id;
   document.getElementById('archiveQuickPreview').textContent=n.content||'';
   document.getElementById('archiveTitle').value=(n.content||'').slice(0,30);
-  document.getElementById('archiveRequirement').value='';
+  document.getElementById('archiveRequirement').value=(n.content||'');
   document.getElementById('archiveDue').value='';
   document.getElementById('archivePriority').value='normal';
+  const stEl=document.getElementById('archiveState');
+  if(stEl) stEl.value='TODO';
   const sel=document.getElementById('archiveLedger');
   sel.innerHTML=LEDGER_KEYS.map(k=>`<option value="${k}">${LEDGER_META[k].label}</option>`).join('');
   const goalSel=document.getElementById('archiveGoal');
@@ -2410,19 +2461,39 @@ function onArchiveLedgerChange(){
   if(k && LEDGER_META[k] && LEDGER_META[k].hard){
     hint.textContent='硬台账「'+LEDGER_META[k].label+'」只填最小字段，其余标记"信息不全"，稍后在台账补全（先归后补）。';
   } else { hint.textContent=''; }
+  // 按目标台账动态渲染补字段（key 与 save*/详情一致）
+  const box=document.getElementById('archiveFields');
+  if(box){
+    const fields=LEDGER_FIELDS[k]||[];
+    if(!fields.length){ box.innerHTML=''; return; }
+    box.innerHTML=fields.map(f=>`<div class="form-group"><label class="form-label">${f.label}</label><input class="form-control" id="af_${f.key}" type="${f.type}"></div>`).join('');
+  }
 }
 function applyArchive(){
   const id=+document.getElementById('archiveQuickId').value;
   const ledger=document.getElementById('archiveLedger').value;
   const title=document.getElementById('archiveTitle').value.trim();
   if(!title){ toast('请填写标题'); return; }
-  const requirement=document.getElementById('archiveRequirement').value.trim();
+  let requirement=document.getElementById('archiveRequirement').value.trim();
+  // 要求为空时，用速记正文兜底作占位
+  if(!requirement){ const n=DB.raw('quick_notes').find(x=>x.id===id); requirement=(n&&n.content)||''; }
   const due=document.getElementById('archiveDue').value;
   const priorityRaw=document.getElementById('archivePriority').value;
+  const st=document.getElementById('archiveState')?document.getElementById('archiveState').value:'TODO';
   const parentGoal=document.getElementById('archiveGoal').value;
   // 未设截止时间则默认标"重要"，确保进入待办时醒目（C 方案）
   const priority=(priorityRaw==='normal' && !due)?'important':priorityRaw;
-  const rec=createLedgerItem(ledger,{title,requirement,due_date:due,priority, parentGoal: parentGoal?+parentGoal:undefined});
+  // 收集动态补字段（空值不写入，避免覆盖默认值）
+  const extra={};
+  (LEDGER_FIELDS[ledger]||[]).forEach(f=>{
+    const v=document.getElementById('af_'+f.key);
+    if(v){
+      let val=v.value;
+      if(f.type==='number'){ val=val===''?'': +val; }
+      if(val!=='' && val!==undefined && val!==null) extra[f.key]=val;
+    }
+  });
+  const rec=createLedgerItem(ledger,{title,requirement,due_date:due,priority, parentGoal: parentGoal?+parentGoal:undefined, state:st, extra});
   const notes=DB.raw('quick_notes');
   const i=notes.findIndex(n=>n.id===id);
   if(i>=0){
@@ -2430,8 +2501,9 @@ function applyArchive(){
     DB.set('quick_notes',notes);
   }
   closeModal('quickArchiveModal');
-  renderQuick(); updateQuickBadge();
-  toast('已整理到'+LEDGER_META[ledger].label+'（进待办）');
+  renderQuick(); updateQuickBadge(); renderSmartInbox();
+  if(st==='CLOSED') toast('已归档到'+LEDGER_META[ledger].label+'（已关闭，不进待办）');
+  else toast('已整理到'+LEDGER_META[ledger].label+'（进待办）');
 }
 function moveQuickToInspiration(id){
   const notes=DB.raw('quick_notes');
@@ -8410,6 +8482,7 @@ checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/
         <label class="form-label">目标台账 *</label>
         <select class="form-control" id="archiveLedger" onchange="onArchiveLedgerChange()"></select>
       </div>
+      <div id="archiveFields"></div>
       <div class="form-group">
         <label class="form-label">标题 *</label>
         <input class="form-control" id="archiveTitle" placeholder="一句话概括">
@@ -8428,9 +8501,20 @@ checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/
           <select class="form-control" id="archivePriority"><option value="normal">普通</option><option value="important">重要</option></select>
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">状态 *</label>
+          <select class="form-control" id="archiveState">
+            <option value="TODO">未开始</option>
+            <option value="DOING">进行中</option>
+            <option value="CLOSED">已关闭（已完成/已取消，直接归档不进待办）</option>
+          </select>
+        </div>
+      </div>
       <div class="form-group">
-        <label class="form-label">关联目标（可选）</label>
+        <label class="form-label">关联目标（计入该目标进度）</label>
         <select class="form-control" id="archiveGoal"><option value="">不关联</option></select>
+        <div style="font-size:12px;color:var(--color-text3);margin-top:2px">选长期目标后，该事项会归入对应目标进度统计；不选则为独立事项。</div>
       </div>
       <div id="archiveInfoHint" class="form-group" style="font-size:12px;color:#d98300"></div>
     </div>
