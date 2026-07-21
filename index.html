@@ -4227,12 +4227,13 @@ function renderInspiration(){
   const tagColors=['badge-blue','badge-purple','badge-teal','badge-green','badge-yellow'];
   document.getElementById('inspList').innerHTML=filtered.map((x,ci)=>`
     <div class="insp-card" onclick="viewInsp(${x.id})">
-      <div class="insp-card-title">${esc(x.title)}${x.status&&x.status!=='active'?' <span class="badge '+(x.status==='archived'?'badge-blue':'badge-gray')+'">'+(x.status==='archived'?'已归档':'已放弃')+'</span>':''}</div>
+      <div class="insp-card-title">${esc(x.title)}${x.status&&x.status!=='active'?' <span class="badge '+(x.status==='archived'?'badge-blue':'badge-gray')+'">'+(x.status==='archived'?(x.archived_to?'已转台账':'已归档'):'已放弃')+'</span>':''}</div>
       <div class="insp-card-body">${esc(x.content||'')}</div>
       <div class="insp-tags" style="margin-top:10px">${(x.tags||[]).map((t,i)=>`<span class="badge ${tagColors[i%tagColors.length]}">${esc(t)}</span>`).join('')}</div>
       <div class="insp-card-actions" style="margin-top:8px">
         ${(x.status==='active'||!x.status)?
-          `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();archiveInsp(${x.id})" title="归档（已实现）">📦</button>
+          `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openInspToLedger(${x.id})" title="转台账（移动语义：转入后进入待办，灵感隐去）">🗂️</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();archiveInsp(${x.id})" title="归档（已实现）">📦</button>
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();abandonInsp(${x.id})" title="放弃">🚫</button>`
           :`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();restoreInsp(${x.id})" title="撤回">↩️</button>`}
         <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editInsp(${x.id})" title="编辑">✏️</button>
@@ -4273,6 +4274,50 @@ function restoreInsp(id){
   const insps=DB.raw('inspirations');
   const x=insps.find(i=>i.id===id);
   if(x){x.status='active';DB.set('inspirations',insps);toast('已撤回');renderInspiration();}
+}
+
+// v1.4 T5：灵感转台账（移动语义）——建 ledger_item + 置 archived_to 使其从 active 列表隐藏
+function openInspToLedger(id){
+  const x=DB.raw('inspirations').find(i=>i.id===id);
+  if(!x) return;
+  document.getElementById('inspToLedgerId').value=id;
+  document.getElementById('inspToLedgerPreview').textContent=(x.content||x.title||'').slice(0,200);
+  document.getElementById('inspToLedgerTitle').value=(x.title||'').slice(0,30);
+  document.getElementById('inspToLedgerRequirement').value='';
+  document.getElementById('inspToLedgerDue').value='';
+  document.getElementById('inspToLedgerPriority').value='normal';
+  const sel=document.getElementById('inspToLedgerLedger');
+  sel.innerHTML=LEDGER_KEYS.map(k=>`<option value="${k}">${LEDGER_META[k].label}</option>`).join('');
+  onInspToLedgerChange();
+  openModal('inspToLedgerModal');
+}
+// 切换目标台账时提示硬台账"先归后补"
+function onInspToLedgerChange(){
+  const k=document.getElementById('inspToLedgerLedger').value;
+  const hint=document.getElementById('inspToLedgerHint');
+  if(k && LEDGER_META[k] && LEDGER_META[k].hard){
+    hint.textContent='硬台账「'+LEDGER_META[k].label+'」只填最小字段，其余标记"信息不全"，稍后在台账补全（先归后补）。';
+  } else { hint.textContent=''; }
+}
+// 执行转台账：复用 T3 统一建条目入口，灵感置 archived + archived_to
+function applyInspToLedger(){
+  const id=+document.getElementById('inspToLedgerId').value;
+  const ledger=document.getElementById('inspToLedgerLedger').value;
+  const title=document.getElementById('inspToLedgerTitle').value.trim();
+  if(!title){ toast('请填写标题'); return; }
+  const requirement=document.getElementById('inspToLedgerRequirement').value.trim();
+  const due=document.getElementById('inspToLedgerDue').value;
+  const priority=document.getElementById('inspToLedgerPriority').value;
+  const rec=createLedgerItem(ledger,{title,requirement,due_date:due,priority});
+  const insps=DB.raw('inspirations');
+  const i=insps.findIndex(x=>x.id===id);
+  if(i>=0){
+    insps[i]=Object.assign({},insps[i],{status:'archived', archived_at:new Date().toISOString(), archived_to:rec.id});
+    DB.set('inspirations',insps);
+  }
+  closeModal('inspToLedgerModal');
+  renderInspiration();
+  toast('已转入'+LEDGER_META[ledger].label+'（进待办）');
 }
 
 function handleTagInput(e,hiddenId){
@@ -8062,6 +8107,50 @@ updateQuickBadge(); // v1.4 速记箱角标
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('quickArchiveModal')">取消</button>
       <button class="btn btn-primary" onclick="applyArchive()">归档（进待办）</button>
+    </div>
+  </div>
+</div>
+
+<!-- v1.4 T5：灵感转台账弹窗 -->
+<div class="modal-overlay" id="inspToLedgerModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <span class="modal-title">灵感转台账</span>
+      <button class="close-btn" onclick="closeModal('inspToLedgerModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="inspToLedgerId">
+      <div class="form-group">
+        <label class="form-label">灵感内容</label>
+        <div id="inspToLedgerPreview" style="background:var(--color-bg);padding:8px;border-radius:8px;font-size:13px;white-space:pre-wrap"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">目标台账 *</label>
+        <select class="form-control" id="inspToLedgerLedger" onchange="onInspToLedgerChange()"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">标题 *</label>
+        <input class="form-control" id="inspToLedgerTitle" placeholder="一句话概括">
+      </div>
+      <div class="form-group">
+        <label class="form-label">要求 / 做到啥程度</label>
+        <textarea class="form-control" id="inspToLedgerRequirement" rows="2" placeholder="先归后补：硬台账其余字段稍后在台账补全"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">截止时间</label>
+          <input type="date" class="form-control" id="inspToLedgerDue">
+        </div>
+        <div class="form-group">
+          <label class="form-label">优先级</label>
+          <select class="form-control" id="inspToLedgerPriority"><option value="normal">普通</option><option value="important">重要</option></select>
+        </div>
+      </div>
+      <div id="inspToLedgerHint" class="form-group" style="font-size:12px;color:#d98300"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('inspToLedgerModal')">取消</button>
+      <button class="btn btn-primary" onclick="applyInspToLedger()">转台账（进待办）</button>
     </div>
   </div>
 </div>
