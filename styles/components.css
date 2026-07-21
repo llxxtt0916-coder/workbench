@@ -1739,6 +1739,7 @@ tr:hover td {
 }
 .state-badge.st-todo{background:#eef2ff;color:#4a6cf7;border-color:#dbe3ff}
 .state-badge.st-doing{background:#fff4e5;color:#d98300;border-color:#ffe2bf}
+.state-badge.st-done{background:#e6f4ea;color:#1e7e34;border-color:#b7e0c2}
 .state-badge.st-closed{background:#eef1f4;color:#8a94a6;border-color:#e0e5ea}
 .state-badge.st-overdue{background:#fdeaea;color:#d93025;border-color:#f6c5c0;font-weight:600}
 
@@ -1750,10 +1751,12 @@ tr:hover td {
 }
 .state-btn.st-todo:hover{background:#eef2ff}
 .state-btn.st-doing:hover{background:#fff4e5}
+.state-btn.st-done:hover{background:#e6f4ea}
 .state-btn.st-closed:hover{background:#eef1f4}
 .state-btn.active{box-shadow:0 0 0 2px var(--color-primary) inset;font-weight:600}
 .state-btn.st-todo.active{background:#eef2ff;color:#4a6cf7}
 .state-btn.st-doing.active{background:#fff4e5;color:#d98300}
+.state-btn.st-done.active{background:#e6f4ea;color:#1e7e34}
 .state-btn.st-closed.active{background:#eef1f4}
 
 /* 速记箱：全局悬浮 + 按钮 */
@@ -1775,6 +1778,7 @@ tr:hover td {
 .v14-state-tag{padding:2px 8px;border-radius:10px;font-size:12px;border:1px solid var(--color-border)}
 .v14-state-tag.st-todo{background:#eef2ff;color:#4a6cf7}
 .v14-state-tag.st-doing{background:#fff4e5;color:#d98300}
+.v14-state-tag.st-done{background:#e6f4ea;color:#1e7e34}
 .v14-state-tag.st-closed{background:#eef1f4;color:#8a94a6}
 .v14-ledger-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:5px}
 .v14-ledger-name{width:64px;flex-shrink:0;color:var(--color-text2)}

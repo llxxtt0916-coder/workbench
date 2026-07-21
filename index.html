@@ -1076,6 +1076,7 @@
       <div class="state-btn-row">
         <button type="button" class="state-btn st-todo" id="stateBtn_未开始" data-state="未开始" onclick="document.querySelectorAll('.state-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">未开始</button>
         <button type="button" class="state-btn st-doing" id="stateBtn_进行中" data-state="进行中" onclick="document.querySelectorAll('.state-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">进行中</button>
+        <button type="button" class="state-btn st-done" id="stateBtn_已完成" data-state="已完成" onclick="document.querySelectorAll('.state-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">已完成</button>
         <button type="button" class="state-btn st-closed" id="stateBtn_已关闭" data-state="已关闭" onclick="document.querySelectorAll('.state-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">已关闭</button>
       </div>
       <div class="form-group" style="margin-top:12px">
@@ -2011,7 +2012,7 @@ const LEDGER_META = {
   funds:     { key:'funds',     label:'经费台账', page:'fund',     hard:true  },
 };
 const LEDGER_KEYS = Object.keys(LEDGER_META); // 七大台账的 localStorage key
-const STATE = { TODO:'未开始', DOING:'进行中', CLOSED:'已关闭' };
+const STATE = { TODO:'未开始', DOING:'进行中', DONE:'已完成', CLOSED:'已关闭' };
 const PERIOD = { none:'none', weekly:'weekly', monthly:'monthly', quarterly:'quarterly', yearly:'yearly' };
 
 // 各台账归档时动态补字段映射（key 与 save*/详情视图读取的字段名一致，否则值存了却显示不出）
@@ -2053,14 +2054,15 @@ const LEDGER_FIELDS = {
 // 原生 status → 统一 state 映射（历史迁移用，规格 §7 + 计划 3.2）
 function mapStatusToState(ledgerKey, status){
   const s=String(status||'').trim();
+  // 完成类语义 → 已完成(DONE)；取消/终止/流标/关闭类 → 已关闭(CLOSED)
   switch(ledgerKey){
-    case 'todos':     return s==='进行中' ? STATE.DOING : (s==='已完成'||s==='已取消') ? STATE.CLOSED : STATE.TODO;
-    case 'contracts': return s==='执行中' ? STATE.DOING : (s==='已完成'||s==='已终止') ? STATE.CLOSED : STATE.TODO;
-    case 'purchases': return s==='申请中' ? STATE.TODO : (s==='已采购'||s==='已完成'||s==='已取消') ? STATE.CLOSED : STATE.DOING;
-    case 'expenses':  return s==='待报销' ? STATE.TODO : (s==='已报销'||s==='已取消') ? STATE.CLOSED : STATE.DOING;
-    case 'agencys':   return s==='待委托' ? STATE.TODO : s==='已委托' ? STATE.DOING : (s==='已完成'||s==='已流标'||s==='已取消') ? STATE.CLOSED : STATE.DOING;
-    case 'handovers': return (s==='进行中'||s==='交接中') ? STATE.DOING : (s==='已完成'||s==='已取消'||s==='已结束') ? STATE.CLOSED : STATE.TODO;
-    case 'funds':     return s==='进行中' ? STATE.DOING : (s==='已完成'||s==='已关闭') ? STATE.CLOSED : STATE.TODO;
+    case 'todos':     return s==='进行中' ? STATE.DOING : (s==='已完成') ? STATE.DONE : (s==='已取消') ? STATE.CLOSED : STATE.TODO;
+    case 'contracts': return s==='执行中' ? STATE.DOING : (s==='已完成') ? STATE.DONE : (s==='已终止') ? STATE.CLOSED : STATE.TODO;
+    case 'purchases': return s==='申请中' ? STATE.TODO : (s==='已采购'||s==='已完成') ? STATE.DONE : (s==='已取消') ? STATE.CLOSED : STATE.DOING;
+    case 'expenses':  return s==='待报销' ? STATE.TODO : (s==='已报销') ? STATE.DONE : (s==='已取消') ? STATE.CLOSED : STATE.DOING;
+    case 'agencys':   return s==='待委托' ? STATE.TODO : s==='已委托' ? STATE.DOING : (s==='已完成') ? STATE.DONE : (s==='已流标'||s==='已取消') ? STATE.CLOSED : STATE.DOING;
+    case 'handovers': return (s==='进行中'||s==='交接中') ? STATE.DOING : (s==='已完成'||s==='已结束') ? STATE.DONE : (s==='已取消') ? STATE.CLOSED : STATE.TODO;
+    case 'funds':     return s==='进行中' ? STATE.DOING : (s==='已完成') ? STATE.DONE : (s==='已关闭') ? STATE.CLOSED : STATE.TODO;
     default:          return STATE.TODO;
   }
 }
@@ -2088,7 +2090,7 @@ function todayStr(){
 function isOverdue(rec, ledgerKey){
   const due=getDueDate(rec, ledgerKey);
   if(!due) return false;
-  return rec.state!==STATE.CLOSED && due < todayStr();
+  return rec.state!==STATE.CLOSED && rec.state!==STATE.DONE && due < todayStr();
 }
 // 下一期日期计算 + 月末钳制（周期任务 T6，与 tests/v14.test.js 保持一致）
 function fmtLocalDate(d){
@@ -2147,6 +2149,12 @@ function ensureV14(){
     const fixed=records.map(r=>{
       const rec=Object.assign({}, r);
       if(rec.state===undefined||rec.state==='') rec.state=mapStatusToState(key, rec.status);
+      // 迁移：旧数据里"已完成却被存成已关闭"的纠正为 已完成(DONE)
+      // （完成类语义：完成/已采购/已报销/已委托/已结束/已到货/已结案）
+      if(rec.state===STATE.CLOSED){
+        const _st=String(rec.status||'');
+        if(/完成|已采购|已报销|已委托|已结束|已到货|已结案/.test(_st)) rec.state=STATE.DONE;
+      }
       if(rec.closed_reason===undefined) rec.closed_reason='';
       if(rec.due_date===undefined) rec.due_date=getDueDate(rec, key);
       if(rec.recurrence===undefined) rec.recurrence='none';
@@ -2192,7 +2200,7 @@ function restoreV14(){
 // 统一状态徽标（含逾期标红）
 function stateBadge(rec){
   const s=rec.state||STATE.TODO;
-  const cls = s===STATE.CLOSED ? 'st-closed' : s===STATE.DOING ? 'st-doing' : 'st-todo';
+  const cls = s===STATE.CLOSED ? 'st-closed' : s===STATE.DONE ? 'st-done' : s===STATE.DOING ? 'st-doing' : 'st-todo';
   const overdue = isOverdue(rec, rec._ledger);
   return `<span class="state-badge ${cls} ${overdue?'st-overdue':''}">${esc(s)}${overdue?' ⚠':''}</span>`;
 }
@@ -2211,7 +2219,7 @@ function setState(ledgerKey, id, newState, reason){
   if(oldState===newState) return;
   rec.state=newState;
   const now=new Date().toISOString();
-  if(newState===STATE.CLOSED){
+  if(newState===STATE.CLOSED || newState===STATE.DONE){
     rec.closed_at=now; rec.closed_by='user';
     if(reason!==undefined) rec.closed_reason=reason||rec.closed_reason||'';
     // 长期目标：关闭前若有活跃子任务，需确认（T7）
@@ -2271,7 +2279,7 @@ function openStateModal(ledgerKey, id){
   document.getElementById('stateModalLedger').value=ledgerKey;
   document.getElementById('stateModalId').value=id;
   document.getElementById('stateModalTitle').textContent='设置状态：'+(rec.name||rec.title||'未命名');
-  ['未开始','进行中','已关闭'].forEach(s=>{
+  ['未开始','进行中','已完成','已关闭'].forEach(s=>{
     const b=document.getElementById('stateBtn_'+s);
     if(b) b.classList.toggle('active', (rec.state||STATE.TODO)===s);
   });
@@ -2298,7 +2306,7 @@ function applyState(){
     DB.set(ledger, recs);
   }
   closeModal('stateModal');
-  setState(ledger, id, ns, ns===STATE.CLOSED?reason:undefined);
+  setState(ledger, id, ns, (ns===STATE.CLOSED||ns===STATE.DONE)?reason:undefined);
 }
 // 状态弹窗：周期选择提示
 function updateStateRecurrenceHint(){
@@ -2552,7 +2560,7 @@ function goalProgress(goalId){
   all.forEach(r=>{
     const key=r.recurrence_group_id?r.recurrence_group_id:('__'+r._ledger+'_'+r.id);
     if(seen.has(key)) return; seen.add(key);
-    total++; if(r.state===STATE.CLOSED) closed++;
+    total++; if(r.state===STATE.CLOSED||r.state===STATE.DONE) closed++;
   });
   return {total, closed, pct: total?Math.round(closed/total*100):0};
 }
@@ -2719,8 +2727,8 @@ function renderDashboardV14(){
   const box=document.getElementById('dashV14Inner');
   if(!box) return;
   const all=getAllLedgerItems();
-  const counts={todo:0,doing:0,closed:0};
-  all.forEach(r=>{ if(r.state===STATE.TODO)counts.todo++; else if(r.state===STATE.DOING)counts.doing++; else if(r.state===STATE.CLOSED)counts.closed++; });
+  const counts={todo:0,doing:0,done:0,closed:0};
+  all.forEach(r=>{ if(r.state===STATE.TODO)counts.todo++; else if(r.state===STATE.DOING)counts.doing++; else if(r.state===STATE.DONE)counts.done++; else if(r.state===STATE.CLOSED)counts.closed++; });
   const ledgerRows=LEDGER_KEYS.map(k=>{
     const items=all.filter(r=>r._ledger===k);
     const total=items.length;
@@ -2743,10 +2751,11 @@ function renderDashboardV14(){
         <div class="v14-state-dist">
           <span class="v14-state-tag st-todo">未开始 ${counts.todo}</span>
           <span class="v14-state-tag st-doing">进行中 ${counts.doing}</span>
+          <span class="v14-state-tag st-done">已完成 ${counts.done}</span>
           <span class="v14-state-tag st-closed">已关闭 ${counts.closed}</span>
         </div>
-        <div class="v14-block-title" style="margin-top:12px">速记待整理</div>
-        <div class="v14-pending">${pending>0?('<span class="tag" style="background:#eef2ff;color:#4a6cf7">'+pending+' 条</span> <a style="cursor:pointer;color:var(--color-primary)" onclick="openSmartModal()">去速记箱 →</a>'):'已清空 ✓'}</div>
+        <div class="v14-block-title" style="margin-top:12px">待办活跃</div>
+        <div class="v14-pending">${getActiveItems().length>0?('<span class="tag" style="background:#eef2ff;color:#4a6cf7">'+getActiveItems().length+' 条</span> <a style="cursor:pointer;color:var(--color-primary)" onclick="navigate(\'待办\')">去待办 →</a>'):'暂无待办 ✓'}</div>
       </div>
       <div class="v14-block">
         <div class="v14-block-title">各台账进度（已关闭/总数）</div>
@@ -8517,7 +8526,8 @@ checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/
           <select class="form-control" id="archiveState">
             <option value="TODO">未开始</option>
             <option value="DOING">进行中</option>
-            <option value="CLOSED">已关闭（已完成/已取消，直接归档不进待办）</option>
+            <option value="DONE">已完成</option>
+            <option value="CLOSED">已关闭（取消/终止，直接归档不进待办）</option>
           </select>
         </div>
       </div>
