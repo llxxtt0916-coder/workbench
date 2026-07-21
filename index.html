@@ -45,12 +45,22 @@
     <div class="nav-section">工作</div>
     <div class="nav-item" onclick="navigate('todo',this)">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-      工作记录
+      工作台账
       <span class="nav-badge" id="todoCount" style="display:none">0</span>
     </div>
     <div class="nav-item" onclick="navigate('inspiration',this)">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
       灵感收集
+    </div>
+    <div class="nav-item" onclick="navigate('quick',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v2h2a1 1 0 110 2h-2v2h2a1 1 0 110 2h-2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2H4a1 1 0 110-2h2V8H4a1 1 0 110-2h2V4z" clip-rule="evenodd"/></svg>
+      速记箱
+      <span class="nav-badge" id="quickCount" style="display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="navigate('待办',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2H3V4zm0 4h14v9a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm3 2a1 1 0 100 2h.01a1 1 0 100-2H6zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+      待办
+      <span class="nav-badge" id="todoActiveCount" style="display:none">0</span>
     </div>
 
     <div class="nav-section">日程</div>
@@ -419,6 +429,30 @@
         <button class="insp-status-btn" data-status="all" onclick="filterInspStatus('all',this)" style="padding:3px 12px;border-radius:var(--radius-sm);border:1px solid var(--color-border);background:transparent;cursor:pointer;font-family:inherit;transition:.15s">全部</button>
       </div>
       <div class="insp-grid" id="inspList"></div>
+    </div>
+
+    <!-- ====== QUICK NOTES (速记箱) PAGE ====== -->
+    <div class="page" id="page-quick">
+      <div class="section-header">
+        <div class="section-header-right">
+          <div class="seg-control" style="display:flex;gap:4px">
+            <button class="insp-status-btn active" data-qv="inbox" onclick="switchQuickView('inbox',this)">📥 收件箱 <span id="quickInboxCount"></span></button>
+            <button class="insp-status-btn" data-qv="archived" onclick="switchQuickView('archived',this)">📦 已归档</button>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openQuickCompose()">+ 写一句</button>
+        </div>
+      </div>
+      <div id="quickList" class="insp-grid"></div>
+    </div>
+
+    <!-- ====== 待办 PAGE (v1.4 跨七台账活跃态视图) ====== -->
+    <div class="page" id="page-待办">
+      <div class="section-header">
+        <div class="section-header-right">
+          <span style="font-size:12px;color:var(--color-text3)" id="todoActiveSummary"></span>
+        </div>
+      </div>
+      <div id="todoActiveList"></div>
     </div>
 
     <!-- ====== CONTRACT PAGE ====== -->
@@ -2117,6 +2151,256 @@ function applyState(){
   setState(ledger, id, ns, ns===STATE.CLOSED?reason:undefined);
 }
 
+// ============================================================
+//  速记箱 v1.4 —— 零字段收件箱（raw 采集）+ 整理归档
+// ============================================================
+let quickView='inbox';
+function getQuickNotes(){ return DB.get('quick_notes'); }
+function saveQuickNote(content, source){
+  content=(content||'').trim();
+  if(!content) return null;
+  const notes=DB.raw('quick_notes');
+  const item={ id:DB.nextId(notes), content, created_at:new Date().toISOString(), source:source||'manual', status:'inbox', archived_at:'', target_ledger:'', linked_id:null, deleted:false };
+  notes.push(item); DB.set('quick_notes', notes);
+  return item;
+}
+// 各台账新建记录的字段基线（先归后补：只填最小，其余默认，info_complete=false 提示补全）
+function ledgerDefaults(ledgerKey){
+  const base={ id:0, state:STATE.TODO, closed_reason:'', due_date:'', recurrence:'none', recurrence_group_id:'', recurrence_index:0, parent_goal:'', is_goal:false, info_complete:false, next_generated:false, priority:'normal', closed_by:'', closed_at:'', reopened_by:'', reopened_at:'', createdAt:todayStr(), deleted:false };
+  switch(ledgerKey){
+    case 'todos':     return Object.assign({}, base, { type:'pending', name:'', category:[], source:[], content:'', issueDate:'', deadline:'', blocker:'', status:'未开始', subtasks:[], contractRef:null, purchaseRef:null, expenseRef:null, meetingRef:null, trainingRef:null, info_complete:true });
+    case 'contracts': return Object.assign({}, base, { name:'', party:'', amount:0, signDate:'', expiry:'', status:'执行中', note:'', category:'货物类', todoRef:null });
+    case 'purchases': return Object.assign({}, base, { name:'', supplier:'', amount:0, date:'', status:'申请中', note:'', category:'货物类', todoRef:null });
+    case 'expenses':  return Object.assign({}, base, { appDate:'', content:'', note:'', supplier:'', amount:0, invoice:'', invoiceDate:'', status:'待报销', reimbDate:'', category:'其他', todoRef:null, fundItem:null });
+    case 'agencys':   return Object.assign({}, base, { name:'', method:'', category:'', budget:0, date:'', agent:'', status:'待委托', dealAmount:0, savingsRate:null, winSupplier:'', docDate:'', dept:'', contact:'', procType:'自行组织', evalMethod:'', todoRef:null });
+    case 'handovers': return Object.assign({}, base, { date:'', giver:'', receiver:'', matter:'', status:'待交接', note:'' });
+    case 'funds':     return Object.assign({}, base, { name:'', category:'', budget:0, note:'', status:'进行中' });
+    default:          return base;
+  }
+}
+// 由速记归档创建台账条目（统一入口）
+function createLedgerItem(ledgerKey, {title, requirement, due_date, priority, isGoal}){
+  const arr=DB.raw(ledgerKey);
+  const rec=ledgerDefaults(ledgerKey);
+  rec.id=DB.nextId(arr);
+  rec.name = title||'未命名';
+  rec.content = requirement||'';
+  rec.note = requirement||'';
+  rec.due_date = due_date||'';
+  if(ledgerKey==='todos') rec.deadline = due_date||'';
+  rec.priority = priority||'normal';
+  rec.state = isGoal ? STATE.DOING : STATE.TODO;
+  if(isGoal) rec.is_goal=true;
+  arr.push(rec); DB.set(ledgerKey, arr);
+  return rec;
+}
+function renderQuick(){
+  const all=DB.get('quick_notes');
+  const inbox=all.filter(n=>n.status==='inbox').sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||''));
+  const archived=all.filter(n=>n.status==='archived').sort((a,b)=>(b.archived_at||'').localeCompare(a.archived_at||''));
+  const list = quickView==='inbox'?inbox:archived;
+  const box=document.getElementById('quickList');
+  if(!box) return;
+  const cEl=document.getElementById('quickInboxCount'); if(cEl) cEl.textContent = inbox.length?('('+inbox.length+')'):'';
+  if(!list.length){
+    box.innerHTML='<div class="empty-state"><p>'+(quickView==='inbox'?'收件箱是空的，点右上角"写一句"记录念头':'暂无已归档速记')+'</p></div>';
+    return;
+  }
+  box.innerHTML=list.map(n=>{
+    const tgt = n.target_ledger? (LEDGER_META[n.target_ledger]?LEDGER_META[n.target_ledger].label:'灵感') : '';
+    const linked = n.linked_id? ' → '+esc(tgt) : '';
+    const actions = quickView==='inbox'
+      ? `<button class="btn btn-ghost btn-sm" onclick="openArchiveModal(${n.id})">整理</button>
+         <button class="btn btn-ghost btn-sm" onclick="moveQuickToInspiration(${n.id})">转灵感</button>
+         <button class="btn btn-ghost btn-sm" onclick="deleteQuickNote(${n.id})" style="color:var(--color-danger)">删除</button>`
+      : `<span class="tag">已归档${esc(linked)}</span>`;
+    return `<div class="insp-card">
+      <div class="insp-card-body">${esc(n.content)}</div>
+      <div style="font-size:11px;color:var(--color-text3);margin-top:6px">${n.created_at?n.created_at.slice(0,16).replace('T',' '):''} ${n.source==='quick_add'?'· 悬浮录入':''}</div>
+      <div class="insp-card-actions" style="margin-top:8px">${actions}</div>
+    </div>`;
+  }).join('');
+}
+function switchQuickView(v, el){
+  quickView=v;
+  document.querySelectorAll('[data-qv]').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderQuick();
+}
+function openQuickCompose(){
+  document.getElementById('quickComposeText').value='';
+  openModal('quickComposeModal');
+  setTimeout(()=>{const t=document.getElementById('quickComposeText'); if(t)t.focus();},50);
+}
+function saveQuickCompose(){
+  const txt=document.getElementById('quickComposeText').value;
+  if(!txt.trim()){ toast('写点什么吧'); return; }
+  saveQuickNote(txt,'quick_add');
+  closeModal('quickComposeModal');
+  if(currentPage==='quick') renderQuick();
+  updateQuickBadge();
+  toast('已收入速记箱');
+}
+function openArchiveModal(id){
+  const n=DB.raw('quick_notes').find(x=>x.id===id);
+  if(!n) return;
+  document.getElementById('archiveQuickId').value=id;
+  document.getElementById('archiveQuickPreview').textContent=n.content||'';
+  document.getElementById('archiveTitle').value=(n.content||'').slice(0,30);
+  document.getElementById('archiveRequirement').value='';
+  document.getElementById('archiveDue').value='';
+  document.getElementById('archivePriority').value='normal';
+  const sel=document.getElementById('archiveLedger');
+  sel.innerHTML=LEDGER_KEYS.map(k=>`<option value="${k}">${LEDGER_META[k].label}</option>`).join('');
+  onArchiveLedgerChange();
+  openModal('quickArchiveModal');
+}
+function onArchiveLedgerChange(){
+  const k=document.getElementById('archiveLedger').value;
+  const hint=document.getElementById('archiveInfoHint');
+  if(k && LEDGER_META[k] && LEDGER_META[k].hard){
+    hint.textContent='硬台账「'+LEDGER_META[k].label+'」只填最小字段，其余标记"信息不全"，稍后在台账补全（先归后补）。';
+  } else { hint.textContent=''; }
+}
+function applyArchive(){
+  const id=+document.getElementById('archiveQuickId').value;
+  const ledger=document.getElementById('archiveLedger').value;
+  const title=document.getElementById('archiveTitle').value.trim();
+  if(!title){ toast('请填写标题'); return; }
+  const requirement=document.getElementById('archiveRequirement').value.trim();
+  const due=document.getElementById('archiveDue').value;
+  const priority=document.getElementById('archivePriority').value;
+  const rec=createLedgerItem(ledger,{title,requirement,due_date:due,priority});
+  const notes=DB.raw('quick_notes');
+  const i=notes.findIndex(n=>n.id===id);
+  if(i>=0){
+    notes[i]=Object.assign({},notes[i],{status:'archived',archived_at:new Date().toISOString(),target_ledger:ledger,linked_id:rec.id});
+    DB.set('quick_notes',notes);
+  }
+  closeModal('quickArchiveModal');
+  renderQuick(); updateQuickBadge();
+  toast('已整理到'+LEDGER_META[ledger].label+'（进待办）');
+}
+function moveQuickToInspiration(id){
+  const notes=DB.raw('quick_notes');
+  const i=notes.findIndex(n=>n.id===id);
+  if(i<0) return;
+  const n=notes[i];
+  const insp=DB.raw('inspirations');
+  const item={id:DB.nextId(insp),title:(n.content||'').slice(0,30),content:n.content||'',tags:['想法'],status:'active',createdAt:todayStr(),archived_to:null,deleted:false};
+  insp.push(item); DB.set('inspirations',insp);
+  notes[i]=Object.assign({},n,{status:'archived',archived_at:new Date().toISOString(),target_ledger:'inspiration',linked_id:item.id});
+  DB.set('quick_notes',notes);
+  renderQuick(); updateQuickBadge();
+  toast('已转入灵感');
+}
+function deleteQuickNote(id){
+  if(!confirm('确定删除这条速记？')) return;
+  const notes=DB.raw('quick_notes');
+  const i=notes.findIndex(n=>n.id===id);
+  if(i>=0){ notes[i]=Object.assign({},notes[i],{deleted:true}); DB.set('quick_notes',notes); }
+  renderQuick(); updateQuickBadge();
+}
+function updateQuickBadge(){
+  const n=DB.get('quick_notes').filter(x=>x.status==='inbox').length;
+  const el=document.getElementById('quickCount');
+  if(el){ if(n>0){el.style.display='';el.textContent=n;}else{el.style.display='none';} }
+}
+
+// ============================================================
+//  待办视图 v1.4 —— 跨七台账活跃态过滤视图（不复制不搬家）
+// ============================================================
+// 目标进度（按 recurrence_group_id 去重，防周期任务灌水）
+function goalProgress(goalId){
+  const all=getAllLedgerItems().filter(r=>r.parent_goal===('todos:'+goalId));
+  if(!all.length) return {total:0, closed:0, pct:0};
+  const seen=new Set(); let total=0, closed=0;
+  all.forEach(r=>{
+    const key=r.recurrence_group_id?r.recurrence_group_id:('__'+r._ledger+'_'+r.id);
+    if(seen.has(key)) return; seen.add(key);
+    total++; if(r.state===STATE.CLOSED) closed++;
+  });
+  return {total, closed, pct: total?Math.round(closed/total*100):0};
+}
+function renderTodos(){
+  const active=getActiveItems();
+  const box=document.getElementById('todoActiveList');
+  if(!box) return;
+  updateTodoBadge();
+  const sum=document.getElementById('todoActiveSummary');
+  if(sum) sum.textContent='共 '+active.length+' 项进行中';
+  if(!active.length){
+    box.innerHTML='<div class="empty-state"><p>🎉 没有进行中的事项。收件箱有念头？去「速记箱」记一笔。</p></div>';
+    return;
+  }
+  const goals=active.filter(r=>r.is_goal);
+  const normal=active.filter(r=>!r.is_goal);
+  let html='';
+  if(goals.length){
+    html+='<div class="todo-group"><div class="todo-group-title">🎯 长期目标（'+goals.length+'）</div>';
+    goals.forEach(g=>{
+      const p=goalProgress(g.id);
+      html+=`<div class="goal-card">
+        <div class="goal-head" onclick="toggleGoal(${g.id})">
+          <span class="goal-name">${esc(g.name||g.title||'未命名目标')}</span>
+          <span class="goal-pct">${p.pct}%</span>
+        </div>
+        <div class="goal-bar"><span style="width:${p.pct}%"></span></div>
+        <div class="goal-sub">子任务 ${p.closed}/${p.total}${g.recurrence!=='none'?' · 周期':''}</div>
+        <div class="goal-children" id="goalChildren-${g.id}" style="display:none"></div>
+      </div>`;
+    });
+    html+='</div>';
+  }
+  const groups={};
+  normal.forEach(r=>{ (groups[r._ledgerLabel]=groups[r._ledgerLabel]||[]).push(r); });
+  const prio={important:0,normal:1};
+  Object.keys(groups).sort().forEach(k=>{
+    const items=groups[k].sort((a,b)=>{
+      const da=getDueDate(a,a._ledger)||'9999', db=getDueDate(b,b._ledger)||'9999';
+      if(da!==db) return da.localeCompare(db);
+      return (prio[a.priority]||1)-(prio[b.priority]||1);
+    });
+    html+='<div class="todo-group"><div class="todo-group-title">'+esc(k)+'（'+items.length+'）</div>';
+    items.forEach(r=>{
+      const overdue=isOverdue(r,r._ledger);
+      const due=getDueDate(r,r._ledger);
+      const infoBadge=(r.info_complete===false)?'<span class="tag" style="background:#fff4e5;color:#d98300">信息不全</span>':'';
+      const goalBadge=r.parent_goal?'<span class="tag tag-cat">目标子任务</span>':'';
+      html+=`<div class="todo-card" style="${overdue?'border-left:3px solid var(--color-danger)':''}">
+        <div class="todo-card-header">
+          <div class="todo-card-title">${esc(r.name||r.title||'未命名')}${r.recurrence!=='none'?'<span class="tag" style="background:var(--color-teal);color:#fff;margin-left:4px">周期·'+(r.recurrence_index?('第'+r.recurrence_index+'次'):'新')+'</span>':''}</div>
+          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">${stateBadge(r)}
+            <button class="btn btn-ghost btn-sm" onclick="openStateModal('${r._ledger}',${r.id})">状态</button>
+          </div>
+        </div>
+        <div class="todo-card-meta">
+          ${due?'<span>⏰ '+due+'</span>':''}
+          ${r.priority==='important'?'<span class="tag" style="background:#fdeaea;color:#d93025">重要</span>':''}
+          ${infoBadge}${goalBadge}
+          ${overdue?'<span class="tag" style="background:#fdeaea;color:#d93025">逾期</span>':''}
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  box.innerHTML=html;
+}
+function toggleGoal(id){
+  const el=document.getElementById('goalChildren-'+id);
+  if(!el) return;
+  if(el.style.display==='none'){
+    const kids=getAllLedgerItems().filter(r=>r.parent_goal===('todos:'+id));
+    el.innerHTML = kids.length? kids.map(k=>'<div class="goal-child">'+stateBadge(k)+' '+esc(k.name||k.title||'未命名')+' <button class="btn btn-ghost btn-sm" onclick="openStateModal(\''+k._ledger+'\','+k.id+')">状态</button></div>').join('') : '<div class="goal-child" style="color:var(--color-text3)">暂无子任务</div>';
+    el.style.display='block';
+  } else { el.style.display='none'; }
+}
+function updateTodoBadge(){
+  const n=getActiveItems().length;
+  const el=document.getElementById('todoActiveCount');
+  if(el){ if(n>0){el.style.display='';el.textContent=n;}else{el.style.display='none';} }
+}
+
 // 自动修复历史数据（格式迁移 + ID修复 + 字段补齐 + 日期标准化 + 软删除）
 function repairData(){
   const keys=['todos','inspirations','contracts','purchases','expenses','meetings','trainings','agencys','handovers','funds','fundRecords'];
@@ -2333,7 +2617,7 @@ function repairData(){
 // ============================================================
 //  NAVIGATION
 // ============================================================
-const pageTitles={dashboard:'驾驶舱',todo:'工作记录',inspiration:'灵感收集',meeting:'会议日程',training:'培训记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账','monthly-summary':'本月摘要',agency:'委托管理',handover:'交接台账',fund:'经费台账'};
+const pageTitles={dashboard:'驾驶舱',todo:'工作台账',quick:'速记箱',inspiration:'灵感收集',待办:'待办',meeting:'会议日程',training:'培训记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账','monthly-summary':'本月摘要',agency:'委托管理',handover:'交接台账',fund:'经费台账'};
 let currentPage='dashboard';
 
 function navigate(page,el){
@@ -2356,6 +2640,8 @@ function navigate(page,el){
   if(page==='agency')renderAgencys();
   if(page==='handover')renderHandovers();
   if(page==='fund')renderFunds();
+  if(page==='quick')renderQuick();
+  if(page==='待办')renderTodos();
 }
 
 function toggleSidebar(){
@@ -7691,6 +7977,7 @@ if(!localStorage.getItem('wb_baidu_sk'))localStorage.setItem('wb_baidu_sk','MwX2
 loadSettings();
 checkBackup();
 repairData(); // 自动修复第一版智能录入产生的旧格式数据
+updateQuickBadge(); // v1.4 速记箱角标
 // try to pull data from cloud on startup
 (async function(){
   if(GITEE.getConfig().user&&GITEE.getConfig().repo){
@@ -7714,5 +8001,73 @@ repairData(); // 自动修复第一版智能录入产生的旧格式数据
   });
 })();
 </script>
+
+<!-- 速记撰写 Modal（v1.4 零字段采集） -->
+<div class="modal-overlay" id="quickComposeModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <span class="modal-title">速记一句</span>
+      <button class="close-btn" onclick="closeModal('quickComposeModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="quick-compose">
+        <textarea id="quickComposeText" placeholder="脑子里的念头，先写下来，不用想分类…" onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey))saveQuickCompose()"></textarea>
+      </div>
+      <div style="font-size:11px;color:var(--color-text3);margin-top:6px">Ctrl/⌘ + Enter 保存</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('quickComposeModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveQuickCompose()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 速记整理（归档）Modal（v1.4 先归后补） -->
+<div class="modal-overlay" id="quickArchiveModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <span class="modal-title">整理到台账</span>
+      <button class="close-btn" onclick="closeModal('quickArchiveModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="archiveQuickId">
+      <div class="form-group">
+        <label class="form-label">速记内容</label>
+        <div id="archiveQuickPreview" style="background:var(--color-bg);padding:8px;border-radius:8px;font-size:13px;white-space:pre-wrap"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">目标台账 *</label>
+        <select class="form-control" id="archiveLedger" onchange="onArchiveLedgerChange()"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">标题 *</label>
+        <input class="form-control" id="archiveTitle" placeholder="一句话概括">
+      </div>
+      <div class="form-group">
+        <label class="form-label">要求 / 做到啥程度</label>
+        <textarea class="form-control" id="archiveRequirement" rows="2" placeholder="先归后补：硬台账其余字段稍后在台账补全"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">截止时间</label>
+          <input type="date" class="form-control" id="archiveDue">
+        </div>
+        <div class="form-group">
+          <label class="form-label">优先级</label>
+          <select class="form-control" id="archivePriority"><option value="normal">普通</option><option value="important">重要</option></select>
+        </div>
+      </div>
+      <div id="archiveInfoHint" class="form-group" style="font-size:12px;color:#d98300"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('quickArchiveModal')">取消</button>
+      <button class="btn btn-primary" onclick="applyArchive()">归档（进待办）</button>
+    </div>
+  </div>
+</div>
+
+<!-- 全局悬浮速记按钮（v1.4） -->
+<button class="fab-quick" onclick="openQuickCompose()" title="快速记录一句话">+</button>
+
 </body>
 </html>
