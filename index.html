@@ -8263,6 +8263,11 @@ function smartExtract(text,cat){
   return result;
 }
 
+// 智能识别类别（todo/contract/...）→ 台账 key（todos/contracts/...）映射，
+// 使自动识别结果能正确回填到类别下拉，并让 smartExtract 按识别类别提取字段
+const SMART_CAT_TO_LEDGER={todo:'todos',inspiration:'inspiration',contract:'contracts',purchase:'purchases',expense:'expenses'};
+const LEDGER_TO_SMART_CAT={todos:'todo',contracts:'contract',purchases:'purchase',expenses:'expense',inspiration:'inspiration',agencys:'agencys',handovers:'handovers',funds:'funds',reminder:'reminder'};
+
 function smartAnalyze(){
   const text=document.getElementById('smartInput').value.trim();
   const previewCard=document.getElementById('previewCard');
@@ -8281,9 +8286,9 @@ function smartAnalyze(){
 
   _smartDetected=JSON.stringify({cat:cls.cat,fields});
 
-  // 同步识别到的类别到下拉
+  // 同步识别到的类别到下拉（识别类别→台账 key 映射）
   const sb=document.getElementById('smartCat');
-  if(sb) sb.value=cls.cat;
+  if(sb) sb.value=SMART_CAT_TO_LEDGER[cls.cat]||cls.cat;
 
   // build preview
   const catNames={todo:'工作台账',inspiration:'灵感',contract:'合同台账',purchase:'采购台账',expense:'报销台账',agency:'委托台账',handover:'交接台账',fund:'经费台账',reminder:'提醒'};
@@ -8309,13 +8314,14 @@ function smartSetCat(cat){
   const c=document.getElementById('smartCat'); if(c) c.value=cat;
   const text=document.getElementById('smartInput').value.trim();
   if(!text){ return; }
-  const fields=smartExtract(text, cat);
+  const sc=LEDGER_TO_SMART_CAT[cat]||cat; // 台账 key→识别类别，供 smartExtract 正确提取字段
+  const fields=smartExtract(text, sc);
   _smartDetected=JSON.stringify({cat,fields});
 
   // rebuild preview
   const previewFields=document.getElementById('previewFields');
-  const catNames={todo:'工作台账',inspiration:'灵感',contract:'合同台账',purchase:'采购台账',expense:'报销台账',agency:'委托台账',handover:'交接台账',fund:'经费台账',reminder:'提醒'};
-  const catEmoji={todo:'✅',inspiration:'💡',contract:'📄',purchase:'🛒',expense:'💰',agency:'🤝',handover:'📦',fund:'💵',reminder:'⏰'};
+  const catNames={todos:'工作台账',contracts:'合同台账',purchases:'采购台账',expenses:'报销台账',agencys:'委托台账',handovers:'交接台账',funds:'经费台账',inspiration:'灵感',reminder:'提醒'};
+  const catEmoji={todos:'✅',contracts:'📄',purchases:'🛒',expenses:'💰',agencys:'🤝',handovers:'📦',funds:'💵',inspiration:'💡',reminder:'⏰'};
 
   let html=`<div class="field"><span class="field-label">类型</span><span class="field-value">${catEmoji[cat]||''} ${catNames[cat]||cat} <span style="font-size:10px;color:var(--color-text3)">(手动)</span></span></div>`;
 
