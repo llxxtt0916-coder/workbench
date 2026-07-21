@@ -52,15 +52,38 @@ function addMonths(year, month0, day, add){
 }
 function nextDueDate(base, period){
   if(!base) return '';
-  const parts=base.split('-');
-  if(parts.length!==3) return '';
-  const y=+parts[0], m=+parts[1], d=+parts[2];
-  const date=new Date(y, m-1, d); // 本地
-  if(period==='weekly'){ date.setDate(date.getDate()+7); return fmtLocal(date); }
-  if(period==='monthly'){ return addMonths(y, m-1, d, 1); }
-  if(period==='quarterly'){ return addMonths(y, m-1, d, 3); }
-  if(period==='yearly'){ return addMonths(y, m-1, d, 12); }
+  const legacy={weekly:'1w',monthly:'1m',quarterly:'3m',yearly:'1y'};
+  if(legacy[period]) period=legacy[period];
+  if(!period || period==='none') return '';
+  if(period==='wd'){
+    const p=base.split('-'); if(p.length!==3) return '';
+    const d=new Date(+p[0], +p[1]-1, +p[2]);
+    do { d.setDate(d.getDate()+1); } while(d.getDay()===0||d.getDay()===6);
+    return fmtLocal(d);
+  }
+  const m=period.match(/^(\d+)([dwmqy])$/);
+  if(!m) return '';
+  const n=+m[1], u=m[2];
+  const parts=base.split('-'); if(parts.length!==3) return '';
+  const y=+parts[0], mo=+parts[1], da=+parts[2];
+  const date=new Date(y, mo-1, da);
+  if(u==='d'){ date.setDate(date.getDate()+n); return fmtLocal(date); }
+  if(u==='w'){ date.setDate(date.getDate()+n*7); return fmtLocal(date); }
+  if(u==='m'){ return addMonths(y, mo-1, da, n); }
+  if(u==='q'){ return addMonths(y, mo-1, da, n*3); }
+  if(u==='y'){ return addMonths(y, mo-1, da, n*12); }
   return '';
+}
+function formatLedgerRecurrence(period){
+  const legacy={weekly:'1w',monthly:'1m',quarterly:'3m',yearly:'1y'};
+  if(legacy[period]) period=legacy[period];
+  if(!period||period==='none') return '';
+  if(period==='wd') return '每工作日';
+  const m=period.match(/^(\d+)([dwmqy])$/);
+  if(!m) return '';
+  const n=+m[1], u=m[2];
+  const unit={d:'天',w:'周',m:'月',q:'季',y:'年'}[u];
+  return '每'+n+unit;
 }
 
 // ---------- 断言 ----------
@@ -107,14 +130,38 @@ eq('逾期-已完成过去', isOverdue({state:STATE.DONE, deadline:past},'todos'
 eq('逾期-进行中无日期', isOverdue({state:STATE.DOING},'todos'), false);
 eq('逾期-进行中未来', isOverdue({state:STATE.DOING, deadline:'2099-01-01'},'todos'), false);
 
-// 3) 周期下一期 + 月末钳制
-eq('weekly', nextDueDate('2026-07-21','weekly'), '2026-07-28');
-eq('monthly 普通', nextDueDate('2026-01-15','monthly'), '2026-02-15');
+// 3) 周期下一期 + 月末钳制（新格式 + 旧格式兼容）
+eq('weekly 兼容', nextDueDate('2026-07-21','weekly'), '2026-07-28');
+eq('monthly 普通 兼容', nextDueDate('2026-01-15','monthly'), '2026-02-15');
 eq('monthly 月末钳制 1/31+月', nextDueDate('2026-01-31','monthly'), '2026-02-28');
 eq('monthly 闰年2月 1/30+月', nextDueDate('2026-01-30','monthly'), '2026-02-28');
-eq('quarterly', nextDueDate('2026-01-31','quarterly'), '2026-04-30');
+eq('quarterly 兼容', nextDueDate('2026-01-31','quarterly'), '2026-04-30');
 eq('yearly 闰年被钳 2024-02-29', nextDueDate('2024-02-29','yearly'), '2025-02-28');
-eq('yearly 普通', nextDueDate('2026-03-10','yearly'), '2027-03-10');
+eq('yearly 普通 兼容', nextDueDate('2026-03-10','yearly'), '2027-03-10');
+
+// 3b) 新灵活周期格式：每 N 天/周/月/季/年 + 工作日
+eq('3d', nextDueDate('2026-07-21','3d'), '2026-07-24');
+eq('7d', nextDueDate('2026-07-21','7d'), '2026-07-28');
+eq('2w', nextDueDate('2026-07-21','2w'), '2026-08-04');
+eq('1m', nextDueDate('2026-01-15','1m'), '2026-02-15');
+eq('3m 季', nextDueDate('2026-01-31','3m'), '2026-04-30');
+eq('6m 半年', nextDueDate('2026-01-31','6m'), '2026-07-31');
+eq('1y', nextDueDate('2026-03-10','1y'), '2027-03-10');
+eq('wd 周五→下周一', nextDueDate('2026-07-24','wd'), '2026-07-27');
+eq('wd 周一→周二', nextDueDate('2026-07-27','wd'), '2026-07-28');
+eq('none 不生成', nextDueDate('2026-07-21','none'), '');
+eq('空 不生成', nextDueDate('2026-07-21',''), '');
+eq('非法 不生成', nextDueDate('2026-07-21','foo'), '');
+
+// 3c) formatLedgerRecurrence 人类可读
+eq('fmt none', formatLedgerRecurrence('none'), '');
+eq('fmt 3d', formatLedgerRecurrence('3d'), '每3天');
+eq('fmt 2w', formatLedgerRecurrence('2w'), '每2周');
+eq('fmt 1m', formatLedgerRecurrence('1m'), '每1月');
+eq('fmt 3m', formatLedgerRecurrence('3m'), '每3月');
+eq('fmt 1y', formatLedgerRecurrence('1y'), '每1年');
+eq('fmt wd', formatLedgerRecurrence('wd'), '每工作日');
+eq('fmt legacy monthly', formatLedgerRecurrence('monthly'), '每1月');
 
 console.log(`\n[v14 逻辑测试] 通过 ${pass} / 失败 ${fail}`);
 process.exit(fail?1:0);

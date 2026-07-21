@@ -1084,14 +1084,20 @@
         <input class="form-control" id="stateReason" placeholder="如：已完成 / 放弃 / 已终止…">
       </div>
       <div class="form-group" style="margin-top:12px">
-        <label class="form-label">周期（关闭后自动生成下一期）</label>
-        <select class="form-control" id="stateRecurrence" onchange="updateStateRecurrenceHint()">
-          <option value="none">不重复（一次性）</option>
-          <option value="weekly">每周</option>
-          <option value="monthly">每月</option>
-          <option value="quarterly">每季度</option>
-          <option value="yearly">每年</option>
-        </select>
+        <label class="form-label">周期（完成/关闭后自动生成下一期）</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span style="font-size:13px;color:var(--color-text3)">每</span>
+          <input type="number" id="stateRecurrenceN" min="1" max="365" value="1" style="width:64px" class="form-control">
+          <select id="stateRecurrenceUnit" class="form-control" style="flex:1" onchange="updateStateRecurrenceHint()">
+            <option value="none">不重复（一次性）</option>
+            <option value="d">天</option>
+            <option value="w">周</option>
+            <option value="m">月</option>
+            <option value="q">季</option>
+            <option value="y">年</option>
+            <option value="wd">工作日</option>
+          </select>
+        </div>
         <div id="stateRecurrenceHint" style="font-size:12px;color:var(--color-text3);margin-top:4px"></div>
       </div>
     </div>
@@ -2106,15 +2112,39 @@ function addMonths(year, month0, day, add){
 }
 function nextDueDate(base, period){
   if(!base) return '';
-  const parts=base.split('-');
-  if(parts.length!==3) return '';
-  const y=+parts[0], m=+parts[1], d=+parts[2];
-  const date=new Date(y, m-1, d); // 本地时区，避免 UTC 偏移差一天
-  if(period==='weekly'){ date.setDate(date.getDate()+7); return fmtLocalDate(date); }
-  if(period==='monthly'){ return addMonths(y, m-1, d, 1); }
-  if(period==='quarterly'){ return addMonths(y, m-1, d, 3); }
-  if(period==='yearly'){ return addMonths(y, m-1, d, 12); }
+  const legacy={weekly:'1w',monthly:'1m',quarterly:'3m',yearly:'1y'};
+  if(legacy[period]) period=legacy[period];
+  if(!period || period==='none') return '';
+  if(period==='wd'){
+    const p=base.split('-'); if(p.length!==3) return '';
+    const d=new Date(+p[0], +p[1]-1, +p[2]);
+    do { d.setDate(d.getDate()+1); } while(d.getDay()===0||d.getDay()===6);
+    return fmtLocalDate(d);
+  }
+  const m=period.match(/^(\d+)([dwmqy])$/);
+  if(!m) return '';
+  const n=+m[1], u=m[2];
+  const parts=base.split('-'); if(parts.length!==3) return '';
+  const y=+parts[0], mo=+parts[1], da=+parts[2];
+  const date=new Date(y, mo-1, da);
+  if(u==='d'){ date.setDate(date.getDate()+n); return fmtLocalDate(date); }
+  if(u==='w'){ date.setDate(date.getDate()+n*7); return fmtLocalDate(date); }
+  if(u==='m'){ return addMonths(y, mo-1, da, n); }
+  if(u==='q'){ return addMonths(y, mo-1, da, n*3); }
+  if(u==='y'){ return addMonths(y, mo-1, da, n*12); }
   return '';
+}
+// 人类可读周期显示：none/3d/2w/1m/3m/1y/wd → 空/每3天/每2周/每月/每季度/每年/每工作日
+function formatLedgerRecurrence(period){
+  const legacy={weekly:'1w',monthly:'1m',quarterly:'3m',yearly:'1y'};
+  if(legacy[period]) period=legacy[period];
+  if(!period||period==='none') return '';
+  if(period==='wd') return '每工作日';
+  const m=period.match(/^(\d+)([dwmqy])$/);
+  if(!m) return '';
+  const n=+m[1], u=m[2];
+  const unit={d:'天',w:'周',m:'月',q:'季',y:'年'}[u];
+  return '每'+n+unit;
 }
 
 // 跨七台账取全部条目（打 _ledger 标签；D3：仅七台账，不含会议/培训）
@@ -2284,8 +2314,17 @@ function openStateModal(ledgerKey, id){
     if(b) b.classList.toggle('active', (rec.state||STATE.TODO)===s);
   });
   document.getElementById('stateReason').value=rec.closed_reason||'';
-  const recSel=document.getElementById('stateRecurrence');
-  if(recSel){ recSel.value=rec.recurrence||'none'; updateStateRecurrenceHint(); }
+  const recSel=document.getElementById('stateRecurrenceUnit');
+  if(recSel){
+    let ru='none', rn='1';
+    const legacy={weekly:'1w',monthly:'1m',quarterly:'3m',yearly:'1y'};
+    const v=legacy[rec.recurrence]||rec.recurrence||'none';
+    if(v==='wd'){ ru='wd'; }
+    else if(v!=='none'){ const mm=v.match(/^(\d+)([dwmqy])$/); if(mm){ rn=mm[1]; ru=mm[2]; } }
+    recSel.value=ru;
+    const rnEl=document.getElementById('stateRecurrenceN'); if(rnEl) rnEl.value=rn;
+    updateStateRecurrenceHint();
+  }
   openModal('stateModal');
 }
 function applyState(){
@@ -2294,7 +2333,9 @@ function applyState(){
   const chosen=document.querySelector('.state-btn.active');
   const ns=chosen?chosen.dataset.state:STATE.TODO;
   const reason=document.getElementById('stateReason').value;
-  const recurrence=document.getElementById('stateRecurrence').value;
+  const runit=document.getElementById('stateRecurrenceUnit').value;
+  const rn=document.getElementById('stateRecurrenceN').value||'1';
+  const recurrence = runit==='none' ? 'none' : (runit==='wd' ? 'wd' : (rn+runit));
   // 周期设置：启用时分配 group id（保证再生链唯一），落库后再 setState
   const recs=DB.raw(ledger);
   const ri=recs.findIndex(r=>r.id===id);
@@ -2310,11 +2351,11 @@ function applyState(){
 }
 // 状态弹窗：周期选择提示
 function updateStateRecurrenceHint(){
-  const k=document.getElementById('stateRecurrence').value;
+  const k=document.getElementById('stateRecurrenceUnit').value;
   const h=document.getElementById('stateRecurrenceHint');
   if(!h) return;
   if(k && k!=='none'){
-    h.textContent='设为周期后，关闭本项将自动生成下一期（进入待办）；想停周期改回"不重复"即可。';
+    h.textContent='设为周期后，完成/关闭本项将自动生成下一期（进入待办）；想停周期改回"不重复"即可。';
   } else { h.textContent=''; }
 }
 
@@ -2611,7 +2652,7 @@ function renderTodos(){
       const goalBadge=r.parent_goal?'<span class="tag tag-cat">目标子任务</span>':'';
       html+=`<div class="todo-card" style="${overdue?'border-left:3px solid var(--color-danger)':''}">
         <div class="todo-card-header">
-          <div class="todo-card-title">${esc(r.name||r.title||'未命名')}${r.recurrence!=='none'?'<span class="tag" style="background:var(--color-teal);color:#fff;margin-left:4px">周期·'+(r.recurrence_index?('第'+r.recurrence_index+'次'):'新')+'</span>':''}</div>
+          <div class="todo-card-title">${esc(r.name||r.title||'未命名')}${r.recurrence!=='none'?'<span class="tag" style="background:var(--color-teal);color:#fff;margin-left:4px">'+formatLedgerRecurrence(r.recurrence)+'</span>':''}</div>
           <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">${stateBadge(r)}
             <button class="btn btn-ghost btn-sm" onclick="openStateModal('${r._ledger}',${r.id})">状态</button>
           </div>
