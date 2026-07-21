@@ -450,6 +450,7 @@
       <div class="section-header">
         <div class="section-header-right">
           <span style="font-size:12px;color:var(--color-text3)" id="todoActiveSummary"></span>
+          <button class="btn btn-primary btn-sm" onclick="openNewGoal()">🎯 新建目标</button>
         </div>
       </div>
       <div id="todoActiveList"></div>
@@ -2151,6 +2152,13 @@ function setState(ledgerKey, id, newState, reason){
   if(newState===STATE.CLOSED){
     rec.closed_at=now; rec.closed_by='user';
     if(reason!==undefined) rec.closed_reason=reason||rec.closed_reason||'';
+    // 长期目标：关闭前若有活跃子任务，需确认（T7）
+    if(rec.is_goal){
+      const activeKids=getAllLedgerItems().filter(r=>r.parent_goal===('todos:'+rec.id) && (r.state===STATE.TODO||r.state===STATE.DOING));
+      if(activeKids.length && !confirm('该目标还有 '+activeKids.length+' 个进行中的子任务，确认关闭目标？')){
+        return; // 用户取消关闭
+      }
+    }
     // 周期再生（T6）：关闭周期项时自动生成下一期
     maybeRegenerate(ledgerKey, records, i, rec);
   } else if(oldState===STATE.CLOSED){
@@ -2268,7 +2276,7 @@ function ledgerDefaults(ledgerKey){
   }
 }
 // 由速记归档创建台账条目（统一入口）
-function createLedgerItem(ledgerKey, {title, requirement, due_date, priority, isGoal}){
+function createLedgerItem(ledgerKey, {title, requirement, due_date, priority, isGoal, parentGoal}){
   const arr=DB.raw(ledgerKey);
   const rec=ledgerDefaults(ledgerKey);
   rec.id=DB.nextId(arr);
@@ -2280,8 +2288,32 @@ function createLedgerItem(ledgerKey, {title, requirement, due_date, priority, is
   rec.priority = priority||'normal';
   rec.state = isGoal ? STATE.DOING : STATE.TODO;
   if(isGoal) rec.is_goal=true;
+  if(parentGoal) rec.parent_goal='todos:'+parentGoal;
   arr.push(rec); DB.set(ledgerKey, arr);
   return rec;
+}
+// 当前活跃目标列表（用于"关联目标"下拉，T7）
+function activeGoalOptions(){
+  const goals=getAllLedgerItems().filter(r=>r.is_goal && (r.state===STATE.TODO||r.state===STATE.DOING));
+  if(!goals.length) return '';
+  return goals.map(g=>`<option value="${g.id}">${esc(g.name||g.title||'未命名目标')}${g.recurrence!=='none'?'（周期）':''}</option>`).join('');
+}
+// 新建长期目标（T7）：建 todos 条目 is_goal=true，state=进行中
+function openNewGoal(){
+  document.getElementById('newGoalTitle').value='';
+  document.getElementById('newGoalDue').value='';
+  document.getElementById('newGoalPriority').value='normal';
+  openModal('newGoalModal');
+}
+function applyNewGoal(){
+  const title=document.getElementById('newGoalTitle').value.trim();
+  if(!title){ toast('请填写目标名称'); return; }
+  const due=document.getElementById('newGoalDue').value;
+  const priority=document.getElementById('newGoalPriority').value;
+  createLedgerItem('todos',{title,due_date:due,priority,isGoal:true});
+  closeModal('newGoalModal');
+  if(currentPage==='待办') renderTodos(); else navigate('待办');
+  toast('已创建长期目标（进待办）');
 }
 function renderQuick(){
   const all=DB.get('quick_notes');
@@ -2341,6 +2373,8 @@ function openArchiveModal(id){
   document.getElementById('archivePriority').value='normal';
   const sel=document.getElementById('archiveLedger');
   sel.innerHTML=LEDGER_KEYS.map(k=>`<option value="${k}">${LEDGER_META[k].label}</option>`).join('');
+  const goalSel=document.getElementById('archiveGoal');
+  if(goalSel) goalSel.innerHTML='<option value="">不关联</option>'+activeGoalOptions();
   onArchiveLedgerChange();
   openModal('quickArchiveModal');
 }
@@ -2359,7 +2393,8 @@ function applyArchive(){
   const requirement=document.getElementById('archiveRequirement').value.trim();
   const due=document.getElementById('archiveDue').value;
   const priority=document.getElementById('archivePriority').value;
-  const rec=createLedgerItem(ledger,{title,requirement,due_date:due,priority});
+  const parentGoal=document.getElementById('archiveGoal').value;
+  const rec=createLedgerItem(ledger,{title,requirement,due_date:due,priority, parentGoal: parentGoal?+parentGoal:undefined});
   const notes=DB.raw('quick_notes');
   const i=notes.findIndex(n=>n.id===id);
   if(i>=0){
@@ -4377,6 +4412,8 @@ function openInspToLedger(id){
   document.getElementById('inspToLedgerPriority').value='normal';
   const sel=document.getElementById('inspToLedgerLedger');
   sel.innerHTML=LEDGER_KEYS.map(k=>`<option value="${k}">${LEDGER_META[k].label}</option>`).join('');
+  const goalSel=document.getElementById('inspToLedgerGoal');
+  if(goalSel) goalSel.innerHTML='<option value="">不关联</option>'+activeGoalOptions();
   onInspToLedgerChange();
   openModal('inspToLedgerModal');
 }
@@ -4397,7 +4434,8 @@ function applyInspToLedger(){
   const requirement=document.getElementById('inspToLedgerRequirement').value.trim();
   const due=document.getElementById('inspToLedgerDue').value;
   const priority=document.getElementById('inspToLedgerPriority').value;
-  const rec=createLedgerItem(ledger,{title,requirement,due_date:due,priority});
+  const parentGoal=document.getElementById('inspToLedgerGoal').value;
+  const rec=createLedgerItem(ledger,{title,requirement,due_date:due,priority, parentGoal: parentGoal?+parentGoal:undefined});
   const insps=DB.raw('inspirations');
   const i=insps.findIndex(x=>x.id===id);
   if(i>=0){
@@ -8191,6 +8229,10 @@ updateQuickBadge(); // v1.4 速记箱角标
           <select class="form-control" id="archivePriority"><option value="normal">普通</option><option value="important">重要</option></select>
         </div>
       </div>
+      <div class="form-group">
+        <label class="form-label">关联目标（可选）</label>
+        <select class="form-control" id="archiveGoal"><option value="">不关联</option></select>
+      </div>
       <div id="archiveInfoHint" class="form-group" style="font-size:12px;color:#d98300"></div>
     </div>
     <div class="modal-footer">
@@ -8235,11 +8277,46 @@ updateQuickBadge(); // v1.4 速记箱角标
           <select class="form-control" id="inspToLedgerPriority"><option value="normal">普通</option><option value="important">重要</option></select>
         </div>
       </div>
+      <div class="form-group">
+        <label class="form-label">关联目标（可选）</label>
+        <select class="form-control" id="inspToLedgerGoal"><option value="">不关联</option></select>
+      </div>
       <div id="inspToLedgerHint" class="form-group" style="font-size:12px;color:#d98300"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('inspToLedgerModal')">取消</button>
       <button class="btn btn-primary" onclick="applyInspToLedger()">转台账（进待办）</button>
+    </div>
+  </div>
+</div>
+
+<!-- v1.4 T7：新建长期目标 -->
+<div class="modal-overlay" id="newGoalModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">🎯 新建长期目标</span>
+      <button class="close-btn" onclick="closeModal('newGoalModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">目标名称 *</label>
+        <input class="form-control" id="newGoalTitle" placeholder="如：完成 XX 项目立项">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">目标期限</label>
+          <input type="date" class="form-control" id="newGoalDue">
+        </div>
+        <div class="form-group">
+          <label class="form-label">优先级</label>
+          <select class="form-control" id="newGoalPriority"><option value="normal">普通</option><option value="important">重要</option></select>
+        </div>
+      </div>
+      <div class="form-group" style="font-size:12px;color:var(--color-text3)">目标创建后出现在「待办」顶部；在速记整理 / 灵感转台账时可选"关联目标"，目标卡显示去重进度。</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('newGoalModal')">取消</button>
+      <button class="btn btn-primary" onclick="applyNewGoal()">创建目标</button>
     </div>
   </div>
 </div>
