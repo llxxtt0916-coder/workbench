@@ -62,6 +62,11 @@
       待办
       <span class="nav-badge" id="todoActiveCount" style="display:none">0</span>
     </div>
+    <div class="nav-item" onclick="navigate('提醒',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1.07a6 6 0 014.93 4.93H17a1 1 0 110 2h-1.07A6 6 0 0111 16.93V18a1 1 0 11-2 0v-1.07A6 6 0 014.07 12H3a1 1 0 110-2h1.07A6 6 0 019 5.07V3a1 1 0 011-1zm0 4a4 4 0 100 8 4 4 0 000-8z" clip-rule="evenodd"/></svg>
+      提醒
+      <span class="nav-badge" id="remindCount" style="display:none">0</span>
+    </div>
 
     <div class="nav-section">日程</div>
     <div class="nav-item" onclick="navigate('meeting',this)">
@@ -454,6 +459,17 @@
         </div>
       </div>
       <div id="todoActiveList"></div>
+    </div>
+
+    <!-- ====== REMIND PAGE (v1.4 提醒中心) ====== -->
+    <div class="page" id="page-提醒">
+      <div class="section-header">
+        <div class="section-header-right">
+          <button class="btn btn-outline btn-sm" onclick="requestNotifyPermission()" id="remindPermBtn">开启桌面通知</button>
+          <button class="btn btn-primary btn-sm" onclick="checkReminders(true)">立即检查</button>
+        </div>
+      </div>
+      <div id="remindList"></div>
     </div>
 
     <!-- ====== CONTRACT PAGE ====== -->
@@ -2392,8 +2408,10 @@ function applyArchive(){
   if(!title){ toast('请填写标题'); return; }
   const requirement=document.getElementById('archiveRequirement').value.trim();
   const due=document.getElementById('archiveDue').value;
-  const priority=document.getElementById('archivePriority').value;
+  const priorityRaw=document.getElementById('archivePriority').value;
   const parentGoal=document.getElementById('archiveGoal').value;
+  // 未设截止时间则默认标"重要"，确保进入待办时醒目（C 方案）
+  const priority=(priorityRaw==='normal' && !due)?'important':priorityRaw;
   const rec=createLedgerItem(ledger,{title,requirement,due_date:due,priority, parentGoal: parentGoal?+parentGoal:undefined});
   const notes=DB.raw('quick_notes');
   const i=notes.findIndex(n=>n.id===id);
@@ -2522,6 +2540,86 @@ function toggleGoal(id){
 function updateTodoBadge(){
   const n=getActiveItems().length;
   const el=document.getElementById('todoActiveCount');
+  if(el){ if(n>0){el.style.display='';el.textContent=n;}else{el.style.display='none';} }
+}
+
+// ============================================================
+//  提醒机制 v1.4（C 方案）：到期/逾期通知 + 轻量提醒中心
+// ============================================================
+const remindShown = new Set(); // 本次会话已提醒过的条目 key，避免重复打扰
+// 触发系统通知（桌面 Notification）+ 应用内 toast
+function fireNotification(title, body){
+  if('Notification' in window && Notification.permission==='granted'){
+    try{ new Notification(title, {body:body}); }catch(e){}
+  }
+  toast(body);
+}
+// 请求通知权限
+function requestNotifyPermission(){
+  if(!('Notification' in window)){ toast('当前浏览器不支持桌面通知'); return; }
+  if(Notification.permission==='granted'){ toast('桌面通知已开启'); checkReminders(true); return; }
+  Notification.requestPermission().then(p=>{
+    toast(p==='granted'?'桌面通知已开启':'已关闭桌面通知');
+    if(p==='granted') checkReminders(true);
+    updateRemindPermBtn();
+  });
+}
+function updateRemindPermBtn(){
+  const b=document.getElementById('remindPermBtn');
+  if(!b) return;
+  if('Notification' in window && Notification.permission==='granted'){ b.textContent='桌面通知已开启'; }
+  else { b.textContent='开启桌面通知'; }
+}
+// 扫描活跃条目：今天到期/已逾期的，未提醒过的弹通知 + toast
+function checkReminders(force){
+  const today=todayStr();
+  const items=getActiveItems().filter(r=>r.due_date && r.due_date<=today);
+  let count=0;
+  items.forEach(r=>{
+    const key=r._ledger+':'+r.id;
+    if(!force && remindShown.has(key)) return;
+    remindShown.add(key);
+    const overdue=r.due_date<today;
+    const label=overdue?('已逾期 '+r.due_date):('今天到期 '+r.due_date);
+    fireNotification('待办提醒 · '+(r._ledgerLabel||''), (r.name||r.title||'未命名')+'（'+label+'）');
+    count++;
+  });
+  updateRemindBadge();
+  return count;
+}
+// 提醒中心列表渲染
+function renderRemindCenter(){
+  const today=todayStr();
+  const items=getActiveItems().filter(r=>r.due_date && r.due_date<=today)
+    .sort((a,b)=>a.due_date.localeCompare(b.due_date));
+  const box=document.getElementById('remindList');
+  if(!box) return;
+  updateRemindPermBtn();
+  updateRemindBadge();
+  if(!items.length){
+    box.innerHTML='<div class="empty-state"><p>📭 没有今天到期或逾期的事项。若开启桌面通知，到点会自动弹提醒。</p></div>';
+    return;
+  }
+  box.innerHTML='<div class="todo-group"><div class="todo-group-title">需关注（'+items.length+'）</div>'+items.map(r=>{
+    const overdue=r.due_date<today;
+    return `<div class="todo-card" style="${overdue?'border-left:3px solid var(--color-danger)':''}">
+      <div class="todo-card-header">
+        <div class="todo-card-title">${esc(r.name||r.title||'未命名')}</div>
+        <div>${stateBadge(r)}</div>
+      </div>
+      <div class="todo-card-meta">
+        <span>${overdue?'⚠ 已逾期':'⏰ 今天到期'} ${r.due_date}</span>
+        <span class="tag">${esc(r._ledgerLabel||'')}</span>
+        ${r.priority==='important'?'<span class="tag" style="background:#fdeaea;color:#d93025">重要</span>':''}
+        <button class="btn btn-ghost btn-sm" onclick="openStateModal('${r._ledger}',${r.id})">状态</button>
+      </div>
+    </div>`;
+  }).join('')+'</div>';
+}
+function updateRemindBadge(){
+  const today=todayStr();
+  const n=getActiveItems().filter(r=>r.due_date && r.due_date<=today).length;
+  const el=document.getElementById('remindCount');
   if(el){ if(n>0){el.style.display='';el.textContent=n;}else{el.style.display='none';} }
 }
 
@@ -2741,7 +2839,7 @@ function repairData(){
 // ============================================================
 //  NAVIGATION
 // ============================================================
-const pageTitles={dashboard:'驾驶舱',todo:'工作台账',quick:'速记箱',inspiration:'灵感收集',待办:'待办',meeting:'会议日程',training:'培训记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账','monthly-summary':'本月摘要',agency:'委托管理',handover:'交接台账',fund:'经费台账'};
+const pageTitles={dashboard:'驾驶舱',todo:'工作台账',quick:'速记箱',inspiration:'灵感收集',待办:'待办',提醒:'提醒中心',meeting:'会议日程',training:'培训记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账','monthly-summary':'本月摘要',agency:'委托管理',handover:'交接台账',fund:'经费台账'};
 let currentPage='dashboard';
 
 function navigate(page,el){
@@ -2766,6 +2864,7 @@ function navigate(page,el){
   if(page==='fund')renderFunds();
   if(page==='quick')renderQuick();
   if(page==='待办')renderTodos();
+  if(page==='提醒')renderRemindCenter();
 }
 
 function toggleSidebar(){
@@ -4433,8 +4532,9 @@ function applyInspToLedger(){
   if(!title){ toast('请填写标题'); return; }
   const requirement=document.getElementById('inspToLedgerRequirement').value.trim();
   const due=document.getElementById('inspToLedgerDue').value;
-  const priority=document.getElementById('inspToLedgerPriority').value;
+  const priorityRaw=document.getElementById('inspToLedgerPriority').value;
   const parentGoal=document.getElementById('inspToLedgerGoal').value;
+  const priority=(priorityRaw==='normal' && !due)?'important':priorityRaw;
   const rec=createLedgerItem(ledger,{title,requirement,due_date:due,priority, parentGoal: parentGoal?+parentGoal:undefined});
   const insps=DB.raw('inspirations');
   const i=insps.findIndex(x=>x.id===id);
@@ -8150,6 +8250,7 @@ loadSettings();
 checkBackup();
 repairData(); // 自动修复第一版智能录入产生的旧格式数据
 updateQuickBadge(); // v1.4 速记箱角标
+checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/逾期项
 // try to pull data from cloud on startup
 (async function(){
   if(GITEE.getConfig().user&&GITEE.getConfig().repo){
@@ -8162,6 +8263,8 @@ updateQuickBadge(); // v1.4 速记箱角标
     if(currentPage==='dashboard')renderDashboard();
     if(currentPage==='monthly-summary')renderSummary();
     if(currentPage==='todo')renderTodo();
+    if(currentPage==='提醒')renderRemindCenter();
+    checkReminders(); // 每小时扫一次到期/逾期（已提醒过的本会话不再弹）
   },3600000);
   // 切回标签页时刷新提醒
   document.addEventListener('visibilitychange',()=>{
@@ -8169,6 +8272,8 @@ updateQuickBadge(); // v1.4 速记箱角标
       if(currentPage==='dashboard')renderDashboard();
       if(currentPage==='monthly-summary')renderSummary();
       if(currentPage==='todo')renderTodo();
+      if(currentPage==='提醒')renderRemindCenter();
+      checkReminders();
     }
   });
 })();
