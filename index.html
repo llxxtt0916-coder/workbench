@@ -468,7 +468,7 @@
       <div class="section-header">
         <div class="section-header-right">
           <span style="font-size:12px;color:var(--color-text3)" id="todoActiveSummary"></span>
-          <button class="btn btn-primary btn-sm" onclick="openNewGoal()">🎯 新建目标</button>
+          <button class="btn btn-primary btn-sm" onclick="openNewTodoFromActive()">+ 新建待办</button>
         </div>
       </div>
       <div id="todoActiveList"></div>
@@ -2689,6 +2689,11 @@ function openNewGoal(){
   document.getElementById('newGoalPriority').value='不重要不紧急';
   openModal('newGoalModal');
 }
+function openNewTodoFromActive(){
+  clearTodoForm();
+  document.getElementById('todoModalTitle').textContent='新建待办';
+  openModal('todoModal');
+}
 function applyNewGoal(){
   const title=document.getElementById('newGoalTitle').value.trim();
   if(!title){ toast('请填写目标名称'); return; }
@@ -4434,6 +4439,7 @@ function saveTodo(){
   closeModal('todoModal');
   clearTodoForm();
   renderTodo();
+  if(currentPage==='待办')renderTodos();
   toast('已保存');
 }
 
