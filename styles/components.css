@@ -521,14 +521,23 @@ tr:hover td {
 }
 
 .todo-card-actions {
-  display: none;
+  display: flex;
   gap: 2px;
   flex-shrink: 0;
 }
-
-.todo-card:hover .todo-card-actions {
-  display: flex;
-}
+.global-search-wrap { position:relative;flex:1;max-width:360px;margin:0 12px; }
+.global-search-wrap input { width:100%;font-size:13px; }
+.global-search-results { position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:1200;background:var(--color-card,#fff);border:1px solid var(--color-border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:380px;overflow:auto; }
+.global-search-results button { display:block;width:100%;padding:9px 10px;text-align:left;border:0;border-bottom:1px solid var(--color-border);background:transparent;cursor:pointer;color:var(--color-text); }
+.global-search-results button:hover { background:var(--color-bg2); }
+.assignee-note { font-size:11px;color:var(--color-text3);margin-top:3px; }
+.fund-sub-row { display:flex;gap:6px;margin:5px 0;align-items:center; }
+.fund-sub-row .fund-sub-name { flex:2;min-width:0; }
+.fund-sub-row .fund-sub-budget { flex:1;min-width:0; }
+.bulk-toolbar { display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0;padding:6px 8px;background:var(--color-bg2);border-radius:7px;font-size:12px; }
+.bulk-toolbar label { display:flex;align-items:center;gap:4px;cursor:pointer; }
+.bulk-checkbox { width:16px;height:16px;margin:0 7px 0 0;vertical-align:middle;cursor:pointer;flex-shrink:0; }
+@media(max-width:640px){.global-search-wrap{max-width:none;margin:0 6px}.global-search-wrap input{font-size:11px}.global-search-results{min-width:260px}}
 
 .todo-card-meta {
   display: flex;
@@ -1731,3 +1740,67 @@ tr:hover td {
     flex-direction: column;
   }
 }
+
+/* ===== v1.4 统一状态徽标与状态按钮 ===== */
+.state-badge{
+  display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;line-height:18px;
+  border:1px solid transparent;white-space:nowrap;
+}
+.state-badge.st-todo{background:#eef2ff;color:#4a6cf7;border-color:#dbe3ff}
+.state-badge.st-doing{background:#fff4e5;color:#d98300;border-color:#ffe2bf}
+.state-badge.st-done{background:#e6f4ea;color:#1e7e34;border-color:#b7e0c2}
+.state-badge.st-closed{background:#eef1f4;color:#8a94a6;border-color:#e0e5ea}
+.state-badge.st-overdue{background:#fdeaea;color:#d93025;border-color:#f6c5c0;font-weight:600}
+
+.state-btn-row{display:flex;gap:8px}
+.state-btn{
+  flex:1;padding:10px 0;border-radius:8px;border:1px solid var(--color-border);
+  background:transparent;cursor:pointer;font-family:inherit;font-size:14px;color:var(--color-text);
+  transition:.15s;
+}
+.state-btn.st-todo:hover{background:#eef2ff}
+.state-btn.st-doing:hover{background:#fff4e5}
+.state-btn.st-done:hover{background:#e6f4ea}
+.state-btn.st-closed:hover{background:#eef1f4}
+.state-btn.active{box-shadow:0 0 0 2px var(--color-primary) inset;font-weight:600}
+.state-btn.st-todo.active{background:#eef2ff;color:#4a6cf7}
+.state-btn.st-doing.active{background:#fff4e5;color:#d98300}
+.state-btn.st-done.active{background:#e6f4ea;color:#1e7e34}
+.state-btn.st-closed.active{background:#eef1f4}
+
+/* 速记箱：全局悬浮 + 按钮 */
+.fab-quick{
+  position:fixed;right:20px;bottom:24px;width:54px;height:54px;border-radius:50%;
+  background:var(--color-primary);color:#fff;border:none;box-shadow:0 4px 14px rgba(74,108,247,.4);
+  font-size:26px;cursor:pointer;z-index:60;display:flex;align-items:center;justify-content:center;
+  transition:.15s;
+}
+.fab-quick:hover{transform:scale(1.06)}
+.quick-compose{width:100%}
+.quick-compose textarea{width:100%;min-height:84px;resize:vertical;font-family:inherit;font-size:14px;padding:8px;border-radius:8px;border:1px solid var(--color-border)}
+
+/* v1.4 驾驶舱聚合卡片 */
+.v14-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.v14-block{background:var(--color-bg);border-radius:8px;padding:10px}
+.v14-block-title{font-size:12px;font-weight:600;color:var(--color-text2);margin-bottom:6px}
+.v14-state-dist{display:flex;gap:6px;flex-wrap:wrap}
+.v14-state-tag{padding:2px 8px;border-radius:10px;font-size:12px;border:1px solid var(--color-border)}
+.v14-state-tag.st-todo{background:#eef2ff;color:#4a6cf7}
+.v14-state-tag.st-doing{background:#fff4e5;color:#d98300}
+.v14-state-tag.st-done{background:#e6f4ea;color:#1e7e34}
+.v14-state-tag.st-closed{background:#eef1f4;color:#8a94a6}
+.v14-ledger-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:5px}
+.v14-ledger-name{width:64px;flex-shrink:0;color:var(--color-text2)}
+.v14-ledger-bar{flex:1;height:6px;background:var(--color-bg2);border-radius:3px;overflow:hidden}
+.v14-ledger-bar span{display:block;height:100%;background:var(--color-primary)}
+.v14-ledger-pct{width:36px;text-align:right;color:var(--color-text3)}
+.v14-ledger-num{width:48px;text-align:right;color:var(--color-text3)}
+.v14-goal-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:5px}
+.v14-goal-name{width:120px;flex-shrink:0;color:var(--color-text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v14-ov-item{font-size:12px;padding:4px 0;border-bottom:1px dashed var(--color-border);cursor:pointer}
+.v14-ov-item:hover{color:var(--color-primary)}
+.v14-empty{font-size:12px;color:var(--color-text3)}
+.v14-pending{font-size:13px}
+
+/* 悬浮按钮角标（速记收件箱计数） */
+.fab-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;background:#ef4444;color:#fff;border-radius:9px;font-size:11px;line-height:18px;text-align:center;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.25)}
