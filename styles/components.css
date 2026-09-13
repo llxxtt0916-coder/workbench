@@ -521,14 +521,23 @@ tr:hover td {
 }
 
 .todo-card-actions {
-  display: none;
+  display: flex;
   gap: 2px;
   flex-shrink: 0;
 }
-
-.todo-card:hover .todo-card-actions {
-  display: flex;
-}
+.global-search-wrap { position:relative;flex:1;max-width:360px;margin:0 12px; }
+.global-search-wrap input { width:100%;font-size:13px; }
+.global-search-results { position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:1200;background:var(--color-card,#fff);border:1px solid var(--color-border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:380px;overflow:auto; }
+.global-search-results button { display:block;width:100%;padding:9px 10px;text-align:left;border:0;border-bottom:1px solid var(--color-border);background:transparent;cursor:pointer;color:var(--color-text); }
+.global-search-results button:hover { background:var(--color-bg2); }
+.assignee-note { font-size:11px;color:var(--color-text3);margin-top:3px; }
+.fund-sub-row { display:flex;gap:6px;margin:5px 0;align-items:center; }
+.fund-sub-row .fund-sub-name { flex:2;min-width:0; }
+.fund-sub-row .fund-sub-budget { flex:1;min-width:0; }
+.bulk-toolbar { display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0;padding:6px 8px;background:var(--color-bg2);border-radius:7px;font-size:12px; }
+.bulk-toolbar label { display:flex;align-items:center;gap:4px;cursor:pointer; }
+.bulk-checkbox { width:16px;height:16px;margin:0 7px 0 0;vertical-align:middle;cursor:pointer;flex-shrink:0; }
+@media(max-width:640px){.global-search-wrap{max-width:none;margin:0 6px}.global-search-wrap input{font-size:11px}.global-search-results{min-width:260px}}
 
 .todo-card-meta {
   display: flex;

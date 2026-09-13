@@ -50,6 +50,51 @@ function addMonths(year, month0, day, add){
   const nd=Math.min(day, last);
   return fmtLocal(new Date(ny, nm, nd));
 }
+// 周期下一期推算辅助（与 index.html 保持一致）
+function clampInt(s, lo, hi, dflt){ let v=parseInt(s,10); if(isNaN(v)) v=dflt; return Math.max(lo, Math.min(hi, v)); }
+function dowLabelCn(x){ return ['','一','二','三','四','五','六','日'][x]||''; }
+function nextMonthDay(base, day){
+  const p=base.split('-'); if(p.length!==3) return '';
+  const y=+p[0], mo=+p[1], da=+p[2];
+  const baseD=new Date(y, mo-1, da);
+  let candY=y, candMo=mo;
+  let last=new Date(candY, candMo, 0).getDate();
+  let cand=new Date(candY, candMo-1, Math.min(day, last));
+  if(cand<=baseD){ candMo++; if(candMo>12){ candMo=1; candY++; } last=new Date(candY, candMo, 0).getDate(); cand=new Date(candY, candMo-1, Math.min(day, last)); }
+  return fmtLocal(cand);
+}
+function nextWeekday(base, x){
+  const p=base.split('-'); if(p.length!==3) return '';
+  const d=new Date(+p[0], +p[1]-1, +p[2]);
+  const targetJs=(x===7)?0:x;
+  do { d.setDate(d.getDate()+1); } while(d.getDay()!==targetJs);
+  return fmtLocal(d);
+}
+function nextQuarterDay(base, day){
+  const p=base.split('-'); if(p.length!==3) return '';
+  const y=+p[0], mo=+p[1], da=+p[2];
+  const baseD=new Date(y, mo-1, da);
+  const qIdx=Math.floor((mo-1)/3);
+  function candForQuarter(yy, qi){
+    const sm=qi*3+1;
+    const qEnd=new Date(yy, sm+2, 0);
+    const c=new Date(yy, sm-1, 1); c.setDate(c.getDate()+(day-1));
+    if(c>qEnd) c.setTime(qEnd.getTime());
+    return c;
+  }
+  let cand=candForQuarter(y, qIdx);
+  if(cand<=baseD){ let qi=qIdx+1, yy=y; if(qi>3){ qi=0; yy++; } cand=candForQuarter(yy, qi); }
+  return fmtLocal(cand);
+}
+function nextYearDate(base, M, D){
+  const p=base.split('-'); if(p.length!==3) return '';
+  const y=+p[0], mo=+p[1], da=+p[2];
+  const baseD=new Date(y, mo-1, da);
+  function candForYear(yy){ const last=new Date(yy, M, 0).getDate(); return new Date(yy, M-1, Math.min(D, last)); }
+  let cand=candForYear(y);
+  if(cand<=baseD) cand=candForYear(y+1);
+  return fmtLocal(cand);
+}
 function nextDueDate(base, period){
   if(!base) return '';
   const legacy={weekly:'1w',monthly:'1m',quarterly:'3m',yearly:'1y'};
@@ -61,6 +106,10 @@ function nextDueDate(base, period){
     do { d.setDate(d.getDate()+1); } while(d.getDay()===0||d.getDay()===6);
     return fmtLocal(d);
   }
+  if(period.indexOf('dom:')===0) return nextMonthDay(base, clampInt(period.slice(4),1,31,1));
+  if(period.indexOf('dow:')===0) return nextWeekday(base, clampInt(period.slice(4),1,7,1));
+  if(period.indexOf('doq:')===0) return nextQuarterDay(base, clampInt(period.slice(4),1,92,1));
+  if(period.indexOf('yd:')===0){ const mm=period.slice(3).match(/^(\d{1,2})-(\d{1,2})$/); if(mm) return nextYearDate(base, +mm[1], +mm[2]); return ''; }
   const m=period.match(/^(\d+)([dwmqy])$/);
   if(!m) return '';
   const n=+m[1], u=m[2];
@@ -79,6 +128,10 @@ function formatLedgerRecurrence(period){
   if(legacy[period]) period=legacy[period];
   if(!period||period==='none') return '';
   if(period==='wd') return '每工作日';
+  if(period.indexOf('dom:')===0) return '每月'+clampInt(period.slice(4),1,31,1)+'日';
+  if(period.indexOf('dow:')===0) return '每周'+dowLabelCn(clampInt(period.slice(4),1,7,1));
+  if(period.indexOf('doq:')===0) return '每季第'+clampInt(period.slice(4),1,92,1)+'日';
+  if(period.indexOf('yd:')===0){ const mm=period.slice(3).match(/^(\d{1,2})-(\d{1,2})$/); if(mm) return '每年'+mm[1]+'月'+mm[2]+'日'; }
   const m=period.match(/^(\d+)([dwmqy])$/);
   if(!m) return '';
   const n=+m[1], u=m[2];
@@ -152,6 +205,20 @@ eq('wd 周一→周二', nextDueDate('2026-07-27','wd'), '2026-07-28');
 eq('none 不生成', nextDueDate('2026-07-21','none'), '');
 eq('空 不生成', nextDueDate('2026-07-21',''), '');
 eq('非法 不生成', nextDueDate('2026-07-21','foo'), '');
+// 3b-2) 固定日期类：每月第N日 / 每周星期X / 每季第N日 / 每年M月D日
+eq('dom 当月15日(月中)', nextDueDate('2026-07-21','dom:15'), '2026-08-15');
+eq('dom 当月1日(月初已过的本月)', nextDueDate('2026-07-10','dom:1'), '2026-08-01');
+eq('dom 月末钳制 2/30→2/28', nextDueDate('2026-01-31','dom:30'), '2026-02-28');
+eq('dom 31日钳到小月30', nextDueDate('2026-03-31','dom:31'), '2026-04-30');
+eq('dow 周三(7/21周二→7/22周三)', nextDueDate('2026-07-21','dow:3'), '2026-07-22');
+eq('dow 周一(7/21周二→7/27周一)', nextDueDate('2026-07-21','dow:1'), '2026-07-27');
+eq('dow 周日(7/21周二→7/26周日)', nextDueDate('2026-07-21','dow:7'), '2026-07-26');
+eq('doq 季内第10日(7/21→Q3第10日=7/10已过→Q4 10/10)', nextDueDate('2026-07-21','doq:10'), '2026-10-10');
+eq('doq 季内第1日(7/21→Q4 10/1)', nextDueDate('2026-07-21','doq:1'), '2026-10-01');
+eq('yd 每年3-15(7/21→明年)', nextDueDate('2026-07-21','yd:3-15'), '2027-03-15');
+eq('yd 每年1-1(7/21→明年)', nextDueDate('2026-07-21','yd:1-1'), '2027-01-01');
+eq('yd 闰年2-29(2023→2024)', nextDueDate('2023-07-21','yd:2-29'), '2024-02-29');
+eq('yd 2-29非闰年钳28(2024→2025)', nextDueDate('2024-07-21','yd:2-29'), '2025-02-28');
 
 // 3c) formatLedgerRecurrence 人类可读
 eq('fmt none', formatLedgerRecurrence('none'), '');
@@ -162,6 +229,10 @@ eq('fmt 3m', formatLedgerRecurrence('3m'), '每3月');
 eq('fmt 1y', formatLedgerRecurrence('1y'), '每1年');
 eq('fmt wd', formatLedgerRecurrence('wd'), '每工作日');
 eq('fmt legacy monthly', formatLedgerRecurrence('monthly'), '每1月');
+eq('fmt dom', formatLedgerRecurrence('dom:15'), '每月15日');
+eq('fmt dow', formatLedgerRecurrence('dow:3'), '每周三');
+eq('fmt doq', formatLedgerRecurrence('doq:10'), '每季第10日');
+eq('fmt yd', formatLedgerRecurrence('yd:3-15'), '每年3月15日');
 
 // 回归：归档/编辑弹窗 archiveState 选项值必须为中文 STATE 值（防四态化漏改）
 (function(){
