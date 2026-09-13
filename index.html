@@ -7432,6 +7432,17 @@ const GITEE={
     lbl.textContent=label;
   },
 
+  _knownSha(cfg,branch){
+    try{
+      const saved=JSON.parse(localStorage.getItem('wb_gitee_data_revision')||'null');
+      return saved&&saved.user===cfg.user&&saved.repo===cfg.repo&&saved.branch===branch ? saved.sha||'' : '';
+    }catch(e){return '';}
+  },
+
+  _rememberSha(cfg,branch,sha){
+    localStorage.setItem('wb_gitee_data_revision',JSON.stringify({user:cfg.user,repo:cfg.repo,branch,sha}));
+  },
+
   // get default branch
   async _getDefaultBranch(){
     const cfg=this.getConfig();
@@ -7461,17 +7472,24 @@ const GITEE={
       const branch=await this._getDefaultBranch();
       console.log('Gitee push: using branch',branch);
 
-      // first try to get existing file SHA
+      // 只用本机上次拉取或上传确认的 SHA 作为上传基线。
       let sha='';
-      try{
-        const getResp=await fetch(
-          `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}/contents/data.json?access_token=${cfg.token}&ref=${branch}`
-        );
-        if(getResp.ok){
-          const info=await getResp.json();
-          sha=info.sha||'';
-        }
-      }catch(e){/* file may not exist yet */}
+      const getResp=await fetch(
+        `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}/contents/data.json?access_token=${cfg.token}&ref=${branch}&_t=${Date.now()}`,
+        {cache:'no-store'}
+      );
+      if(getResp.ok){
+        const info=await getResp.json();
+        sha=info.sha||'';
+        if(!sha)throw new Error('Gitee data.json SHA missing');
+      }else if(getResp.status!==404){
+        throw new Error('Gitee data.json read failed: '+getResp.status);
+      }
+      if(this._knownSha(cfg,branch)!==sha){
+        this.setSyncStatus('error','云端已更新');
+        toast('云端数据已在其他设备更新，请先拉取最新数据后再上传。');
+        return 'conflict';
+      }
 
       const body={access_token:cfg.token,content,message:'workbench auto-sync '+new Date().toLocaleString('zh-CN'),branch};
       if(sha)body.sha=sha;
@@ -7490,6 +7508,10 @@ const GITEE={
         return false;
       }
 
+      const result=await resp.json();
+      const pushedSha=result&&result.content&&result.content.sha;
+      if(!pushedSha)throw new Error('Gitee push response SHA missing');
+      this._rememberSha(cfg,branch,pushedSha);
       console.log('Gitee push: success on branch',branch);
       this.setSyncStatus('ok','已同步');
       // store branch for pull reference
@@ -7523,7 +7545,9 @@ const GITEE={
             const json=await resp.json();
             const decoded=decodeURIComponent(escape(atob(json.content)));
             const data=JSON.parse(decoded);
-            return this._mergeData(data);
+            const result=this._mergeData(data);
+            if(result==='ok'&&json.sha)this._rememberSha(cfg,b,json.sha);
+            return result;
           }
           if(resp.status===404)continue; // try next branch
           if(resp.status===401){this.setSyncStatus('error','令牌无效');return false;}
@@ -7698,6 +7722,8 @@ async function manualPush(){
     GITEE.setSyncStatus('ok','已同步');
     toast('✓ 数据已推送到云端');
     renderCurrentPage();
+  }else if(result==='conflict'){
+    return;
   }else{
     toast('✗ 推送失败：'+result);
   }
