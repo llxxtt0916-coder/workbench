@@ -28,6 +28,7 @@ function createDevice(fetchImpl){
     document:{getElementById:()=>({className:'',textContent:''})},
     fetch:fetchImpl,
     dumpData:actualDumpData,
+    refreshDataBadges:()=>{},
     btoa,atob,escape,unescape,encodeURIComponent,decodeURIComponent,
     toast:message=>messages.push(message),
     console:{log(){},error(){}},Date
@@ -54,22 +55,22 @@ function createDevice(fetchImpl){
   };
   const device=createDevice(fetchImpl);
   assert.equal(await device.gitee.pull(),'ok');
-  assert.equal(device.gitee._knownSha(device.gitee.getConfig(),'main'),'sha-a');
+  assert.equal(JSON.parse(device.values.get('wb_gitee_data_revision')).sha,'sha-a');
   assert.equal(await device.gitee.push(),'ok');
   assert.equal(writes.length,1);
   assert.equal(writes[0].method,'PUT');
   assert.equal(writes[0].body.sha,'sha-a');
-  assert.equal(device.gitee._knownSha(device.gitee.getConfig(),'main'),'sha-b');
+  assert.equal(JSON.parse(device.values.get('wb_gitee_data_revision')).sha,'sha-b');
   assert(!atob(writes[0].body.content).includes('local-token'),'Token 不得进入 data.json');
 
   cloudSha='sha-c';
-  assert.equal(await device.gitee.push(),'conflict');
-  assert.equal(writes.length,1,'云端变更后不得再次上传');
-  assert(device.messages.some(x=>x.includes('请先拉取最新数据')));
+  assert.equal(await device.gitee.push(),'ok');
+  assert.equal(writes.length,2,'本地应使用当前云端 SHA 覆盖旧数据');
+  assert.equal(writes[1].body.sha,'sha-c');
 
   const fresh=createDevice(fetchImpl);
-  assert.equal(await fresh.gitee.push(),'conflict','未拉取的设备不得覆盖已有云端文件');
-  assert.equal(writes.length,1);
+  assert.equal(await fresh.gitee.push(),'ok','本地权威数据允许直接覆盖云端文件');
+  assert.equal(writes.length,3);
 
   const empty=createDevice(async(url,opts={})=>{
     if(!url.includes('/contents/'))return response(200,{default_branch:'main'});
@@ -78,7 +79,7 @@ function createDevice(fetchImpl){
     return response(201,{content:{sha:'sha-new'}});
   });
   assert.equal(await empty.gitee.push(),'ok');
-  assert.equal(empty.gitee._knownSha(empty.gitee.getConfig(),'main'),'sha-new');
+  assert.equal(JSON.parse(empty.values.get('wb_gitee_data_revision')).sha,'sha-new');
 
   let attemptedWrite=false;
   const failed=createDevice(async(url,opts={})=>{
@@ -88,5 +89,15 @@ function createDevice(fetchImpl){
   });
   assert.equal(await failed.gitee.push(),false);
   assert.equal(attemptedWrite,false,'云端状态读取失败时不得上传');
-  process.stdout.write('Gitee SHA 防覆盖测试通过（正常、冲突、首次创建、读取失败、Token 排除）\n');
+  const localValues=new Map([['todos',JSON.stringify([{id:1,name:'本地',deleted:false},{id:2,name:'本地已删',deleted:true}])]]);
+  const localStorage={getItem:k=>localValues.has(k)?localValues.get(k):null,setItem:(k,v)=>localValues.set(k,v)};
+  const DB={set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+  const localGitee=vm.runInNewContext(source+'\nGITEE',{
+    localStorage,DB,document:{getElementById:()=>({className:'',textContent:''})},refreshDataBadges:()=>{},console
+  });
+  assert.equal(localGitee._mergeData({todos:[{id:1,name:'云端旧值'},{id:2,name:'云端复活'}],contracts:[{id:3,name:'仅云端'}]}),'ok');
+  assert.equal(JSON.parse(localStorage.getItem('todos'))[0].name,'本地');
+  assert.equal(JSON.parse(localStorage.getItem('todos'))[1].deleted,true,'本地软删除不得被云端复活');
+  assert.equal(JSON.parse(localStorage.getItem('contracts'))[0].name,'仅云端','本地尚无该数组时允许初始化');
+  process.stdout.write('Gitee 本地优先上传测试通过（云端旧版覆盖、首次创建、读取失败、Token 排除）\n');
 })().catch(e=>{console.error(e);process.exitCode=1;});
