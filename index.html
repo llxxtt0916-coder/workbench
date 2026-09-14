@@ -6792,6 +6792,43 @@ function clearTrainingForm(){
 // ============================================================
 const SYNC_BUSINESS_KEYS=['todos','inspirations','contracts','purchases','expenses','meetings',
   'trainings','agencys','handovers','funds','fundRecords','quick_notes'];
+const SYNC_REMOTE_PATH='data.json';
+function normalizedSyncRows(data,key){
+  return (Array.isArray(data?.[key])?data[key]:[]).filter(row=>row&&!row.deleted);
+}
+function sameBusinessSnapshot(a,b){
+  return mismatchedBusinessKeys(a,b).length===0;
+}
+function mismatchedBusinessKeys(a,b){
+  return SYNC_BUSINESS_KEYS.filter(key=>!Array.isArray(a?.[key])||!Array.isArray(b?.[key])||
+    JSON.stringify(a[key])!==JSON.stringify(b[key]));
+}
+function sameBusinessIds(a,b){
+  return SYNC_BUSINESS_KEYS.every(key=>{
+    const ids=data=>normalizedSyncRows(data,key).map(row=>String(row.id??'')).sort();
+    return JSON.stringify(ids(a))===JSON.stringify(ids(b));
+  });
+}
+function syncSummary(data){
+  const boards={};let total=0;
+  SYNC_BUSINESS_KEYS.forEach(key=>{
+    const rows=normalizedSyncRows(data,key);
+    const ids=rows.map(row=>String(row.id??'')).sort().join('|');
+    let hash=2166136261;
+    for(let i=0;i<ids.length;i++)hash=Math.imul(hash^ids.charCodeAt(i),16777619)>>>0;
+    boards[key]={count:rows.length,idHash:hash.toString(16).padStart(8,'0')};
+    total+=rows.length;
+  });
+  return {total,boards};
+}
+function logSyncSnapshot(stage,target,data){
+  console.log(stage,{repo:target.owner+'/'+target.repo,branch:target.branch,path:target.path,...syncSummary(data)});
+}
+function safeSyncErrorMessage(error,token){
+  let message=String(error?.message||'未知错误').replace(/access_token=[^&\s]+/gi,'access_token=[已隐藏]');
+  if(token)message=message.split(token).join('[已隐藏]');
+  return message;
+}
 function dumpData(){
   const data={};
   SYNC_BUSINESS_KEYS.forEach(key=>{data[key]=DB.get(key);});
@@ -6895,18 +6932,38 @@ const GITEE={
     localStorage.setItem('wb_gitee_data_revision',JSON.stringify({user:cfg.user,repo:cfg.repo,branch,sha}));
   },
 
-  // get default branch
-  async _getDefaultBranch(){
-    const cfg=this.getConfig();
-    try{
-      const auth=cfg.token?'?access_token='+encodeURIComponent(cfg.token):'';
-      const resp=await fetch(`https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}${auth}`);
-      if(resp.ok){
-        const info=await resp.json();
-        return info.default_branch||'master';
-      }
-    }catch(e){}
-    return 'master';
+  // 每次操作先取得唯一目标。解析失败时停止，不回退到可能存着旧数据的分支。
+  async _resolveTarget(cfg){
+    const base=`https://gitee.com/api/v5/repos/${encodeURIComponent(cfg.user)}/${encodeURIComponent(cfg.repo)}`;
+    const auth=cfg.token?'?access_token='+encodeURIComponent(cfg.token):'';
+    const resp=await fetch(base+auth,{cache:'no-store'});
+    if(!resp.ok)throw new Error('仓库信息读取失败 (HTTP '+resp.status+')');
+    const info=await resp.json();
+    const branch=String(info.default_branch||'').trim();
+    if(!branch)throw new Error('仓库未返回默认分支');
+    return {owner:cfg.user,repo:cfg.repo,branch,path:SYNC_REMOTE_PATH};
+  },
+  _apiFilePath(target){
+    return `https://gitee.com/api/v5/repos/${encodeURIComponent(target.owner)}/${encodeURIComponent(target.repo)}/contents/${target.path}`;
+  },
+  _apiFileUrl(target,cfg){
+    return this._apiFilePath(target)+
+      `?access_token=${encodeURIComponent(cfg.token)}&ref=${encodeURIComponent(target.branch)}&_t=${Date.now()}`;
+  },
+  _rawFileUrl(target){
+    return `https://gitee.com/${encodeURIComponent(target.owner)}/${encodeURIComponent(target.repo)}/raw/${encodeURIComponent(target.branch)}/${target.path}?_t=${Date.now()}`;
+  },
+  async _readApiFile(target,cfg,allowMissing=false){
+    const resp=await fetch(this._apiFileUrl(target,cfg),{cache:'no-store'});
+    if(resp.status===404&&allowMissing)return null;
+    if(!resp.ok)throw new Error('远端文件读取失败 (HTTP '+resp.status+')');
+    const file=await resp.json();
+    if(!file.sha||!file.content)throw new Error('远端文件缺少 SHA 或内容');
+    let data;
+    try{data=JSON.parse(decodeURIComponent(escape(atob(String(file.content).replace(/\s/g,'')))));}
+    catch(e){throw new Error('远端文件 JSON 无效');}
+    if(!data||typeof data!=='object'||Array.isArray(data))throw new Error('远端文件结构无效');
+    return {sha:file.sha,data};
   },
 
   // push data to Gitee (needs token)
@@ -6916,48 +6973,31 @@ const GITEE={
 
     this.setSyncStatus('loading','同步中…');
     try{
-      const branch=await this._getDefaultBranch();
-      console.log('Gitee push: using branch',branch);
-
-      // 只读取当前文件 SHA 和非业务元数据；业务数组始终来自本机完整快照。
-      let sha='';
-      let cloudData={};
-      const getResp=await fetch(
-        `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}/contents/data.json?access_token=${cfg.token}&ref=${branch}&_t=${Date.now()}`,
-        {cache:'no-store'}
-      );
-      if(getResp.ok){
-        const info=await getResp.json();
-        sha=info.sha||'';
-        if(!sha)throw new Error('Gitee data.json SHA missing');
-        // 解码文件以核对结构，并保留不属于工作台业务的普通元数据。
-        if(!info.content)throw new Error('Gitee data.json content missing');
-        try{
-          cloudData=JSON.parse(decodeURIComponent(escape(atob(String(info.content).replace(/\s/g,'')))));
-          if(!cloudData || typeof cloudData!=='object' || Array.isArray(cloudData))throw new Error('invalid data');
-        }catch(e){throw new Error('Gitee data.json content invalid');}
-      }else if(getResp.status!==404){
-        throw new Error('Gitee data.json read failed: '+getResp.status);
-      }
+      const target=await this._resolveTarget(cfg);
       const localData=dumpData();
-      const metadata=Object.fromEntries(Object.entries(cloudData).filter(([key])=>
+      logSyncSnapshot('LOCAL SNAPSHOT',target,localData);
+      const before=await this._readApiFile(target,cfg,true);
+      const metadata=Object.fromEntries(Object.entries(before?.data||{}).filter(([key])=>
         !SYNC_BUSINESS_KEYS.includes(key)&&key!=='exportedAt'&&!/(token|credential|secret|password|key)/i.test(key)));
       const data=JSON.stringify({...metadata,...localData});
       // base64 encode (utf8-safe via percent-encoding roundtrip)
       const content=btoa(unescape(encodeURIComponent(data)));
-      const body={access_token:cfg.token,content,message:'workbench auto-sync '+new Date().toLocaleString('zh-CN'),branch};
-      if(sha)body.sha=sha;
+      const body={access_token:cfg.token,content,message:'workbench snapshot '+new Date().toLocaleString('zh-CN'),branch:target.branch};
+      if(before)body.sha=before.sha;
 
       // POST for create, PUT for update
-      const method=sha?'PUT':'POST';
+      const method=before?'PUT':'POST';
       const resp=await fetch(
-        `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}/contents/data.json`,
+        this._apiFilePath(target),
         {method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}
       );
 
       if(!resp.ok){
-        const errText=await resp.text().catch(()=>'');
-        console.error('Gitee push failed:',resp.status,errText);
+        console.error('Gitee push failed: HTTP',resp.status);
+        if(resp.status===409||resp.status===422){
+          this.setSyncStatus('error','云端版本冲突');
+          return 'conflict';
+        }
         this.setSyncStatus('error','推送失败('+resp.status+')');
         return false;
       }
@@ -6965,16 +7005,31 @@ const GITEE={
       const result=await resp.json();
       const pushedSha=result&&result.content&&result.content.sha;
       if(!pushedSha)throw new Error('Gitee push response SHA missing');
-      this._rememberSha(cfg,branch,pushedSha);
-      console.log('Gitee push: success on branch',branch);
-      this.setSyncStatus('ok','已同步');
+      const after=await this._readApiFile(target,cfg);
+      logSyncSnapshot('REMOTE AFTER PUSH',target,after.data);
+      const mismatches=mismatchedBusinessKeys(localData,after.data);
+      if(mismatches.length){
+        this.setSyncStatus('error','远端回读不一致');
+        console.error('Gitee push verification failed',{repo:target.owner+'/'+target.repo,
+          branch:target.branch,path:target.path,mismatchedKeys:mismatches});
+        return false;
+      }
+      if(!sameBusinessSnapshot(localData,dumpData())){
+        this.setSyncStatus('error','推送期间本机数据已变化，请重试');
+        console.error('Gitee push verification failed: local snapshot changed during upload');
+        return false;
+      }
+      this._rememberSha(cfg,target.branch,after.sha);
+      console.log('Gitee push verified',{repo:target.owner+'/'+target.repo,branch:target.branch,path:target.path,match:true});
+      this.setSyncStatus('ok','已验证一致 · '+target.branch+'/'+target.path+' · '+syncSummary(after.data).total+'条');
       refreshDataBadges();
       // store branch for pull reference
-      localStorage.setItem('wb_gitee_branch',branch);
+      localStorage.setItem('wb_gitee_branch',target.branch);
       return 'ok';
     }catch(e){
-      console.error('Gitee push error:',e);
-      this.setSyncStatus('error','同步失败');
+      const message=safeSyncErrorMessage(e,cfg.token);
+      console.error('Gitee push error:',message);
+      this.setSyncStatus('error','推送未验证：'+message);
       return false;
     }
   },
@@ -6982,79 +7037,53 @@ const GITEE={
   // pull data from Gitee
   async pull(){
     const cfg=this.getConfig();
-    const savedBranch=localStorage.getItem('wb_gitee_branch')||'';
-
-    // 默认分支与推送一致；旧设备缓存的分支只作最后的兼容回退。
-    const defaultBranch=await this._getDefaultBranch();
-    const branches=[...new Set([defaultBranch,'main','master',savedBranch].filter(Boolean))];
-
-    // strategy 1: use API with token if available
-    if(cfg.token){
-      for(const b of branches){
-        try{
-          const resp=await fetch(
-            `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}/contents/data.json?access_token=${cfg.token}&ref=${b}&_t=${Date.now()}`
-          );
-          if(resp.ok){
-            const json=await resp.json();
-            const decoded=decodeURIComponent(escape(atob(json.content)));
-            const data=JSON.parse(decoded);
-            const result=this._mergeData(data);
-            if(result==='ok'&&json.sha)this._rememberSha(cfg,b,json.sha);
-            return result;
-          }
-          if(resp.status===404)continue; // try next branch
-          if(resp.status===401){this.setSyncStatus('error','令牌无效');return false;}
-        }catch(e){continue;}
-      }
-      // all branches tried, maybe file doesn't exist yet
-      this.setSyncStatus('ok','云端暂无数据');
-      return false;
-    }
-
-    // strategy 2: no token — try raw URL, then API with auth error hint
     if(!cfg.user||!cfg.repo){
-      this.setSyncStatus('ok','仅本地');
+      this.setSyncStatus('error','未配置仓库');
       return false;
     }
-
-    for(const b of branches){
-      try{
-        const resp=await fetch(
-          `https://gitee.com/${cfg.user}/${cfg.repo}/raw/${b}/data.json?_t=${Date.now()}`
-        );
-        if(resp.ok){
-          const data=await resp.json();
-          return this._mergeData(data);
-        }
-        if(resp.status===404)continue; // try next branch
-        if(resp.status===403){
-          this.setSyncStatus('error','仓库为私有，需令牌');
-          return false;
-        }
-      }catch(e){continue;}
+    this.setSyncStatus('loading','拉取中…');
+    try{
+      const target=await this._resolveTarget(cfg);
+      let remote;
+      if(cfg.token){
+        remote=await this._readApiFile(target,cfg);
+      }else{
+        const resp=await fetch(this._rawFileUrl(target),{cache:'no-store'});
+        if(!resp.ok)throw new Error('远端文件读取失败 (HTTP '+resp.status+')');
+        remote={sha:'',data:await resp.json()};
+      }
+      logSyncSnapshot('REMOTE BEFORE PULL',target,remote.data);
+      const result=this._applySnapshot(remote.data);
+      if(result!== 'ok')return result;
+      const local=dumpData();
+      logSyncSnapshot('LOCAL AFTER PULL',target,local);
+      if(!sameBusinessIds(remote.data,local))throw new Error('拉取后本机记录 ID 与云端不一致');
+      if(remote.sha)this._rememberSha(cfg,target.branch,remote.sha);
+      localStorage.setItem('wb_gitee_branch',target.branch);
+      console.log('Gitee pull verified',{repo:target.owner+'/'+target.repo,branch:target.branch,path:target.path,idsMatch:true});
+      this.setSyncStatus('ok','已按云端覆盖 · '+target.branch+'/'+target.path+' · '+syncSummary(local).total+'条');
+      return 'ok';
+    }catch(e){
+      const message=safeSyncErrorMessage(e,cfg.token);
+      console.error('Gitee pull error:',message);
+      this.setSyncStatus('error','拉取失败：'+message);
+      return false;
     }
-
-    // raw URL all failed — maybe private repo, suggest using token
-    this.setSyncStatus('error','拉取失败，需令牌');
-    return false;
   },
 
-  _mergeData(data){
+  _applySnapshot(data){
     if(!data || typeof data!=='object'||Array.isArray(data)||
        SYNC_BUSINESS_KEYS.some(k=>data[k]!==undefined&&!Array.isArray(data[k]))){
       this.setSyncStatus('error','云端数据格式错误');return false;
     }
-    let imported=0;
+    clearTimeout(_syncTimer);_syncTimer=null;
     this._applyingSnapshot=true;
     try{
       SYNC_BUSINESS_KEYS.forEach(k=>{
-        const rows=data[k]||[];
-        DB.set(k,rows);
-        imported+=rows.filter(r=>!r.deleted).length;
+        DB.set(k,Array.isArray(data[k])?data[k]:[]);
       });
+      repairData(); // 仅规范刚拉到的记录；不会读取备份或合并旧本机业务数组。
     }finally{this._applyingSnapshot=false;}
-    this.setSyncStatus('ok','已按云端快照更新 ('+imported+'条)');
     refreshDataBadges();
     renderCurrentPage();
     return 'ok';
@@ -7080,16 +7109,11 @@ const GITEE={
 };
 
 // ============================================================
-//  AUTO SYNC ON SAVE (debounced)
+//  UPDATE LOCAL BADGES AFTER STORAGE CHANGES
 // ============================================================
 let _syncTimer=null;
-function triggerSync(){
-  if(!GITEE.isConfigured())return;
-  clearTimeout(_syncTimer);
-  _syncTimer=setTimeout(()=>{GITEE.push();},1500);
-}
 
-// override DB.set to auto-sync
+// 业务写入只更新本机界面；云端变更由用户明确点击“推送数据”触发。
 const _origDBSet=DB.set;
 let _badgeRefreshQueued=false;
 DB.set=function(key,val){
@@ -7101,7 +7125,6 @@ DB.set=function(key,val){
       _badgeRefreshQueued=true;
       queueMicrotask(()=>{_badgeRefreshQueued=false;refreshDataBadges();renderCurrentPage();});
     }
-    if(!GITEE._applyingSnapshot)triggerSync();
   }
 };
 
@@ -7138,13 +7161,7 @@ function saveSettings(){
   closeModal('settingsModal');
   loadSettings();
 
-  // if newly configured, do an initial push
-  if(GITEE.isConfigured()){
-    toast('设置已保存，正在同步数据…');
-    GITEE.push().then(()=>{renderCurrentPage();});
-  }else{
-    toast('设置已保存');
-  }
+  toast('设置已保存');
 }
 
 async function testSync(){
@@ -7167,13 +7184,13 @@ async function manualPush(){
   const result=await GITEE.push();
   btn.disabled=false; btn.textContent='⬆️ 推送数据';
   if(result==='ok'){
-    GITEE.setSyncStatus('ok','已同步');
-    toast('✓ 数据已推送到云端');
+    toast('✓ 已推送并回读验证：云端业务数据与本机一致');
     renderCurrentPage();
   }else if(result==='conflict'){
+    toast('✗ 云端版本冲突，未修改本机数据');
     return;
   }else{
-    toast('✗ 推送失败：'+result);
+    toast('✗ 推送未验证，请查看同步状态和控制台诊断');
   }
 }
 
@@ -7188,13 +7205,10 @@ async function manualPull(){
   const result=await GITEE.pull();
   btn.disabled=false; btn.textContent='⬇️ 拉取数据';
   if(result==='ok'){
-    GITEE._applyingSnapshot=true;
-    try{repairData();}finally{GITEE._applyingSnapshot=false;}
-    GITEE.setSyncStatus('ok','已同步');
     toast('✓ 本机业务数据已按云端快照覆盖');
     renderCurrentPage();
   }else{
-    toast('✗ 拉取失败：'+result);
+    toast('✗ 拉取失败，请查看同步状态和控制台诊断');
   }
 }
 

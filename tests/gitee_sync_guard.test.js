@@ -10,11 +10,15 @@ function section(start,end){
   return html.slice(a,b);
 }
 const source=section('const SYNC_BUSINESS_KEYS=','function exportData(){')+'\n'+
-  section('const GITEE={','//  SETTINGS');
+  section('const GITEE={','//  SETTINGS')+'\n'+
+  section('function repairData(){','//  NAVIGATION')+'\n'+
+  section('function snapshotBeforeV14(){','// 从快照恢复 localStorage')+'\n'+
+  section('function isLegacyLedgerMirror(rec){','function belongsToLedger(')+'\n'+
+  section('async function manualPush(){','// deploy current HTML');
 function response(status,data){
   return {status,ok:status>=200&&status<300,json:async()=>data,text:async()=>''};
 }
-function createServer(initial){
+function createServer(initial,options={}){
   let cloud=structuredClone(initial),sha='sha-a';
   const writes=[],reads=[];
   return {
@@ -24,7 +28,7 @@ function createServer(initial){
         reads.push(url);
         return cloud===null?response(404,{}):response(200,structuredClone(cloud));
       }
-      if(!url.includes('/contents/'))return response(200,{default_branch:'main'});
+      if(!url.includes('/contents/'))return response(200,{default_branch:options.branch||'main'});
       if(!opts.method){
         reads.push(url);
         return cloud===null?response(404,{}):response(200,{sha,content:btoa(unescape(encodeURIComponent(JSON.stringify(cloud))))});
@@ -32,8 +36,10 @@ function createServer(initial){
       const body=JSON.parse(opts.body);
       assert.equal(opts.method,cloud===null?'POST':'PUT');
       if(cloud!==null)assert.equal(body.sha,sha,'推送应使用当前云端 SHA');
-      cloud=JSON.parse(decodeURIComponent(escape(atob(body.content))));
-      writes.push({method:opts.method,body,data:structuredClone(cloud)});
+      if(options.conflict)return response(409,{});
+      const submitted=JSON.parse(decodeURIComponent(escape(atob(body.content))));
+      cloud=options.readback?structuredClone(options.readback):submitted;
+      writes.push({method:opts.method,body,data:structuredClone(cloud),submitted});
       sha='sha-'+(writes.length+1);
       return response(200,{content:{sha}});
     }
@@ -47,20 +53,31 @@ function createDevice(server,rows={},settings={}){
   for(const [key,value] of Object.entries(rows))values.set(key,JSON.stringify(value));
   const DB={
     get:key=>JSON.parse(values.get(key)||'[]').filter(r=>!r.deleted),
+    raw:key=>JSON.parse(values.get(key)||'[]'),
     set:(key,value)=>values.set(key,JSON.stringify(value))
   };
-  let scheduledPushes=0;
-  const sandbox={
-    localStorage:{getItem:k=>values.has(k)?values.get(k):null,setItem:(k,v)=>values.set(k,v)},
-    DB,document:{getElementById:id=>id==='globalSearch'?{value:''}:{className:'',textContent:''}},
-    fetch:(...args)=>server.fetch(...args),refreshDataBadges:()=>{},renderCurrentPage:()=>{},
-    renderGlobalSearch:()=>{},queueMicrotask:fn=>fn(),setTimeout:()=>{scheduledPushes++;return 1;},clearTimeout:()=>{},
-    btoa,atob,escape,unescape,encodeURIComponent,decodeURIComponent,
-    toast:()=>{},console:{log(){},error(){}},Date
+  let scheduledPushes=0,renders=0;
+  const logs=[],toasts=[];
+  const localStorage={
+    get length(){return values.size;},key:i=>Array.from(values.keys())[i],
+    getItem:k=>values.has(k)?values.get(k):null,setItem:(k,v)=>values.set(k,String(v))
   };
-  const api=vm.runInNewContext(source+'\n({GITEE,SYNC_BUSINESS_KEYS,dumpData})',sandbox);
-  return {gitee:api.GITEE,keys:Array.from(api.SYNC_BUSINESS_KEYS),values,DB,
-    get scheduledPushes(){return scheduledPushes;}};
+  const sandbox={
+    localStorage,
+    DB,document:{getElementById:id=>id==='globalSearch'?{value:''}:{className:'',textContent:''}},
+    fetch:(...args)=>server.fetch(...args),refreshDataBadges:()=>{},renderCurrentPage:()=>{renders++;},
+    renderGlobalSearch:()=>{},queueMicrotask:fn=>fn(),setTimeout:()=>{scheduledPushes++;return 1;},clearTimeout:()=>{},
+    LEDGER_KEYS:['todos'],STATE:{CLOSED:'CLOSED',DONE:'DONE'},
+    recordState:()=> 'DONE',getDueDate:()=>'',finishWorkRecord:()=>{},
+    normPriority:x=>x||'',normalizeDate:x=>x?String(x).slice(0,10):'',
+    _syncTimer:null,
+    btoa,atob,escape,unescape,encodeURIComponent,decodeURIComponent,
+    toast:message=>toasts.push(message),console:{log:(...args)=>logs.push(args),error:(...args)=>logs.push(args)},Date
+  };
+  const api=vm.runInNewContext(source+'\n({GITEE,SYNC_BUSINESS_KEYS,dumpData,manualPush,manualPull,restart(){snapshotBeforeV14();GITEE._applyingSnapshot=true;try{repairData();retireVerifiedLegacyMirrors();}finally{GITEE._applyingSnapshot=false;}renderCurrentPage();}})',sandbox);
+  return {gitee:api.GITEE,keys:Array.from(api.SYNC_BUSINESS_KEYS),values,DB,logs,toasts,
+    dumpData:api.dumpData,manualPush:api.manualPush,manualPull:api.manualPull,restart:api.restart,
+    get scheduledPushes(){return scheduledPushes;},get renders(){return renders;}};
 }
 function names(rows){return rows.map(r=>r.name);}
 
@@ -69,6 +86,16 @@ function names(rows){return rows.map(r=>r.name);}
   const server=createServer({todos:old,trainings:[{id:10,name:'旧培训'}],otherMetadata:{kept:true}});
   const pc=createDevice(server,{todos:[{id:4,name:'D'}],trainings:[]});
   assert.equal(await pc.gitee.push(),'ok');
+  const actualPut=server.writes[0];
+  const decodedPut=JSON.parse(decodeURIComponent(escape(atob(actualPut.body.content))));
+  assert.deepEqual(names(decodedPut.todos),['D'],'链路 Case 1：实际 PUT content 必须只有 D');
+  pc.keys.forEach(key=>assert.deepEqual(decodedPut[key],JSON.parse(JSON.stringify(pc.dumpData()[key])),
+    `链路 Case 1：实际 PUT ${key} 必须等于当前本机快照`));
+  assert.equal(actualPut.body.branch,'main');
+  assert.equal(server.reads.filter(url=>url.includes('/contents/')).length,2,'上传前读 SHA，上传后回读同一文件');
+  assert(server.reads.filter(url=>url.includes('/contents/')).every(url=>url.includes('ref=main')));
+  assert(pc.logs.some(entry=>entry[0]==='LOCAL SNAPSHOT'));
+  assert(pc.logs.some(entry=>entry[0]==='REMOTE AFTER PUSH'));
   assert.deepEqual(names(server.data.todos),['D'],'测试1：云端 A/B/C 应被本地 D 替换');
   assert.deepEqual(server.data.trainings,[],'测试2：本地空数组应清空云端旧培训');
   assert.deepEqual(server.data.inspirations,[],'缺失的标准业务键也应上传空数组');
@@ -77,16 +104,47 @@ function names(rows){return rows.map(r=>r.name);}
   assert(!JSON.stringify(server.data).includes('local-token'),'Token 不得进入云端文件');
   assert.equal(pc.values.get('wb_gitee_token'),'local-token');
 
+  const staleReadback=createServer({todos:old},{readback:{todos:[...old,{id:4,name:'D'}]}});
+  const staleDevice=createDevice(staleReadback,{todos:[{id:4,name:'D'}]});
+  await staleDevice.manualPush();
+  assert.equal(staleReadback.writes.length,1,'链路 Case 2：确实执行过 PUT');
+  assert(staleDevice.toasts.some(message=>message.includes('推送未验证')),'回读仍有旧数据时界面必须报错');
+  assert(!staleDevice.toasts.some(message=>message.includes('回读验证：云端业务数据与本机一致')));
+  assert(staleDevice.logs.some(entry=>entry[0]==='Gitee push verification failed'&&entry[1].mismatchedKeys.includes('todos')),
+    '诊断应指出回读不一致的业务数组');
+  assert.deepEqual(names(staleDevice.DB.get('todos')),['D'],'验证失败不得改动本机');
+  const conflictServer=createServer({todos:old},{conflict:true});
+  const conflictDevice=createDevice(conflictServer,{todos:[{id:4,name:'D'}]});
+  assert.equal(await conflictDevice.gitee.push(),'conflict','SHA 冲突应明确失败');
+  assert.deepEqual(names(conflictDevice.DB.get('todos')),['D'],'SHA 冲突不得自动拉取旧数据');
+  assert.equal(conflictServer.reads.filter(url=>url.includes('/contents/')).length,1);
+
   const phone=createDevice(server,{todos:old,trainings:[{id:10,name:'旧培训'}],quick_notes:[{id:20,name:'旧速记'}]},
-    {wb_gitee_token:'phone-token',wb_backup_interval:'30',wb_gitee_branch:'master'});
+    {wb_gitee_token:'phone-token',wb_backup_interval:'30',wb_gitee_branch:'master',
+      wb_v14_snapshot:'1',wb_v14_restore:JSON.stringify({todos:JSON.stringify(old)})});
   assert.equal(await phone.gitee.pull(),'ok');
   assert(server.reads.at(-1).includes('ref=main'),'旧设备缓存分支不能抢在默认分支前拉取');
   assert.deepEqual(names(phone.DB.get('todos')),['D'],'测试4：拉取应覆盖手机 A/B/C');
+  assert(phone.logs.some(entry=>entry[0]==='REMOTE BEFORE PULL'));
+  assert(phone.logs.some(entry=>entry[0]==='LOCAL AFTER PULL'));
   assert.deepEqual(phone.DB.get('trainings'),[]);
   assert.deepEqual(phone.DB.get('quick_notes'),[]);
   assert.equal(phone.values.get('wb_gitee_token'),'phone-token','测试5：手机凭据保留');
   assert.equal(phone.values.get('wb_backup_interval'),'30','测试5：设备偏好保留');
   assert.equal(phone.scheduledPushes,0,'拉取不得触发自动反向推送');
+  phone.restart();
+  assert.deepEqual(names(phone.DB.get('todos')),['D'],'链路 Case 4：重新执行真实修复/镜像清理及渲染后仍只有 D');
+  assert(phone.renders>=2);
+  assert.equal(phone.scheduledPushes,0,'重新初始化也不得自动推送');
+  assert(!JSON.stringify(phone.logs).includes('phone-token'),'诊断日志不能包含 Token');
+  const masterServer=createServer({todos:[{id:4,name:'D'}]},{branch:'master'});
+  const oldBranchDevice=createDevice(masterServer,{todos:old},{wb_gitee_branch:'main'});
+  assert.equal(await oldBranchDevice.gitee.pull(),'ok');
+  assert(masterServer.reads.at(-1).includes('ref=master'),'缓存中的 main 不得优先于仓库默认 master');
+  assert.deepEqual(names(oldBranchDevice.DB.get('todos')),['D']);
+  assert.equal(await oldBranchDevice.gitee.push(),'ok');
+  assert.equal(masterServer.writes[0].body.branch,'master','同一设备推送也应写入 master');
+  assert(masterServer.reads.at(-1).includes('ref=master'),'推送回读也应使用 master');
   const readOnlyPhone=createDevice(server,{todos:old},{wb_gitee_token:'',wb_gitee_branch:'master'});
   assert.equal(await readOnlyPhone.gitee.pull(),'ok','无令牌设备应可从公开仓库拉取');
   assert.deepEqual(names(readOnlyPhone.DB.get('todos')),['D']);
@@ -109,7 +167,7 @@ function names(rows){return rows.map(r=>r.name);}
   const failedServer={fetch:async(url,opts={})=>url.includes('/contents/')?response(500,{}):response(200,{default_branch:'main'})};
   assert.equal(await createDevice(failedServer).gitee.push(),false,'云端读取失败时不得写入');
   const invalid=createDevice(createServer(null),{todos:[{id:7,name:'本地'}]});
-  assert.equal(invalid.gitee._mergeData({todos:'wrong'}),false,'损坏的云端数组不能清空本地');
+  assert.equal(invalid.gitee._applySnapshot({todos:'wrong'}),false,'损坏的云端数组不能清空本地');
   assert.deepEqual(names(invalid.DB.get('todos')),['本地']);
-  process.stdout.write('Gitee 快照推送、空数组、删除传播、拉取覆盖、配置隔离测试通过\n');
+  process.stdout.write('Gitee 实际 push/pull 路径、PUT 内容、远端回读、冲突、存储覆盖及重启迁移测试通过\n');
 })().catch(e=>{console.error(e);process.exitCode=1;});
