@@ -45,6 +45,9 @@ const work=createLedgerItem('todos',{title:'工作A',state:STATE.DONE});
 assert.equal(work.type,'record');
 assert.equal(formalLedgerItems('todos').length,1);
 assert.equal(getActiveItems().filter(x=>x._ledger==='todos').length,0);
+rows.todos.push({id:99,name:'旧版未结束工作',status:'未开始',type:'pending',deleted:false});
+assert.equal(formalLedgerItems('todos').length,1,'旧数据即使没有 state 也不能进入工作台账');
+rows.todos.pop();
 const meeting=createLedgerItem('meetings',{title:'会议A',state:STATE.DOING,extra:{assignee:'李四'}});
 assert.equal(getActiveItems().filter(x=>x._ledger==='meetings').length,1);
 setState('meetings',meeting.id,STATE.CLOSED);
@@ -64,7 +67,8 @@ const organizeSource=section('function openOrganizeModal(ledgerKey, id){','funct
 const calls=[];
 const hidden={style:{display:''}};
 const modal={dataset:{},querySelectorAll:()=>[{closest:()=>hidden}]};
-const organizeSandbox={document:{getElementById:()=>modal},toast:()=>{}};
+const organizeSandbox={document:{getElementById:()=>modal},toast:()=>{},
+  hideLifecycleStatusField:()=>{hidden.style.display='none';}};
 for(const [key,fn] of Object.entries({todos:'editTodo',contracts:'editContract',purchases:'editPurchase',expenses:'editExpense',
   agencys:'editAgency',handovers:'editHandover',funds:'editFund',meetings:'editMeeting',trainings:'editTraining',fundRecords:'editFundRecord'})){
   organizeSandbox[fn]=id=>calls.push([key,id]);
@@ -75,4 +79,23 @@ for(const key of ['todos','contracts','purchases','expenses','agencys','handover
   assert.equal(calls.at(-1)[0],key);
   assert.equal(hidden.style.display,'none','整理表单不显示状态字段');
 }
+const inspirationSource=section("let activeInspTag='';",'function handleTagInput(');
+const inspirationRows=[{id:1,title:'阅读',content:'笔记',tags:["O'Reilly"],createdAt:'2026-09-14'}];
+const nodes={inspSearch:{value:''},inspTagFilter:{innerHTML:''},inspList:{innerHTML:''}};
+const inspiration=vm.runInNewContext(inspirationSource+'\n({renderInspiration,filterInspTag})',{
+  DB:{get:()=>inspirationRows.filter(r=>!r.deleted)},
+  document:{getElementById:id=>nodes[id]},
+  esc:s=>String(s??'').replace(/'/g,'&#39;')
+});
+inspiration.renderInspiration();
+assert(nodes.inspTagFilter.innerHTML.includes('data-tag="O&#39;Reilly"'),'含单引号的真实标签可安全选择');
+inspirationRows[0].deleted=true;
+inspiration.renderInspiration();
+assert(!nodes.inspTagFilter.innerHTML.includes('O&#39;Reilly'),'删除最后一条灵感后标签立即消失');
+inspirationRows.push({id:2,title:'新想法',content:'内容',tags:['新标签'],createdAt:'2026-09-14'});
+inspiration.renderInspiration();
+assert(nodes.inspTagFilter.innerHTML.includes('新标签'),'新增灵感后标签立即出现');
+inspirationRows[1].tags=['已修改'];
+inspiration.renderInspiration();
+assert(!nodes.inspTagFilter.innerHTML.includes('新标签')&&nodes.inspTagFilter.innerHTML.includes('已修改'),'修改标签后立即重算');
 console.log('v1.5 状态分流、所属板块、经办人、旧副本幂等清理测试通过');

@@ -313,10 +313,7 @@
     <div class="page" id="page-todo">
       <div class="section-header">
         <div style="display:flex;gap:2px;background:var(--color-bg2);padding:3px;border-radius:var(--radius);flex:1;max-width:420px;min-width:0">
-          <button class="todo-tab active" data-tab="pending" onclick="switchTodoTab('pending')">待办<span class="tab-count" id="tabCount-pending">0</span></button>
-          <button class="todo-tab" data-tab="key" onclick="switchTodoTab('key')">重点<span class="tab-count" id="tabCount-key">0</span></button>
-          <button class="todo-tab" data-tab="recurring" onclick="switchTodoTab('recurring')">周期<span class="tab-count" id="tabCount-recurring">0</span></button>
-          <button class="todo-tab" data-tab="record" onclick="switchTodoTab('record')">记录<span class="tab-count" id="tabCount-record">0</span></button>
+          <button class="todo-tab active" data-tab="record">已结束工作<span class="tab-count" id="tabCount-record">0</span></button>
         </div>
         <button class="filter-toggle" onclick="toggleFilterPanel('todo')" id="todoFilterToggle">🔍 筛选<span class="filter-badge" id="todoFilterBadge" style="display:none">0</span></button>
       </div>
@@ -330,18 +327,14 @@
             <label>类型</label>
             <select id="todoF_type" onchange="applyTodoFilter()">
               <option value="">全部类型</option>
-              <option value="pending">待办工作</option>
               <option value="key">重点工作</option>
               <option value="recurring">周期工作</option>
-              <option value="record">已完成</option>
             </select>
           </div>
           <div class="filter-item">
             <label>状态</label>
             <select id="todoF_status" onchange="applyTodoFilter()">
               <option value="">全部状态</option>
-              <option value="未开始">未开始</option>
-              <option value="进行中">进行中</option>
               <option value="已完成">已完成</option>
               <option value="已关闭">已关闭</option>
             </select>
@@ -425,7 +418,6 @@
           </div>
         </div>
       </div>
-      <div id="reminderBanner" style="display:none"></div>
       <div class="todo-tab-content" id="todoTabContent"></div>
     </div>
 
@@ -467,6 +459,7 @@
           <span style="font-size:12px;color:var(--color-text3)" id="todoActiveSummary"></span>
         </div>
       </div>
+      <div id="reminderBanner" style="display:none"></div>
       <div id="todoActiveList"></div>
     </div>
 
@@ -912,7 +905,7 @@
         <div class="form-group">
           <label class="form-label">类型</label>
           <select class="form-control" id="todoType">
-            <option value="pending">待办工作</option>
+            <option value="">不选择</option>
             <option value="key">重点工作</option>
             <option value="recurring">周期工作</option>
           </select>
@@ -1394,6 +1387,7 @@
         <div class="form-group">
           <label class="form-label">类型</label>
           <select class="form-control" id="trainingType">
+            <option value="">不选择</option>
             <option value="线下">线下</option>
             <option value="线上">线上</option>
             <option value="混合">混合</option>
@@ -1404,6 +1398,7 @@
         <div class="form-group">
           <label class="form-label">分类</label>
           <select class="form-control" id="trainingCategory">
+            <option value="">不选择</option>
             <option value="业务培训">业务培训</option>
             <option value="继续教育">继续教育</option>
             <option value="党建学习">党建学习</option>
@@ -1669,9 +1664,6 @@
           <select id="smartState" class="form-control"><option value="未开始">未开始</option><option value="进行中">进行中</option><option value="已完成">已完成</option><option value="已关闭">已关闭</option></select>
         </div>
         <div class="form-group"><label class="form-label">经办人</label><input id="smartAssignee" class="form-control" placeholder="可留空"></div>
-      </div>
-      <div class="form-group" id="smartFundParentWrap" style="display:none">
-        <label class="form-label">所属经费 *</label><select id="smartFundParent" class="form-control"></select>
       </div>
 
       <div class="form-group" style="margin-top:8px">
@@ -2098,9 +2090,9 @@ function finishWorkRecord(rec){
   if(rec.is_goal || (rec.owner_ledger && rec.owner_ledger!=='todos') || isLegacyLedgerMirror(rec)) return;
   const done=rec.state===STATE.DONE||rec.state===STATE.CLOSED;
   if(done && rec.type!=='record'){
-    rec._prevType=rec.type||'pending'; rec.type='record';
+    rec._prevType=rec.type||''; rec.type='record';
   } else if(!done && rec.type==='record'){
-    rec.type=rec._prevType||'pending';
+    rec.type=rec._prevType||'';
   }
   rec.completeDate=done?(rec.completeDate||todayStr()):'';
 }
@@ -2131,7 +2123,8 @@ function belongsToLedger(key,rec){
   return (rec.owner_ledger||key)===key && !(key==='todos' && isLegacyLedgerMirror(rec));
 }
 function formalLedgerItems(key){
-  return DB.get(key).filter(r=>belongsToLedger(key,r) && (!r.state || [STATE.DONE,STATE.CLOSED].includes(recordState(key,r))));
+  return DB.get(key).filter(r=>belongsToLedger(key,r) &&
+    ((key!=='todos'&&!r.state) || [STATE.DONE,STATE.CLOSED].includes(recordState(key,r))));
 }
 
 // 取某台账条目的"截止日期"（统一字段 due_date 优先，回退到各台账原生日期）
@@ -2675,9 +2668,7 @@ function openOrganizeModal(ledgerKey, id){
     agencys:'agencyModal',handovers:'handoverModal',funds:'fundModal',meetings:'meetingModal',trainings:'trainingModal',fundRecords:'fundRecordModal'};
   if(!editors[ledgerKey]){toast('所属板块表单不可用');return;}
   editors[ledgerKey](id);
-  const modal=document.getElementById(modalIds[ledgerKey]);
-  modal.dataset.organizing='1';
-  modal.querySelectorAll('[id$="Status"]').forEach(el=>{const group=el.closest('.form-group');if(group)group.style.display='none';});
+  hideLifecycleStatusField(modalIds[ledgerKey]);
 }
 function deleteQuickNote(id){
   if(!confirm('确定删除这条速记？')) return;
@@ -2712,6 +2703,7 @@ function renderTodos(){
   const active=getActiveItems();
   const box=document.getElementById('todoActiveList');
   if(!box) return;
+  renderReminders();
   updateTodoBadge();
   const sum=document.getElementById('todoActiveSummary');
   if(sum) sum.textContent='共 '+active.filter(r=>!r.is_goal).length+' 项进行中';
@@ -2834,15 +2826,14 @@ function refreshDataBadges(){
   updateRemindBadge();
   updateQuickBadge();
   updateGoalBadge(DB.get('todos').filter(r=>r.is_goal && [STATE.TODO,STATE.DOING].includes(recordState('todos',r))).length);
-  const todos=DB.get('todos').filter(t=>belongsToLedger('todos',t));
+  const todos=formalLedgerItems('todos');
   TODO_TYPES.forEach(type=>{
-    const n=todos.filter(t=>t.type===type && (type==='record'?[STATE.DONE,STATE.CLOSED].includes(recordState('todos',t)):[STATE.TODO,STATE.DOING].includes(recordState('todos',t)))).length;
+    const n=todos.length;
     const tab=document.getElementById('tabCount-'+type);
     if(tab)tab.textContent=n;
   });
-  const pending=todos.filter(t=>t.type==='pending' && [STATE.TODO,STATE.DOING].includes(recordState('todos',t))).length;
   const badge=document.getElementById('todoCount');
-  if(badge){badge.textContent=pending;badge.style.display=pending?'':'none';}
+  if(badge)badge.style.display='none';
 }
 
 // ============================================================
@@ -3231,11 +3222,15 @@ function closeSidebar(){
 // ============================================================
 function openModal(id){
   const modal=document.getElementById(id);
-  if(modal.dataset.organizing){
-    modal.querySelectorAll('[id$="Status"]').forEach(el=>{const group=el.closest('.form-group');if(group)group.style.display='';});
-    delete modal.dataset.organizing;
-  }
+  modal.querySelectorAll('#contractStatus,#purchaseStatus,#expenseStatus,#agencyStatus').forEach(el=>{
+    const group=el.closest('.form-group');if(group)group.style.display='';
+  });
   modal.classList.add('open');
+}
+function hideLifecycleStatusField(modalId){
+  document.getElementById(modalId).querySelectorAll('#contractStatus,#purchaseStatus,#expenseStatus,#agencyStatus').forEach(el=>{
+    const group=el.closest('.form-group');if(group)group.style.display='none';
+  });
 }
 function closeModal(id){document.getElementById(id).classList.remove('open')}
 document.querySelectorAll('.modal-overlay').forEach(m=>{
@@ -3815,12 +3810,12 @@ function renderSummary(){
     </div>
   `;
   document.getElementById('summaryTrainingDetail').innerHTML=monthTrainings.length
-    ? monthTrainings.sort((a,b)=>a.startDate.localeCompare(b.startDate)).map(t=>{
+    ? monthTrainings.sort((a,b)=>(a.startDate||'').localeCompare(b.startDate||'')).map(t=>{
       const typeBadge={线上:'badge-blue',线下:'badge-green',混合:'badge-purple'};
       return `<div class="todo-item" style="cursor:pointer" onclick="navigate('training')">
-        <span class="badge ${typeBadge[t.type]||'badge-gray'}" style="font-size:10px">${t.type}</span>
+        ${businessLabel(t.type)?`<span class="badge ${typeBadge[t.type]||'badge-gray'}" style="font-size:10px">${esc(t.type)}</span>`:''}
         <span>${esc(t.name)}</span>
-        <span style="font-size:11px;color:var(--color-text3)">${t.startDate}${t.endDate?'→'+t.endDate:''}</span>
+        ${businessLabel(t.startDate)?`<span style="font-size:11px;color:var(--color-text3)">${esc(t.startDate)}${businessLabel(t.endDate)?'→'+esc(t.endDate):''}</span>`:''}
         ${t.credits?`<span class="badge badge-green" style="font-size:10px">${t.credits}学分</span>`:''}
       </div>`;
     }).join('')
@@ -3872,42 +3867,39 @@ function toggleSummaryDetail(sectionId){
 }
 
 // ============================================================
-//  TODO V2 - 4板块：待办/重点/周期/记录
+//  工作台账：仅展示已完成和已关闭的工作；工作类型仍保存在原记录中。
 // ============================================================
-let activeTodoTab='pending';
-const TODO_TYPES=['pending','key','recurring','record'];
+let activeTodoTab='record';
+const TODO_TYPES=['record'];
 const TYPE_LABELS={pending:'待办工作',key:'重点工作',recurring:'周期工作',record:'工作记录'};
 const PRIORITY_MAP={'重要且紧急':0,'重要不紧急':1,'紧急不重要':2,'不重要不紧急':3};
 const PRIORITY_LABEL={'重要且紧急':'重要且紧急','重要不紧急':'重要不紧急','紧急不重要':'紧急不重要','不重要不紧急':'不重要不紧急'};
 const PRIORITY_COLOR={'重要且紧急':'#d93025','重要不紧急':'#e8920c','紧急不重要':'#d98300','不重要不紧急':'#9aa0a6'};
 
 function switchTodoTab(tab){
-  activeTodoTab=tab;
-  document.querySelectorAll('.todo-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  activeTodoTab='record';
+  document.querySelectorAll('.todo-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab==='record'));
   renderTodo();
 }
 
 function renderTodo(){
-  const todos=DB.get('todos').filter(t=>belongsToLedger('todos',t));
+  const todos=formalLedgerItems('todos');
   // update tab counts + sidebar badge
-  let pendingCount=0;
   TODO_TYPES.forEach(type=>{
-    const count=todos.filter(t=>t.type===type && (type==='record'?[STATE.DONE,STATE.CLOSED].includes(recordState('todos',t)):[STATE.TODO,STATE.DOING].includes(recordState('todos',t)))).length;
+    const count=todos.length;
     const el=document.getElementById('tabCount-'+type);
     if(el)el.textContent=count;
-    if(type==='pending')pendingCount=count;
   });
   const badge=document.getElementById('todoCount');
-  if(badge){if(pendingCount>0){badge.style.display='';badge.textContent=pendingCount}else{badge.style.display='none'}}
+  if(badge)badge.style.display='none';
 
-  let filtered=todos.filter(t=>t.type===activeTodoTab && (activeTodoTab==='record'?[STATE.DONE,STATE.CLOSED].includes(recordState('todos',t)):[STATE.TODO,STATE.DOING].includes(recordState('todos',t))));
+  let filtered=todos;
   // Apply extra filters from filter panel
   try{filtered=applyTodoFilters(filtered);}catch(e){console.error('applyTodoFilters error:',e);}
   updateTodoFilterCount(filtered.length);
 
   if(!filtered.length){
-    document.getElementById('todoTabContent').innerHTML='<div class="empty-state"><p>暂无符合筛选的'+TYPE_LABELS[activeTodoTab]+'（共'+todos.length+'条数据，当前标签'+todos.filter(t=>t.type===activeTodoTab).length+'条）</p><button class="btn btn-primary" style="margin-top:12px" onclick="resetTodoFilter()">🔄 重置所有筛选条件</button></div>';
-    renderReminders();
+    document.getElementById('todoTabContent').innerHTML='<div class="empty-state"><p>暂无符合筛选的已结束工作</p><button class="btn btn-primary" style="margin-top:12px" onclick="resetTodoFilter()">🔄 重置所有筛选条件</button></div>';
     return;
   }
 
@@ -3977,7 +3969,6 @@ function renderTodo(){
       </div>
     </div>`;
   }).join('');
-  renderReminders();
 }
 
 function renderSubtasks(t){
@@ -4097,7 +4088,7 @@ function saveTodo(){
   const now=new Date().toISOString().slice(0,10);
   const item={
     id:id||DB.nextId(todos),
-    type:document.getElementById('todoType').value||'pending',
+    type:document.getElementById('todoType').value,
     name,
     category:getMultiSelected('todoCategory'),
     source:getMultiSelected('todoSource'),
@@ -4164,7 +4155,10 @@ function saveTodo(){
       item.parent_goal=old.parent_goal||'';
       item.is_goal=old.is_goal||false;
       item.due_date=item.deadline;
-      if(old.type==='record')item.type='record';
+      if(old.type==='record'){
+        item._prevType=item.type;
+        item.type='record';
+      }
       finishWorkRecord(item);
       todosRaw[i]=item;
     }else{todosRaw.push(item);}
@@ -4183,7 +4177,7 @@ function editTodo(id){
   document.getElementById('todoModalTitle').textContent='编辑工作';
   document.getElementById('todoId').value=t.id;
   document.getElementById('todoName').value=t.name||'';
-  document.getElementById('todoType').value=(t.type==='record')?'pending':(t.type||'pending');
+  document.getElementById('todoType').value=t.type==='record'?(t._prevType==='key'||t._prevType==='recurring'?t._prevType:''):(t.type==='key'||t.type==='recurring'?t.type:'');
   document.getElementById('todoPriority').value=normPriority(t.priority);
   setMultiSelected('todoCategory',toArray(t.category));
   setMultiSelected('todoSource',toArray(t.source));
@@ -4193,7 +4187,7 @@ function editTodo(id){
   document.getElementById('todoBlocker').value=t.blocker||'';
   document.getElementById('todoAssignee').value=t.assignee||'';
   // 加载周期配置
-  if(t.type==='recurring'){
+  if((t.type==='record'?t._prevType:t.type)==='recurring'){
     document.getElementById('recurrenceConfig').style.display='block';
     const rec=t.recurrence||{};
     document.getElementById('recType').value=rec.type||'';
@@ -4211,7 +4205,7 @@ function editTodo(id){
 function clearTodoForm(){
   ['todoId','todoName','todoContent','todoIssueDate','todoDeadline','todoBlocker','todoAssignee'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('todoPriority').value='不重要不紧急';
-  document.getElementById('todoType').value='pending';
+  document.getElementById('todoType').value='';
   document.getElementById('todoModalTitle').textContent='新建工作';
   setMultiSelected('todoCategory',[]);
   setMultiSelected('todoSource',[]);
@@ -4389,6 +4383,8 @@ function applyTodoFilters(list){
   const doneFrom=document.getElementById('todoF_doneFrom')?.value||'';
   const doneTo=document.getElementById('todoF_doneTo')?.value||'';
   return list.filter(t=>{
+    const type=document.getElementById('todoF_type')?.value||'';
+    if(type&&(t.type==='record'?t._prevType:t.type)!==type)return false;
     if(name&&!(t.name||'').toLowerCase().includes(name))return false;
     if(status&&recordState('todos',t)!==mapStatusToState('todos',status))return false;
     if(priority&&normPriority(t.priority)!==priority)return false;
@@ -4408,6 +4404,7 @@ function applyTodoFilters(list){
 function getTodoFilterActiveCount(){
   let n=0;
   if((document.getElementById('todoF_name')?.value||''))n++;
+  if(document.getElementById('todoF_type')?.value)n++;
   if(document.getElementById('todoF_status')?.value)n++;
   if(document.getElementById('todoF_priority')?.value)n++;
   if(getMultiSelected('todoF_cat').length)n++;
@@ -4438,6 +4435,7 @@ function applyTodoFilter(){
 
 function resetTodoFilter(){
   document.getElementById('todoF_name').value='';
+  document.getElementById('todoF_type').value='';
   document.getElementById('todoF_status').value='';
   document.getElementById('todoF_priority').value='';
   setMultiSelected('todoF_cat',[]);renderMultiOptions('todoF_cat');
@@ -4452,23 +4450,15 @@ function resetTodoFilter(){
 }
 
 function getVisibleTodos(){
-  const todos=DB.get('todos');
-  const typeFilter=document.getElementById('todoF_type')?.value||'';
-  let filtered=typeFilter?todos.filter(t=>t.type===typeFilter):todos.filter(t=>t.type===activeTodoTab);
-  filtered=applyTodoFilters(filtered);
-  return filtered;
+  return applyTodoFilters(formalLedgerItems('todos'));
 }
 
 function exportTodos(mode){
   let data;
   if(mode==='all'){
-    data=DB.get('todos');
+    data=formalLedgerItems('todos');
   }else if(mode==='current'){
-    // Apply current filters across all tabs
-    const todos=DB.get('todos');
-    const typeFilter=document.getElementById('todoF_type')?.value||'';
-    let filtered=typeFilter?todos.filter(t=>t.type===typeFilter):todos;
-    data=applyTodoFilters(filtered);
+    data=getVisibleTodos();
   }else{
     data=getVisibleTodos();
   }
@@ -4724,21 +4714,21 @@ let activeInspStatus='active';
 
 function renderInspiration(){
   const insps=DB.get('inspirations');
+  const statusItems=insps.filter(i=>activeInspStatus==='all' ||
+    (activeInspStatus==='active' ? (!i.status||i.status==='active') : i.status===activeInspStatus));
+  const allTags=[...new Set(statusItems.flatMap(i=>Array.isArray(i.tags)?i.tags:[]).filter(t=>typeof t==='string'&&t.trim()))];
+  if(activeInspTag&&!allTags.includes(activeInspTag))activeInspTag='';
   const q=(document.getElementById('inspSearch').value||'').toLowerCase();
-  const filtered=insps.filter(i=>{
+  const filtered=statusItems.filter(i=>{
     if(q&&!(i.title+i.content).toLowerCase().includes(q))return false;
-    if(activeInspTag&&!(i.tags||[]).includes(activeInspTag))return false;
-    if(activeInspStatus==='active'&&i.status&&i.status!=='active')return false;
-    if(activeInspStatus==='archived'&&i.status!=='archived')return false;
-    if(activeInspStatus==='abandoned'&&i.status!=='abandoned')return false;
+    if(activeInspTag&&!(Array.isArray(i.tags)?i.tags:[]).includes(activeInspTag))return false;
     return true;
   }).sort((a,b)=>b.createdAt>a.createdAt?1:-1);
 
-  // tags — based on current filtered set
-  const allTags=[...new Set(insps.flatMap(i=>i.tags||[]))];
+  // 标签只来自当前状态下仍存在的记录，删除或修改后立即重算。
   document.getElementById('inspTagFilter').innerHTML=[
     `<button class="tag-pill ${!activeInspTag?'active':''}" onclick="filterInspTag('')">全部</button>`,
-    ...allTags.map(t=>`<button class="tag-pill ${activeInspTag===t?'active':''}" onclick="filterInspTag('${esc(t)}')">${esc(t)}</button>`)
+    ...allTags.map(t=>`<button class="tag-pill ${activeInspTag===t?'active':''}" data-tag="${esc(t)}" onclick="filterInspTag(this.dataset.tag)">${esc(t)}</button>`)
   ].join('');
 
   if(!filtered.length){
@@ -4968,7 +4958,7 @@ function saveContract(){
     category:document.getElementById('contractCategory').value,
     signDate:document.getElementById('contractSignDate').value,
     expiry:document.getElementById('contractExpiry').value,
-    status:document.getElementById('contractStatus').value,
+    status:id?existingRecord('contracts',id).status:document.getElementById('contractStatus').value,
     no:document.getElementById('contractNo').value,
     note:document.getElementById('contractNote').value,
     todoRef:null,
@@ -5001,6 +4991,7 @@ function editContract(id){
   document.getElementById('contractNo').value=c.no||'';
   document.getElementById('contractNote').value=c.note||'';
   openModal('contractModal');
+  hideLifecycleStatusField('contractModal');
 }
 
 function clearContractForm(){
@@ -5096,7 +5087,7 @@ function savePurchase(){
     amount:+(document.getElementById('purchaseAmount').value||0),
     date:document.getElementById('purchaseDate').value,
     category:document.getElementById('purchaseCategory').value,
-    status:document.getElementById('purchaseStatus').value,
+    status:id?existingRecord('purchases',id).status:document.getElementById('purchaseStatus').value,
     note:document.getElementById('purchaseNote').value,
     hasContract:document.getElementById('purchaseHasContract').value,
     contractDept:document.getElementById('purchaseContractDept').value,
@@ -5172,6 +5163,7 @@ function editPurchase(id){
   document.getElementById('purchaseStatus').value=p.status;
   document.getElementById('purchaseNote').value=p.note||'';
   openModal('purchaseModal');
+  hideLifecycleStatusField('purchaseModal');
 }
 
 function clearPurchaseForm(){
@@ -5484,7 +5476,7 @@ function saveAgency(){
     budget:budget,
     date:document.getElementById('agencyDate').value,
     agent:agentEl&&agentEl.dataset.selected?JSON.parse(agentEl.dataset.selected)[0]||'':'',
-    status:document.getElementById('agencyStatus').value,
+    status:id?existingRecord('agencys',id).status:document.getElementById('agencyStatus').value,
     dealAmount:deal,
     savingsRate:savingsRate,
     winSupplier:supplierEl&&supplierEl.dataset.selected?JSON.parse(supplierEl.dataset.selected)[0]||'':'',
@@ -5532,6 +5524,7 @@ function editAgency(id){
   document.getElementById('agencyDocDate').value=a.docDate||'';
   calcAgencySavings();
   openModal('agencyModal');
+  hideLifecycleStatusField('agencyModal');
 }
 
 function deleteAgency(id){
@@ -6191,12 +6184,12 @@ function saveExpense(){
   const subcategoryId=document.getElementById('expenseSubcategory').value||'';
   if(fundItem&&!DB.get('funds').some(f=>String(f.id)===String(fundItem))){toast('关联的经费项目不存在');return;}
   if(subcategoryId&&!fundSubcategories(fundItem).some(s=>String(s.id)===String(subcategoryId))){toast('请选择该经费项目下的子类别');return;}
-  const status=document.getElementById('expenseStatus').value;
   const expenses=DB.raw('expenses');
   const id=+document.getElementById('expenseId').value;
+  const status=id?existingRecord('expenses',id).status:document.getElementById('expenseStatus').value;
   // 已报销时自动记录报销日期
   let reimbDate=document.getElementById('expenseReimbDate').value;
-  if(status==='已报销'&&!reimbDate)reimbDate=new Date().toISOString().slice(0,10);
+  if(!id&&status==='已报销'&&!reimbDate)reimbDate=new Date().toISOString().slice(0,10);
   const now=new Date().toISOString().slice(0,10);
   const item={
     ...existingRecord('expenses',id),
@@ -6252,6 +6245,7 @@ function editExpense(id){
   populateExpenseSubcategories();
   document.getElementById('expenseSubcategory').value=e.subcategoryId||'';
   openModal('expenseModal');
+  hideLifecycleStatusField('expenseModal');
 }
 
 // ============================================================
@@ -6626,7 +6620,7 @@ function renderTrainings(){
   if(expiringOnly)filtered=filtered.filter(t=>t.hasCertificate&&t.certificateExpiry&&t.certificateExpiry>=todayStr&&t.certificateExpiry<=soonStr);
 
   // 按日期降序
-  filtered.sort((a,b)=>b.startDate.localeCompare(a.startDate));
+  filtered.sort((a,b)=>(b.startDate||'').localeCompare(a.startDate||''));
 
   // 统计
   const totalCredits=filtered.reduce((s,t)=>s+(t.credits||0),0);
@@ -6656,12 +6650,12 @@ function renderTrainings(){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
-            <span class="badge ${typeBadge[t.type]||'badge-gray'}">${t.type}</span>
-            <span class="badge badge-gray">${esc(t.category||'其他')}</span>
+            ${businessLabel(t.type)?`<span class="badge ${typeBadge[t.type]||'badge-gray'}">${esc(t.type)}</span>`:''}
+            ${businessLabel(t.category)?`<span class="badge badge-gray">${esc(t.category)}</span>`:''}
             <strong style="font-size:15px">${esc(t.name)}</strong>${t.assignee?`<span class="assignee-note">经办人：${esc(t.assignee)}</span>`:''}
           </div>
           <div style="color:var(--color-text2);font-size:12px;line-height:1.6;display:flex;flex-wrap:wrap;gap:12px">
-            <span>📅 ${t.startDate}${t.endDate?'→'+t.endDate:''}</span>
+            ${businessLabel(t.startDate)?`<span>📅 ${esc(t.startDate)}${businessLabel(t.endDate)?'→'+esc(t.endDate):''}</span>`:''}
             ${t.organizer?`<span>👤 ${esc(t.organizer)}</span>`:''}
             ${t.credits?`<span>📝 ${t.credits}学分${t.creditType?'('+esc(t.creditType)+')':''}</span>`:''}
             ${t.fee?`<span>💰 ${esc(t.feeStatus||'自费')} ¥${t.fee.toLocaleString()}</span>`:''}
@@ -6741,8 +6735,8 @@ function editTraining(id){
   document.getElementById('trainingAssignee').value=t.assignee||'';
   document.getElementById('trainingName').value=t.name;
   document.getElementById('trainingOrganizer').value=t.organizer||'';
-  document.getElementById('trainingType').value=t.type||'线下';
-  document.getElementById('trainingCategory').value=t.category||'业务培训';
+  document.getElementById('trainingType').value=businessLabel(t.type)?t.type:'';
+  document.getElementById('trainingCategory').value=businessLabel(t.category)?t.category:'';
   document.getElementById('trainingFeeStatus').value=t.feeStatus||'自费';
   document.getElementById('trainingStartDate').value=t.startDate;
   document.getElementById('trainingEndDate').value=t.endDate||'';
@@ -6796,21 +6790,13 @@ function clearTrainingForm(){
 // ============================================================
 //  EXPORT / IMPORT DATA
 // ============================================================
+const SYNC_BUSINESS_KEYS=['todos','inspirations','contracts','purchases','expenses','meetings',
+  'trainings','agencys','handovers','funds','fundRecords','quick_notes'];
 function dumpData(){
-  return {
-    todos:DB.get('todos'),
-    inspirations:DB.get('inspirations'),
-    contracts:DB.get('contracts'),
-    purchases:DB.get('purchases'),
-    expenses:DB.get('expenses'),
-    meetings:DB.get('meetings'),
-    trainings:DB.get('trainings'),
-    agencys:DB.get('agencys'),
-    handovers:DB.get('handovers'),
-    funds:DB.get('funds'),
-    fundRecords:DB.get('fundRecords'),
-    exportedAt:new Date().toISOString()
-  };
+  const data={};
+  SYNC_BUSINESS_KEYS.forEach(key=>{data[key]=DB.get(key);});
+  data.exportedAt=new Date().toISOString();
+  return data;
 }
 
 function exportData(){
@@ -6835,7 +6821,7 @@ function importData(e){
     try{
       const data=JSON.parse(ev.target.result);
       let imported=0;
-      ['todos','inspirations','contracts','purchases','expenses','meetings','trainings','agencys','handovers','funds','fundRecords'].forEach(k=>{        if(Array.isArray(data[k])){DB.set(k,data[k]);imported+=data[k].length;}
+      SYNC_BUSINESS_KEYS.forEach(k=>{        if(Array.isArray(data[k])){DB.set(k,data[k]);imported+=data[k].length;}
       });
       toast('已导入 '+imported+' 条数据');
       renderCurrentPage();
@@ -6884,6 +6870,7 @@ function dismissBackup(){
 //  GITEE SYNC ENGINE
 // ============================================================
 const GITEE={
+  _applyingSnapshot:false,
   getConfig(){
     return {
       user:localStorage.getItem('wb_gitee_user')||'',
@@ -6912,9 +6899,8 @@ const GITEE={
   async _getDefaultBranch(){
     const cfg=this.getConfig();
     try{
-      const resp=await fetch(
-        `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}?access_token=${cfg.token}`
-      );
+      const auth=cfg.token?'?access_token='+encodeURIComponent(cfg.token):'';
+      const resp=await fetch(`https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}${auth}`);
       if(resp.ok){
         const info=await resp.json();
         return info.default_branch||'master';
@@ -6933,7 +6919,7 @@ const GITEE={
       const branch=await this._getDefaultBranch();
       console.log('Gitee push: using branch',branch);
 
-      // 读取当前文件 SHA；已有本地板块的上传内容来自本地 dumpData。
+      // 只读取当前文件 SHA 和非业务元数据；业务数组始终来自本机完整快照。
       let sha='';
       let cloudData={};
       const getResp=await fetch(
@@ -6944,8 +6930,7 @@ const GITEE={
         const info=await getResp.json();
         sha=info.sha||'';
         if(!sha)throw new Error('Gitee data.json SHA missing');
-        // 保留本地尚无数据键的云端板块，以及其他不属于工作台的文件字段。
-        // 已有本地数组（包括空数组）仍覆盖云端，不按记录 ID 双向合并。
+        // 解码文件以核对结构，并保留不属于工作台业务的普通元数据。
         if(!info.content)throw new Error('Gitee data.json content missing');
         try{
           cloudData=JSON.parse(decodeURIComponent(escape(atob(String(info.content).replace(/\s/g,'')))));
@@ -6955,12 +6940,9 @@ const GITEE={
         throw new Error('Gitee data.json read failed: '+getResp.status);
       }
       const localData=dumpData();
-      Object.keys(localData).forEach(key=>{
-        if(key!=='exportedAt' && localStorage.getItem(key)===null && Array.isArray(cloudData[key])){
-          localData[key]=cloudData[key];
-        }
-      });
-      const data=JSON.stringify({...cloudData,...localData});
+      const metadata=Object.fromEntries(Object.entries(cloudData).filter(([key])=>
+        !SYNC_BUSINESS_KEYS.includes(key)&&key!=='exportedAt'&&!/(token|credential|secret|password|key)/i.test(key)));
+      const data=JSON.stringify({...metadata,...localData});
       // base64 encode (utf8-safe via percent-encoding roundtrip)
       const content=btoa(unescape(encodeURIComponent(data)));
       const body={access_token:cfg.token,content,message:'workbench auto-sync '+new Date().toLocaleString('zh-CN'),branch};
@@ -7002,10 +6984,9 @@ const GITEE={
     const cfg=this.getConfig();
     const savedBranch=localStorage.getItem('wb_gitee_branch')||'';
 
-    // try branches in order: saved > main > master
-    const branches=[];
-    if(savedBranch)branches.push(savedBranch);
-    branches.push('main','master');
+    // 默认分支与推送一致；旧设备缓存的分支只作最后的兼容回退。
+    const defaultBranch=await this._getDefaultBranch();
+    const branches=[...new Set([defaultBranch,'main','master',savedBranch].filter(Boolean))];
 
     // strategy 1: use API with token if available
     if(cfg.token){
@@ -7060,17 +7041,22 @@ const GITEE={
   },
 
   _mergeData(data){
-    if(!data || typeof data!=='object'){this.setSyncStatus('ok','云端无数据');return 'ok';}
+    if(!data || typeof data!=='object'||Array.isArray(data)||
+       SYNC_BUSINESS_KEYS.some(k=>data[k]!==undefined&&!Array.isArray(data[k]))){
+      this.setSyncStatus('error','云端数据格式错误');return false;
+    }
     let imported=0;
-    // 本地已存在的数组（包括空数组和软删除记录）均为权威数据，绝不合并旧云端记录。
-    ['todos','inspirations','contracts','purchases','expenses','meetings','trainings','agencys','handovers','funds','fundRecords'].forEach(k=>{
-      if(localStorage.getItem(k)===null && Array.isArray(data[k])){
-        DB.set(k,data[k]);
-        imported+=data[k].length;
-      }
-    });
-    this.setSyncStatus('ok',imported?'已导入缺失数据 ('+imported+'条)':'本地数据已保留');
+    this._applyingSnapshot=true;
+    try{
+      SYNC_BUSINESS_KEYS.forEach(k=>{
+        const rows=data[k]||[];
+        DB.set(k,rows);
+        imported+=rows.filter(r=>!r.deleted).length;
+      });
+    }finally{this._applyingSnapshot=false;}
+    this.setSyncStatus('ok','已按云端快照更新 ('+imported+'条)');
     refreshDataBadges();
+    renderCurrentPage();
     return 'ok';
   },
 
@@ -7110,12 +7096,12 @@ DB.set=function(key,val){
   _origDBSet(key,val);
   if(document.getElementById('globalSearch')?.value)renderGlobalSearch();
   // only sync for main data keys
-  if(['todos','inspirations','contracts','purchases','expenses','meetings','trainings','agencys','handovers','funds','fundRecords'].includes(key)){
+  if(SYNC_BUSINESS_KEYS.includes(key)){
     if(!_badgeRefreshQueued){
       _badgeRefreshQueued=true;
       queueMicrotask(()=>{_badgeRefreshQueued=false;refreshDataBadges();renderCurrentPage();});
     }
-    triggerSync();
+    if(!GITEE._applyingSnapshot)triggerSync();
   }
 };
 
@@ -7202,9 +7188,10 @@ async function manualPull(){
   const result=await GITEE.pull();
   btn.disabled=false; btn.textContent='⬇️ 拉取数据';
   if(result==='ok'){
-    repairData(); // 拉取后自动修复旧数据格式
+    GITEE._applyingSnapshot=true;
+    try{repairData();}finally{GITEE._applyingSnapshot=false;}
     GITEE.setSyncStatus('ok','已同步');
-    toast('✓ 本地数据已保留；仅导入本地缺失的板块数据');
+    toast('✓ 本机业务数据已按云端快照覆盖');
     renderCurrentPage();
   }else{
     toast('✗ 拉取失败：'+result);
@@ -7424,7 +7411,6 @@ function smartAnalyze(){
 
 function smartSetCat(cat){
   const c=document.getElementById('smartCat'); if(c){c.value=cat;c.dataset.manual='1';}
-  document.getElementById('smartFundParentWrap').style.display=cat==='fundRecords'?'':'none';
   const text=document.getElementById('smartInput').value.trim();
   if(!text){ return; }
   const sc=LEDGER_TO_SMART_CAT[cat]||cat; // 台账 key→识别类别，供 smartExtract 正确提取字段
@@ -7459,7 +7445,6 @@ function smartClear(){
   closePreview();
   const c=document.getElementById('smartCat'); if(c) c.value=LEDGER_KEYS[0];
   if(c)delete c.dataset.manual;
-  document.getElementById('smartFundParentWrap').style.display='none';
 }
 
 function closePreview(){
@@ -7489,13 +7474,8 @@ function smartSave(){
     createLedgerItem('todos',{title:text,requirement:'',due_date:due,priority:'重要且紧急',state:initialState,extra:{assignee}, parentGoal: sGoalVal?+sGoalVal:undefined});
   } else if(cat==='goal'){
     createLedgerItem('todos',{title:text,requirement:text,due_date:due,priority:prio,isGoal:true,state:initialState,extra:{assignee,owner_ledger:'goals'}});
-  } else if(cat==='fundRecords'){
-    const fundId=Number(document.getElementById('smartFundParent').value);
-    if(!fundId || !formalLedgerItems('funds').some(f=>Number(f.id)===fundId)){toast('请选择已结束的所属经费');return;}
-    createLedgerItem('fundRecords',{title:fields.title||text.slice(0,60),requirement:text,due_date:due,priority:prio,state:initialState,
-      extra:{assignee,fundId,amount:fields.amount||0,date:due||'',content:text}});
   } else {
-    if(!ENTRY_KEYS.includes(cat)){toast('请选择所属板块');return;}
+    if(!ENTRY_KEYS.includes(cat)||cat==='fundRecords'){toast('请选择所属板块');return;}
     const extra={assignee};
     ['party','supplier','amount','invoice'].forEach(k=>{if(fields[k]!==undefined)extra[k]=fields[k];});
     if(due)extra.date=due;
@@ -7512,7 +7492,7 @@ function smartSave(){
 function openSmartModal(){
   const sel=document.getElementById('smartCat');
   if(sel && !sel.dataset.filled){
-    sel.innerHTML = ENTRY_KEYS.map(k=>`<option value="${k}">${LEDGER_META[k].label}</option>`).join('')
+    sel.innerHTML = ENTRY_KEYS.filter(k=>k!=='fundRecords').map(k=>`<option value="${k}">${LEDGER_META[k].label}</option>`).join('')
       + '<option value="goal">长期目标</option>'
       + '<option value="inspiration">💡 灵感</option>'
       + '<option value="reminder">⏰ 提醒</option>';
@@ -7520,9 +7500,6 @@ function openSmartModal(){
   }
   if(sel) sel.value=LEDGER_KEYS[0];
   if(sel)delete sel.dataset.manual;
-  const parent=document.getElementById('smartFundParent');
-  parent.innerHTML='<option value="">请选择已结束的经费</option>'+formalLedgerItems('funds').map(f=>`<option value="${esc(f.id)}">${esc(f.name||'经费')}</option>`).join('');
-  document.getElementById('smartFundParentWrap').style.display='none';
   const gEl=document.getElementById('smartGoal');
   if(gEl) gEl.innerHTML='<option value="">不关联</option>'+activeGoalOptions();
   openModal('smartModal');
@@ -7554,8 +7531,12 @@ function renderCurrentPage(){
 //  XSS escape
 // ============================================================
 function esc(s){
-  if(!s)return'';
+  if(!businessLabel(s))return'';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function businessLabel(value){
+  return value!==undefined&&value!==null&&String(value).trim()!==''&&
+    !['undefined','null'].includes(String(value).trim().toLowerCase());
 }
 function toArray(v){ return Array.isArray(v) ? v : v ? [v] : []; }
 const SEARCH_FIELDS={
@@ -7612,7 +7593,8 @@ function openSearchHit(key,id){
   document.getElementById('globalSearchResults').style.display='none';
   if(key==='todos'){
     const rec=DB.get('todos').find(r=>String(r.id)===String(id));
-    if(rec)activeTodoTab=rec.type||'pending';
+    if(rec && ![STATE.DONE,STATE.CLOSED].includes(recordState('todos',rec))){navigate('待办');return;}
+    activeTodoTab='record';
   }
   navigate(page);
   if(SEARCH_EDIT[key])SEARCH_EDIT[key](/^\d+$/.test(id)?Number(id):id);
@@ -7724,17 +7706,15 @@ removeObsoleteInvoiceCredentials();
 loadSettings();
 checkBackup();
 snapshotBeforeV14();
-repairData(); // 自动修复第一版智能录入产生的旧格式数据
-retireVerifiedLegacyMirrors();
+GITEE._applyingSnapshot=true;
+try{
+  repairData(); // 本机历史数据修复不应触发云端推送
+  retireVerifiedLegacyMirrors();
+}finally{GITEE._applyingSnapshot=false;}
 updateQuickBadge(); // v1.4 速记箱角标
 checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/逾期项
-// try to pull data from cloud on startup
-(async function(){
-  if(GITEE.getConfig().user&&GITEE.getConfig().repo){
-    await GITEE.pull();
-    repairData(); // 拉取云端数据后也跑一次修复
-    retireVerifiedLegacyMirrors();
-  }
+// 拉取会覆盖本机业务快照，因此仅由用户点击“拉取数据”触发。
+(function(){
   renderDashboard();
   // 每小时检查一次截止提醒
   setInterval(()=>{

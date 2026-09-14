@@ -4,114 +4,112 @@ const path=require('node:path');
 const vm=require('node:vm');
 
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
-const start=html.indexOf('const GITEE={');
-const end=html.indexOf('//  AUTO SYNC ON SAVE',start);
-assert(start>=0&&end>start,'找不到实际同步实现');
-const source=html.slice(start,end);
-const dumpStart=html.indexOf('function dumpData(){');
-const dumpEnd=html.indexOf('function exportData(){',dumpStart);
-assert(dumpStart>=0&&dumpEnd>dumpStart,'找不到实际上传数据构造函数');
-const actualDumpData=vm.runInNewContext(html.slice(dumpStart,dumpEnd)+'\ndumpData',{
-  DB:{get:()=>[]},Date
-});
-assert.equal(Object.keys(actualDumpData()).join(','),
-  'todos,inspirations,contracts,purchases,expenses,meetings,trainings,agencys,handovers,funds,fundRecords,exportedAt');
-
+function section(start,end){
+  const a=html.indexOf(start),b=html.indexOf(end,a+start.length);
+  assert(a>=0&&b>a,`找不到代码段 ${start}`);
+  return html.slice(a,b);
+}
+const source=section('const SYNC_BUSINESS_KEYS=','function exportData(){')+'\n'+
+  section('const GITEE={','//  SETTINGS');
 function response(status,data){
   return {status,ok:status>=200&&status<300,json:async()=>data,text:async()=>''};
 }
-function createDevice(fetchImpl){
-  const values=new Map([['wb_gitee_user','user'],['wb_gitee_repo','repo'],['wb_gitee_token','local-token']]);
-  const messages=[];
-  const sandbox={
-    localStorage:{getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v)},
-    document:{getElementById:()=>({className:'',textContent:''})},
-    fetch:fetchImpl,
-    dumpData:()=>{
-      const data=actualDumpData();
-      Object.keys(data).forEach(key=>{
-        if(key!=='exportedAt' && values.has(key))data[key]=JSON.parse(values.get(key)).filter(row=>!row.deleted);
-      });
-      return data;
-    },
-    refreshDataBadges:()=>{},
-    btoa,atob,escape,unescape,encodeURIComponent,decodeURIComponent,
-    toast:message=>messages.push(message),
-    console:{log(){},error(){}},Date
+function createServer(initial){
+  let cloud=structuredClone(initial),sha='sha-a';
+  const writes=[],reads=[];
+  return {
+    get data(){return cloud;},writes,reads,
+    async fetch(url,opts={}){
+      if(url.includes('/raw/')){
+        reads.push(url);
+        return cloud===null?response(404,{}):response(200,structuredClone(cloud));
+      }
+      if(!url.includes('/contents/'))return response(200,{default_branch:'main'});
+      if(!opts.method){
+        reads.push(url);
+        return cloud===null?response(404,{}):response(200,{sha,content:btoa(unescape(encodeURIComponent(JSON.stringify(cloud))))});
+      }
+      const body=JSON.parse(opts.body);
+      assert.equal(opts.method,cloud===null?'POST':'PUT');
+      if(cloud!==null)assert.equal(body.sha,sha,'推送应使用当前云端 SHA');
+      cloud=JSON.parse(decodeURIComponent(escape(atob(body.content))));
+      writes.push({method:opts.method,body,data:structuredClone(cloud)});
+      sha='sha-'+(writes.length+1);
+      return response(200,{content:{sha}});
+    }
   };
-  const gitee=vm.runInNewContext(source+'\nGITEE',sandbox);
-  gitee._mergeData=()=> 'ok';
-  return {gitee,values,messages};
 }
+function createDevice(server,rows={},settings={}){
+  const values=new Map(Object.entries({
+    wb_gitee_user:'user',wb_gitee_repo:'repo',wb_gitee_token:'local-token',
+    wb_backup_interval:'7',...settings
+  }));
+  for(const [key,value] of Object.entries(rows))values.set(key,JSON.stringify(value));
+  const DB={
+    get:key=>JSON.parse(values.get(key)||'[]').filter(r=>!r.deleted),
+    set:(key,value)=>values.set(key,JSON.stringify(value))
+  };
+  let scheduledPushes=0;
+  const sandbox={
+    localStorage:{getItem:k=>values.has(k)?values.get(k):null,setItem:(k,v)=>values.set(k,v)},
+    DB,document:{getElementById:id=>id==='globalSearch'?{value:''}:{className:'',textContent:''}},
+    fetch:(...args)=>server.fetch(...args),refreshDataBadges:()=>{},renderCurrentPage:()=>{},
+    renderGlobalSearch:()=>{},queueMicrotask:fn=>fn(),setTimeout:()=>{scheduledPushes++;return 1;},clearTimeout:()=>{},
+    btoa,atob,escape,unescape,encodeURIComponent,decodeURIComponent,
+    toast:()=>{},console:{log(){},error(){}},Date
+  };
+  const api=vm.runInNewContext(source+'\n({GITEE,SYNC_BUSINESS_KEYS,dumpData})',sandbox);
+  return {gitee:api.GITEE,keys:Array.from(api.SYNC_BUSINESS_KEYS),values,DB,
+    get scheduledPushes(){return scheduledPushes;}};
+}
+function names(rows){return rows.map(r=>r.name);}
 
 (async()=>{
-  let cloudSha='sha-a';
-  const cloudData={todos:[{id:1,name:'云端旧值'}],trainings:[{id:2,name:'仅云端培训'}],otherMetadata:{kept:true}};
-  let writes=[];
-  const fetchImpl=async(url,opts={})=>{
-    if(!url.includes('/contents/'))return response(200,{default_branch:'main'});
-    if(!opts.method){
-      if(url.includes('_t=')&&url.includes('ref=main')&&url.includes('access_token=')){
-        return response(200,{sha:cloudSha,content:btoa(unescape(encodeURIComponent(JSON.stringify(cloudData))))});
-      }
-      return response(200,{sha:cloudSha,content:btoa(unescape(encodeURIComponent(JSON.stringify(cloudData))))});
-    }
-    writes.push({method:opts.method,body:JSON.parse(opts.body)});
-    cloudSha='sha-b';
-    return response(200,{content:{sha:cloudSha}});
-  };
-  const device=createDevice(fetchImpl);
-  assert.equal(await device.gitee.pull(),'ok');
-  assert.equal(JSON.parse(device.values.get('wb_gitee_data_revision')).sha,'sha-a');
-  assert.equal(await device.gitee.push(),'ok');
-  assert.equal(writes.length,1);
-  assert.equal(writes[0].method,'PUT');
-  assert.equal(writes[0].body.sha,'sha-a');
-  const firstPayload=JSON.parse(decodeURIComponent(escape(atob(writes[0].body.content))));
-  assert.equal(firstPayload.trainings[0].name,'仅云端培训','本地缺失的板块保留云端数据');
-  assert.equal(firstPayload.otherMetadata.kept,true,'不相关文件字段不得丢失');
-  assert.equal(JSON.parse(device.values.get('wb_gitee_data_revision')).sha,'sha-b');
-  assert(!atob(writes[0].body.content).includes('local-token'),'Token 不得进入 data.json');
+  const old=[{id:1,name:'A'},{id:2,name:'B'},{id:3,name:'C'}];
+  const server=createServer({todos:old,trainings:[{id:10,name:'旧培训'}],otherMetadata:{kept:true}});
+  const pc=createDevice(server,{todos:[{id:4,name:'D'}],trainings:[]});
+  assert.equal(await pc.gitee.push(),'ok');
+  assert.deepEqual(names(server.data.todos),['D'],'测试1：云端 A/B/C 应被本地 D 替换');
+  assert.deepEqual(server.data.trainings,[],'测试2：本地空数组应清空云端旧培训');
+  assert.deepEqual(server.data.inspirations,[],'缺失的标准业务键也应上传空数组');
+  assert.deepEqual(server.data.quick_notes,[],'速记箱属于业务快照');
+  assert.equal(server.data.otherMetadata.kept,true,'非业务元数据应保留');
+  assert(!JSON.stringify(server.data).includes('local-token'),'Token 不得进入云端文件');
+  assert.equal(pc.values.get('wb_gitee_token'),'local-token');
 
-  cloudSha='sha-c';
-  device.values.set('todos',JSON.stringify([{id:1,name:'本地新值'}]));
-  assert.equal(await device.gitee.push(),'ok');
-  assert.equal(writes.length,2,'本地应使用当前云端 SHA 覆盖旧数据');
-  assert.equal(writes[1].body.sha,'sha-c');
-  const secondPayload=JSON.parse(decodeURIComponent(escape(atob(writes[1].body.content))));
-  assert.equal(secondPayload.todos[0].name,'本地新值','已有本地板块必须覆盖同 ID 云端旧值');
-  assert.equal(secondPayload.trainings[0].name,'仅云端培训');
+  const phone=createDevice(server,{todos:old,trainings:[{id:10,name:'旧培训'}],quick_notes:[{id:20,name:'旧速记'}]},
+    {wb_gitee_token:'phone-token',wb_backup_interval:'30',wb_gitee_branch:'master'});
+  assert.equal(await phone.gitee.pull(),'ok');
+  assert(server.reads.at(-1).includes('ref=main'),'旧设备缓存分支不能抢在默认分支前拉取');
+  assert.deepEqual(names(phone.DB.get('todos')),['D'],'测试4：拉取应覆盖手机 A/B/C');
+  assert.deepEqual(phone.DB.get('trainings'),[]);
+  assert.deepEqual(phone.DB.get('quick_notes'),[]);
+  assert.equal(phone.values.get('wb_gitee_token'),'phone-token','测试5：手机凭据保留');
+  assert.equal(phone.values.get('wb_backup_interval'),'30','测试5：设备偏好保留');
+  assert.equal(phone.scheduledPushes,0,'拉取不得触发自动反向推送');
+  const readOnlyPhone=createDevice(server,{todos:old},{wb_gitee_token:'',wb_gitee_branch:'master'});
+  assert.equal(await readOnlyPhone.gitee.pull(),'ok','无令牌设备应可从公开仓库拉取');
+  assert.deepEqual(names(readOnlyPhone.DB.get('todos')),['D']);
+  assert(server.reads.at(-1).includes('/raw/main/'),'无令牌设备也应优先读默认分支');
 
-  const fresh=createDevice(fetchImpl);
-  assert.equal(await fresh.gitee.push(),'ok','本地权威数据允许直接覆盖云端文件');
-  assert.equal(writes.length,3);
+  const deleteServer=createServer({todos:[{id:1,name:'A'}]});
+  const desktop=createDevice(deleteServer,{todos:[]});
+  assert.equal(await desktop.gitee.push(),'ok');
+  const another=createDevice(deleteServer,{todos:[{id:1,name:'A'}]});
+  assert.equal(await another.gitee.pull(),'ok');
+  assert.deepEqual(another.DB.get('todos'),[],'测试3：删除应传播到另一设备');
 
-  const empty=createDevice(async(url,opts={})=>{
-    if(!url.includes('/contents/'))return response(200,{default_branch:'main'});
-    if(!opts.method)return response(404,{});
-    assert.equal(opts.method,'POST');
-    return response(201,{content:{sha:'sha-new'}});
-  });
-  assert.equal(await empty.gitee.push(),'ok');
-  assert.equal(JSON.parse(empty.values.get('wb_gitee_data_revision')).sha,'sha-new');
+  const softDeleteServer=createServer({todos:[{id:1,name:'A'}]});
+  const softDeleteDevice=createDevice(softDeleteServer,{todos:[{id:1,name:'A',deleted:true}]});
+  assert.equal(await softDeleteDevice.gitee.push(),'ok');
+  assert.deepEqual(softDeleteServer.data.todos,[],'软删除也应在业务快照中表达为不存在');
 
-  let attemptedWrite=false;
-  const failed=createDevice(async(url,opts={})=>{
-    if(!url.includes('/contents/'))return response(200,{default_branch:'main'});
-    if(opts.method)attemptedWrite=true;
-    return response(500,{});
-  });
-  assert.equal(await failed.gitee.push(),false);
-  assert.equal(attemptedWrite,false,'云端状态读取失败时不得上传');
-  const localValues=new Map([['todos',JSON.stringify([{id:1,name:'本地',deleted:false},{id:2,name:'本地已删',deleted:true}])]]);
-  const localStorage={getItem:k=>localValues.has(k)?localValues.get(k):null,setItem:(k,v)=>localValues.set(k,v)};
-  const DB={set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
-  const localGitee=vm.runInNewContext(source+'\nGITEE',{
-    localStorage,DB,document:{getElementById:()=>({className:'',textContent:''})},refreshDataBadges:()=>{},console
-  });
-  assert.equal(localGitee._mergeData({todos:[{id:1,name:'云端旧值'},{id:2,name:'云端复活'}],contracts:[{id:3,name:'仅云端'}]}),'ok');
-  assert.equal(JSON.parse(localStorage.getItem('todos'))[0].name,'本地');
-  assert.equal(JSON.parse(localStorage.getItem('todos'))[1].deleted,true,'本地软删除不得被云端复活');
-  assert.equal(JSON.parse(localStorage.getItem('contracts'))[0].name,'仅云端','本地尚无该数组时允许初始化');
-  process.stdout.write('Gitee 本地优先上传测试通过（云端旧版覆盖、首次创建、读取失败、Token 排除）\n');
+  const freshServer=createServer(null);
+  assert.equal(await createDevice(freshServer).gitee.push(),'ok','首次推送应创建文件');
+  const failedServer={fetch:async(url,opts={})=>url.includes('/contents/')?response(500,{}):response(200,{default_branch:'main'})};
+  assert.equal(await createDevice(failedServer).gitee.push(),false,'云端读取失败时不得写入');
+  const invalid=createDevice(createServer(null),{todos:[{id:7,name:'本地'}]});
+  assert.equal(invalid.gitee._mergeData({todos:'wrong'}),false,'损坏的云端数组不能清空本地');
+  assert.deepEqual(names(invalid.DB.get('todos')),['本地']);
+  process.stdout.write('Gitee 快照推送、空数组、删除传播、拉取覆盖、配置隔离测试通过\n');
 })().catch(e=>{console.error(e);process.exitCode=1;});
