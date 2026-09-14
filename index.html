@@ -6930,15 +6930,12 @@ const GITEE={
 
     this.setSyncStatus('loading','同步中…');
     try{
-      const data=JSON.stringify(dumpData(),null,0);
-      // base64 encode (utf8-safe via percent-encoding roundtrip)
-      const content=btoa(unescape(encodeURIComponent(data)));
-
       const branch=await this._getDefaultBranch();
       console.log('Gitee push: using branch',branch);
 
-      // 读取云端当前 SHA 仅用于更新该文件；内容始终来自本地 dumpData。
+      // 读取当前文件 SHA；已有本地板块的上传内容来自本地 dumpData。
       let sha='';
+      let cloudData={};
       const getResp=await fetch(
         `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}/contents/data.json?access_token=${cfg.token}&ref=${branch}&_t=${Date.now()}`,
         {cache:'no-store'}
@@ -6947,9 +6944,25 @@ const GITEE={
         const info=await getResp.json();
         sha=info.sha||'';
         if(!sha)throw new Error('Gitee data.json SHA missing');
+        // 保留本地尚无数据键的云端板块，以及其他不属于工作台的文件字段。
+        // 已有本地数组（包括空数组）仍覆盖云端，不按记录 ID 双向合并。
+        if(!info.content)throw new Error('Gitee data.json content missing');
+        try{
+          cloudData=JSON.parse(decodeURIComponent(escape(atob(String(info.content).replace(/\s/g,'')))));
+          if(!cloudData || typeof cloudData!=='object' || Array.isArray(cloudData))throw new Error('invalid data');
+        }catch(e){throw new Error('Gitee data.json content invalid');}
       }else if(getResp.status!==404){
         throw new Error('Gitee data.json read failed: '+getResp.status);
       }
+      const localData=dumpData();
+      Object.keys(localData).forEach(key=>{
+        if(key!=='exportedAt' && localStorage.getItem(key)===null && Array.isArray(cloudData[key])){
+          localData[key]=cloudData[key];
+        }
+      });
+      const data=JSON.stringify({...cloudData,...localData});
+      // base64 encode (utf8-safe via percent-encoding roundtrip)
+      const content=btoa(unescape(encodeURIComponent(data)));
       const body={access_token:cfg.token,content,message:'workbench auto-sync '+new Date().toLocaleString('zh-CN'),branch};
       if(sha)body.sha=sha;
 

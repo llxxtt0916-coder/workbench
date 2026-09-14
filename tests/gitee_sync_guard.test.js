@@ -27,7 +27,13 @@ function createDevice(fetchImpl){
     localStorage:{getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v)},
     document:{getElementById:()=>({className:'',textContent:''})},
     fetch:fetchImpl,
-    dumpData:actualDumpData,
+    dumpData:()=>{
+      const data=actualDumpData();
+      Object.keys(data).forEach(key=>{
+        if(key!=='exportedAt' && values.has(key))data[key]=JSON.parse(values.get(key)).filter(row=>!row.deleted);
+      });
+      return data;
+    },
     refreshDataBadges:()=>{},
     btoa,atob,escape,unescape,encodeURIComponent,decodeURIComponent,
     toast:message=>messages.push(message),
@@ -40,14 +46,15 @@ function createDevice(fetchImpl){
 
 (async()=>{
   let cloudSha='sha-a';
+  const cloudData={todos:[{id:1,name:'云端旧值'}],trainings:[{id:2,name:'仅云端培训'}],otherMetadata:{kept:true}};
   let writes=[];
   const fetchImpl=async(url,opts={})=>{
     if(!url.includes('/contents/'))return response(200,{default_branch:'main'});
     if(!opts.method){
       if(url.includes('_t=')&&url.includes('ref=main')&&url.includes('access_token=')){
-        return response(200,{sha:cloudSha,content:btoa('{"todos":[]}')});
+        return response(200,{sha:cloudSha,content:btoa(unescape(encodeURIComponent(JSON.stringify(cloudData))))});
       }
-      return response(200,{sha:cloudSha});
+      return response(200,{sha:cloudSha,content:btoa(unescape(encodeURIComponent(JSON.stringify(cloudData))))});
     }
     writes.push({method:opts.method,body:JSON.parse(opts.body)});
     cloudSha='sha-b';
@@ -60,13 +67,20 @@ function createDevice(fetchImpl){
   assert.equal(writes.length,1);
   assert.equal(writes[0].method,'PUT');
   assert.equal(writes[0].body.sha,'sha-a');
+  const firstPayload=JSON.parse(decodeURIComponent(escape(atob(writes[0].body.content))));
+  assert.equal(firstPayload.trainings[0].name,'仅云端培训','本地缺失的板块保留云端数据');
+  assert.equal(firstPayload.otherMetadata.kept,true,'不相关文件字段不得丢失');
   assert.equal(JSON.parse(device.values.get('wb_gitee_data_revision')).sha,'sha-b');
   assert(!atob(writes[0].body.content).includes('local-token'),'Token 不得进入 data.json');
 
   cloudSha='sha-c';
+  device.values.set('todos',JSON.stringify([{id:1,name:'本地新值'}]));
   assert.equal(await device.gitee.push(),'ok');
   assert.equal(writes.length,2,'本地应使用当前云端 SHA 覆盖旧数据');
   assert.equal(writes[1].body.sha,'sha-c');
+  const secondPayload=JSON.parse(decodeURIComponent(escape(atob(writes[1].body.content))));
+  assert.equal(secondPayload.todos[0].name,'本地新值','已有本地板块必须覆盖同 ID 云端旧值');
+  assert.equal(secondPayload.trainings[0].name,'仅云端培训');
 
   const fresh=createDevice(fetchImpl);
   assert.equal(await fresh.gitee.push(),'ok','本地权威数据允许直接覆盖云端文件');
