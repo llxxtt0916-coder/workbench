@@ -234,13 +234,14 @@ eq('fmt dow', formatLedgerRecurrence('dow:3'), '每周三');
 eq('fmt doq', formatLedgerRecurrence('doq:10'), '每季第10日');
 eq('fmt yd', formatLedgerRecurrence('yd:3-15'), '每年3月15日');
 
-// 回归：归档/编辑弹窗 archiveState 选项值必须为中文 STATE 值（防四态化漏改）
+// v1.5：初始状态只在智能录入选择，整理不再有状态字段。
 (function(){
   const fs=require('fs'); const path=require('path');
   const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
-  const m=html.match(/id="archiveState"[^>]*>([\s\S]*?)<\/select>/);
+  const m=html.match(/id="smartState"[^>]*>([\s\S]*?)<\/select>/);
   const vals=m?[...m[1].matchAll(/<option value="([^"]+)"/g)].map(x=>x[1]):[];
-  eq('archiveState 四选项值为中文 STATE', JSON.stringify(vals)===JSON.stringify(['未开始','进行中','已完成','已关闭']), true);
+  eq('smartState 四选项值为中文 STATE', JSON.stringify(vals)===JSON.stringify(['未开始','进行中','已完成','已关闭']), true);
+  eq('整理状态字段已移除', html.includes('id="archiveState"'), false);
 })();
 
 console.log(`\n[v14 逻辑测试] 通过 ${pass} / 失败 ${fail}`);

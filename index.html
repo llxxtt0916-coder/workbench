@@ -313,13 +313,9 @@
     <div class="page" id="page-todo">
       <div class="section-header">
         <div style="display:flex;gap:2px;background:var(--color-bg2);padding:3px;border-radius:var(--radius);flex:1;max-width:420px;min-width:0">
-          <button class="todo-tab active" data-tab="pending" onclick="switchTodoTab('pending')">待办<span class="tab-count" id="tabCount-pending">0</span></button>
-          <button class="todo-tab" data-tab="key" onclick="switchTodoTab('key')">重点<span class="tab-count" id="tabCount-key">0</span></button>
-          <button class="todo-tab" data-tab="recurring" onclick="switchTodoTab('recurring')">周期<span class="tab-count" id="tabCount-recurring">0</span></button>
-          <button class="todo-tab" data-tab="record" onclick="switchTodoTab('record')">记录<span class="tab-count" id="tabCount-record">0</span></button>
+          <button class="todo-tab active" data-tab="record">已结束工作<span class="tab-count" id="tabCount-record">0</span></button>
         </div>
         <button class="filter-toggle" onclick="toggleFilterPanel('todo')" id="todoFilterToggle">🔍 筛选<span class="filter-badge" id="todoFilterBadge" style="display:none">0</span></button>
-        <button class="btn btn-primary btn-sm" onclick="openModal('todoModal')">+ 新建工作</button>
       </div>
       <div class="filter-panel collapsed" id="todoFilterPanel">
         <div class="filter-grid">
@@ -331,18 +327,14 @@
             <label>类型</label>
             <select id="todoF_type" onchange="applyTodoFilter()">
               <option value="">全部类型</option>
-              <option value="pending">待办工作</option>
               <option value="key">重点工作</option>
               <option value="recurring">周期工作</option>
-              <option value="record">已完成</option>
             </select>
           </div>
           <div class="filter-item">
             <label>状态</label>
             <select id="todoF_status" onchange="applyTodoFilter()">
               <option value="">全部状态</option>
-              <option value="未开始">未开始</option>
-              <option value="进行中">进行中</option>
               <option value="已完成">已完成</option>
               <option value="已关闭">已关闭</option>
             </select>
@@ -426,7 +418,6 @@
           </div>
         </div>
       </div>
-      <div id="reminderBanner" style="display:none"></div>
       <div class="todo-tab-content" id="todoTabContent"></div>
     </div>
 
@@ -437,7 +428,6 @@
           <svg width="14" height="14" viewBox="0 0 20 20" fill="#9ca3af"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
           <input class="search-input" id="inspSearch" placeholder="搜索灵感…" oninput="renderInspiration()">
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openModal('inspModal')">+ 记录灵感</button>
       </div>
       <div id="inspTagFilter" class="tag-filter"></div>
       <div class="insp-status-filter" style="display:flex;gap:4px;margin-bottom:12px;font-size:12px">
@@ -457,7 +447,6 @@
             <button class="insp-status-btn active" data-qv="inbox" onclick="switchQuickView('inbox',this)">📥 收件箱 <span id="quickInboxCount"></span></button>
             <button class="insp-status-btn" data-qv="archived" onclick="switchQuickView('archived',this)">📦 已归档</button>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="openQuickCompose()">+ 写一句</button>
         </div>
       </div>
       <div id="quickList" class="insp-grid"></div>
@@ -468,9 +457,9 @@
       <div class="section-header">
         <div class="section-header-right">
           <span style="font-size:12px;color:var(--color-text3)" id="todoActiveSummary"></span>
-          <button class="btn btn-primary btn-sm" onclick="openNewTodoFromActive()">+ 新建待办</button>
         </div>
       </div>
+      <div id="reminderBanner" style="display:none"></div>
       <div id="todoActiveList"></div>
     </div>
 
@@ -479,7 +468,6 @@
       <div class="section-header">
         <div class="section-header-right">
           <span style="font-size:12px;color:var(--color-text3)" id="goalSummary"></span>
-          <button class="btn btn-primary btn-sm" onclick="openNewGoal()">＋ 新建长期目标</button>
         </div>
       </div>
       <div id="goalList" class="goal-list"></div>
@@ -502,7 +490,6 @@
         <div class="section-header-right">
           <button class="filter-toggle" onclick="toggleFilterPanel('contract')" id="contractFilterToggle">筛选<span class="filter-badge" id="contractFilterBadge" style="display:none">0</span></button>
           <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('contract')">导出</button>
-          <button class="btn btn-primary btn-sm" onclick="openModal('contractModal')">+ 新增合同</button>
         </div>
       </div>
       <div class="filter-panel collapsed" id="contractFilterPanel">
@@ -572,7 +559,6 @@
         <div class="section-header-right">
           <button class="filter-toggle" onclick="toggleFilterPanel('purchase')" id="purchaseFilterToggle">筛选<span class="filter-badge" id="purchaseFilterBadge" style="display:none">0</span></button>
           <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('purchase')">导出</button>
-          <button class="btn btn-primary btn-sm" onclick="openModal('purchaseModal')">+ 新增采购</button>
         </div>
       </div>
       <div class="filter-panel collapsed" id="purchaseFilterPanel">
@@ -637,7 +623,6 @@
         </div>
         <div style="display:flex;gap:6px">
           <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('meeting')">导出</button>
-          <button class="btn btn-primary btn-sm" onclick="clearMeetingForm();openModal('meetingModal')">+ 新增会议</button>
         </div>
       </div>
       <!-- 日历网格 -->
@@ -669,7 +654,6 @@
         <span style="font-size:16px;font-weight:600">📚 培训记录</span>
         <div style="display:flex;gap:6px">
           <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('training')">导出</button>
-          <button class="btn btn-primary btn-sm" onclick="clearTrainingForm();openModal('trainingModal')">+ 新增培训</button>
         </div>
       </div>
       <!-- 筛选 -->
@@ -707,7 +691,6 @@
         <div class="section-header-right">
           <button class="filter-toggle" onclick="toggleFilterPanel('expense')" id="expenseFilterToggle">筛选<span class="filter-badge" id="expenseFilterBadge" style="display:none">0</span></button>
           <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('expense')">导出</button>
-          <button class="btn btn-primary btn-sm" onclick="clearExpenseForm();openModal('expenseModal')">+ 新增报销</button>
         </div>
       </div>
       <div class="filter-panel collapsed" id="expenseFilterPanel">
@@ -771,7 +754,6 @@
         <div class="section-header-right">
           <button class="filter-toggle" onclick="this.classList.toggle('active');toggleFilterPanel('agency')">🔍 筛选</button>
           <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('agency')">导出</button>
-          <button class="btn btn-primary btn-sm" onclick="clearAgencyForm();openModal('agencyModal')">+ 新增委托</button>
         </div>
       </div>
       <div class="filter-panel collapsed" id="agencyFilterPanel">
@@ -809,7 +791,6 @@
         <div class="section-header-right">
           <button class="filter-toggle" onclick="toggleFilterPanel('handover')" id="handoverFilterToggle">筛选<span class="filter-badge" id="handoverFilterBadge" style="display:none">0</span></button>
           <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('handover')">导出</button>
-          <button class="btn btn-primary btn-sm" onclick="clearHandoverForm();openModal('handoverModal')">+ 新增交接</button>
         </div>
       </div>
       <div class="filter-panel collapsed" id="handoverFilterPanel">
@@ -866,7 +847,6 @@
         <div class="section-header-right">
           <button class="filter-toggle" onclick="toggleFilterPanel('fund')" id="fundFilterToggle">筛选<span class="filter-badge" id="fundFilterBadge" style="display:none">0</span></button>
           <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('fund')">导出</button>
-          <button class="btn btn-primary btn-sm" onclick="clearFundForm();openModal('fundModal')">+ 新增经费</button>
         </div>
       </div>
       <div class="filter-panel collapsed" id="fundFilterPanel">
@@ -925,7 +905,7 @@
         <div class="form-group">
           <label class="form-label">类型</label>
           <select class="form-control" id="todoType">
-            <option value="pending">待办工作</option>
+            <option value="">不选择</option>
             <option value="key">重点工作</option>
             <option value="recurring">周期工作</option>
           </select>
@@ -1407,6 +1387,7 @@
         <div class="form-group">
           <label class="form-label">类型</label>
           <select class="form-control" id="trainingType">
+            <option value="">不选择</option>
             <option value="线下">线下</option>
             <option value="线上">线上</option>
             <option value="混合">混合</option>
@@ -1417,6 +1398,7 @@
         <div class="form-group">
           <label class="form-label">分类</label>
           <select class="form-control" id="trainingCategory">
+            <option value="">不选择</option>
             <option value="业务培训">业务培训</option>
             <option value="继续教育">继续教育</option>
             <option value="党建学习">党建学习</option>
@@ -1677,6 +1659,13 @@
         <select id="smartCat" class="form-control" style="margin-top:8px" onchange="smartSetCat(this.value)"></select>
       </div>
 
+      <div class="form-row" style="margin-top:8px">
+        <div class="form-group"><label class="form-label">初始状态</label>
+          <select id="smartState" class="form-control"><option value="未开始">未开始</option><option value="进行中">进行中</option><option value="已完成">已完成</option><option value="已关闭">已关闭</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">经办人</label><input id="smartAssignee" class="form-control" placeholder="可留空"></div>
+      </div>
+
       <div class="form-group" style="margin-top:8px">
         <label class="form-label">关联目标（可选，计入该目标进度）</label>
         <select id="smartGoal" class="form-control"><option value="">不关联</option></select>
@@ -1894,6 +1883,7 @@
     </div>
     <div class="modal-body">
       <input type="hidden" id="fundId">
+      <div class="form-group"><label class="form-label">经办人</label><input class="form-control" id="fundAssignee" placeholder="负责办理的人"></div>
       <div class="form-group">
         <label class="form-label">经费名称 *</label>
         <input class="form-control" id="fundName" placeholder="如：2026年办公经费">
@@ -1928,6 +1918,7 @@
     <div class="modal-body">
       <input type="hidden" id="fundRecordId">
       <input type="hidden" id="fundRecordFundId">
+      <div class="form-group"><label class="form-label">经办人</label><input class="form-control" id="fundRecordAssignee" placeholder="负责办理的人"></div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">开支日期 *</label>
@@ -1961,19 +1952,6 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="multiLedgerModal">
-  <div class="modal" style="max-width:520px">
-    <div class="modal-header"><span class="modal-title">加入其他台账</span><button class="close-btn" onclick="closeModal('multiLedgerModal')">×</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="multiLedgerSourceKey"><input type="hidden" id="multiLedgerSourceId">
-      <div id="multiLedgerSource" style="margin-bottom:12px"></div>
-      <div id="multiLedgerOptions"></div>
-      <p style="font-size:12px;color:var(--color-text3)">相同字段会带入；各台账独有的信息可稍后分别补充。</p>
-    </div>
-    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('multiLedgerModal')">取消</button><button class="btn btn-primary" onclick="applyMultiLedger()">生成所选台账</button></div>
-  </div>
-</div>
-
 <script>
 // ============================================================
 //  DATA LAYER
@@ -1998,9 +1976,8 @@ function existingRecord(key,id){
 }
 
 // ============================================================
-//  DATA LAYER v1.4 —— 统一数据源 + 三态状态生命周期
-//  设计裁定（见落地计划 D1）：保留 7 个台账数组原结构，仅追加统一字段；
-//  待办/看板/驾驶舱用跨数组查询实现"统一视图"，不复制不搬家。
+//  DATA LAYER v1.5 —— 原业务数组为单一存储，状态控制生命周期，所属板块决定归档展示。
+//  待办、正式板块和驾驶舱按状态查询同一条记录，不再生成工作记录副本。
 // ============================================================
 const LEDGER_META = {
   todos:     { key:'todos',     label:'工作台账', page:'todo',     hard:false },
@@ -2010,8 +1987,12 @@ const LEDGER_META = {
   agencys:   { key:'agencys',   label:'委托台账', page:'agency',   hard:true  },
   handovers: { key:'handovers', label:'交接台账', page:'handover', hard:true  },
   funds:     { key:'funds',     label:'经费台账', page:'fund',     hard:true  },
+  meetings:  { key:'meetings',  label:'会议', page:'meeting', hard:false },
+  trainings: { key:'trainings', label:'培训记录', page:'training', hard:false },
+  fundRecords:{ key:'fundRecords',label:'经费开支',page:'fund',hard:true },
 };
-const LEDGER_KEYS = Object.keys(LEDGER_META); // 七大台账的 localStorage key
+const LEDGER_KEYS = ['todos','contracts','purchases','expenses','agencys','handovers','funds'];
+const ENTRY_KEYS = [...LEDGER_KEYS,'meetings','trainings','fundRecords'];
 const STATE = { TODO:'未开始', DOING:'进行中', DONE:'已完成', CLOSED:'已关闭' };
 // 优先级：统一四象限（全站唯一标准，v1.4 #5）
 const PRIORITY = { URGENT_IMPORTANT:'重要且紧急', IMPORTANT:'重要不紧急', URGENT:'紧急不重要', NORMAL:'不重要不紧急' };
@@ -2070,9 +2051,16 @@ const LEDGER_FIELDS = {
                {key:'matter', label:'事项', type:'text'},
                {key:'note', label:'备注', type:'text'} ],
   funds:     [ {key:'budget', label:'金额', type:'number', required:true},
-               {key:'note', label:'说明', type:'text'} ],
+                {key:'note', label:'说明', type:'text'} ],
+  fundRecords:[{key:'fundId',label:'所属经费',type:'number',required:true},
+               {key:'amount',label:'金额',type:'number',required:true},
+               {key:'date',label:'日期',type:'date',required:true}],
   // 注：经费为两级结构（经费台账下再记转账开支），此处只填最小字段，转账后到经费台账补全。
 };
+ENTRY_KEYS.forEach(key=>{
+  LEDGER_FIELDS[key]=LEDGER_FIELDS[key]||[];
+  LEDGER_FIELDS[key].unshift({key:'assignee',label:'经办人',type:'text'});
+});
 
 // 原生 status → 统一 state 映射（历史迁移用，规格 §7 + 计划 3.2）
 function mapStatusToState(ledgerKey, status){
@@ -2096,17 +2084,47 @@ function validDateOrder(startId,endId,message){
   return true;
 }
 function recordState(key, rec){
-  return rec.state_manual ? rec.state : (rec.status ? mapStatusToState(key,rec.status) : (rec.state||STATE.TODO));
+  return rec.state_manual && rec.state ? rec.state : (rec.status ? mapStatusToState(key,rec.status) : (rec.state||STATE.TODO));
 }
 function finishWorkRecord(rec){
-  if(rec.is_goal) return;
+  if(rec.is_goal || (rec.owner_ledger && rec.owner_ledger!=='todos') || isLegacyLedgerMirror(rec)) return;
   const done=rec.state===STATE.DONE||rec.state===STATE.CLOSED;
   if(done && rec.type!=='record'){
-    rec._prevType=rec.type||'pending'; rec.type='record';
-  } else if(!done && rec.type==='record' && rec._prevType){
-    rec.type=rec._prevType;
+    rec._prevType=rec.type||''; rec.type='record';
+  } else if(!done && rec.type==='record'){
+    rec.type=rec._prevType||'';
   }
   rec.completeDate=done?(rec.completeDate||todayStr()):'';
+}
+function isLegacyLedgerMirror(rec){
+  return !!(rec.origin && /^(contracts|purchases|expenses|meetings|trainings|agencys):/.test(rec.origin));
+}
+function retireVerifiedLegacyMirrors(){
+  const rows=DB.raw('todos');
+  let changed=false;
+  rows.forEach(todo=>{
+    if(todo.deleted || !isLegacyLedgerMirror(todo))return;
+    const match=String(todo.origin).match(/^([^:]+):(.+)$/);
+    if(!match)return;
+    const source=DB.raw(match[1]).find(r=>!r.deleted && String(r.id)===match[2]);
+    if(source && String(source.todoRef)===String(todo.id)){
+      todo.deleted=true;
+      changed=true;
+    }
+  });
+  if(!changed)return;
+  if(localStorage.getItem('wb_v15_todos_before_mirror_cleanup')===null){
+    try{localStorage.setItem('wb_v15_todos_before_mirror_cleanup',JSON.stringify(DB.raw('todos')));}
+    catch(e){console.warn('无法保存旧工作副本快照，取消清理');return;}
+  }
+  DB.set('todos',rows);
+}
+function belongsToLedger(key,rec){
+  return (rec.owner_ledger||key)===key && !(key==='todos' && isLegacyLedgerMirror(rec));
+}
+function formalLedgerItems(key){
+  return DB.get(key).filter(r=>belongsToLedger(key,r) &&
+    ((key!=='todos'&&!r.state) || [STATE.DONE,STATE.CLOSED].includes(recordState(key,r))));
 }
 
 // 取某台账条目的"截止日期"（统一字段 due_date 优先，回退到各台账原生日期）
@@ -2257,11 +2275,11 @@ function formatLedgerRecurrence(period){
   return '每'+n+unit;
 }
 
-// 跨七台账取全部条目（打 _ledger 标签；D3：仅七台账，不含会议/培训）
+// 跨现有业务板块查询，附加所属板块标签；记录仍只保存在原数组。
 function getAllLedgerItems(){
   const out=[];
-  LEDGER_KEYS.forEach(key=>{
-    DB.get(key).forEach(r=>{
+  ENTRY_KEYS.forEach(key=>{
+    DB.get(key).filter(r=>belongsToLedger(key,r) && (r.state || !['meetings','trainings','fundRecords'].includes(key))).forEach(r=>{
       out.push(Object.assign({ _ledger:key, _ledgerLabel:LEDGER_META[key].label, _ledgerPage:LEDGER_META[key].page }, r));
     });
   });
@@ -2269,7 +2287,11 @@ function getAllLedgerItems(){
 }
 // 待办 = 活跃态（未开始 ∪ 进行中）过滤视图
 function getActiveItems(){
-  return getAllLedgerItems().filter(r=> recordState(r._ledger,r)===STATE.TODO || recordState(r._ledger,r)===STATE.DOING );
+  return getAllLedgerItems().filter(r=>[STATE.TODO,STATE.DOING].includes(recordState(r._ledger,r)));
+}
+// 待办页唯一数据源：只含该页实际渲染的普通活跃事项（长期目标在独立页面展示）。
+function getVisibleTodoItems(){
+  return getActiveItems().filter(r=>!r.is_goal && !!LEDGER_META[r._ledger]);
 }
 
 // v1.4 数据层保障：追加统一生命周期字段 + 首次运行快照 localStorage（回退 safety）
@@ -2336,7 +2358,7 @@ function restoreV14(){
 }
 
 // ============================================================
-//  状态机 v1.4 —— 三态生命周期 + 撤销退回（带审计）
+//  状态机 v1.5 —— 四态生命周期 + 撤销退回（带审计）
 //  设计：setState 只写统一 state 字段，不覆盖原有 status，
 //  保证回退到 v1.3 后老列表仍显示原始状态词（可回退红线）。
 // ============================================================
@@ -2351,17 +2373,6 @@ function stateBadge(rec){
 function rerenderCurrent(){
   const active=document.querySelector('.nav-item.active');
   if(typeof navigate==='function') navigate(currentPage, active);
-}
-function syncLinkedWorkState(key,record){
-  if(key==='todos'||!record.todoRef)return;
-  const todos=DB.raw('todos');
-  const work=todos.find(t=>String(t.id)===String(record.todoRef)&&!t.deleted);
-  if(!work)return;
-  work.state=recordState(key,record);
-  work.status=work.state;
-  work.state_manual=false;
-  finishWorkRecord(work);
-  DB.set('todos',todos);
 }
 function nativeStatusNote(key,rec){
   return rec.status&&mapStatusToState(key,rec.status)===recordState(key,rec)
@@ -2405,7 +2416,7 @@ function setState(ledgerKey, id, newState, reason){
   }
   records[i]=rec;
   DB.set(ledgerKey, records);
-  syncLinkedWorkState(ledgerKey,rec);
+
   rerenderCurrent();
   toast('状态已更新为：'+newState);
 }
@@ -2450,7 +2461,7 @@ function maybeRegenerate(ledgerKey, records, i, rec){
   if(ledgerKey==='todos') nrec.deadline = next;
   nrec.state = STATE.TODO;
   // 复制常见业务字段（金额/对方/类别等），其余沿用 ledgerDefaults 默认值
-  ['amount','party','supplier','agent','budget','category','giver','receiver','dealAmount','savingsRate','winSupplier','docDate','dept','contact','procType','evalMethod','expiry','signDate','invoice','invoiceDate','reimbDate','appDate','contractRef','purchaseRef','expenseRef','meetingRef','trainingRef','subtasks','source','issueDate','blocker','todoRef','fundItem'].forEach(k=>{ if(k in rec) nrec[k]=rec[k]; });
+  ['amount','party','supplier','agent','budget','category','giver','receiver','dealAmount','savingsRate','winSupplier','docDate','dept','contact','procType','evalMethod','expiry','signDate','invoice','invoiceDate','reimbDate','appDate','contractRef','purchaseRef','expenseRef','meetingRef','trainingRef','subtasks','source','issueDate','blocker','todoRef','fundItem','fundId','assignee','owner_ledger'].forEach(k=>{ if(k in rec) nrec[k]=rec[k]; });
   records.push(nrec);
   rec.next_generated = true;                // 标记本实例已再生
 }
@@ -2554,7 +2565,7 @@ function saveQuickNote(content, source){
 }
 // 各台账新建记录的字段基线（先归后补：只填最小，其余默认，info_complete=false 提示补全）
 function ledgerDefaults(ledgerKey){
-  const base={ id:0, state:STATE.TODO, closed_reason:'', due_date:'', recurrence:'none', recurrence_group_id:'', recurrence_index:0, parent_goal:'', is_goal:false, info_complete:false, next_generated:false, priority:'不重要不紧急', closed_by:'', closed_at:'', reopened_by:'', reopened_at:'', createdAt:todayStr(), deleted:false };
+  const base={ id:0, state:STATE.TODO, state_manual:true, owner_ledger:ledgerKey, assignee:'', closed_reason:'', due_date:'', recurrence:'none', recurrence_group_id:'', recurrence_index:0, parent_goal:'', is_goal:false, info_complete:false, next_generated:false, priority:'不重要不紧急', closed_by:'', closed_at:'', reopened_by:'', reopened_at:'', createdAt:todayStr(), deleted:false };
   switch(ledgerKey){
     case 'todos':     return Object.assign({}, base, { type:'pending', name:'', category:[], source:[], content:'', issueDate:'', deadline:'', blocker:'', status:'未开始', subtasks:[], contractRef:null, purchaseRef:null, expenseRef:null, meetingRef:null, trainingRef:null, info_complete:true });
     case 'contracts': return Object.assign({}, base, { name:'', party:'', amount:0, signDate:'', expiry:'', status:'执行中', note:'', category:'货物类', todoRef:null });
@@ -2563,10 +2574,13 @@ function ledgerDefaults(ledgerKey){
     case 'agencys':   return Object.assign({}, base, { name:'', method:'', category:'', budget:0, date:'', agent:'', status:'待委托', dealAmount:0, savingsRate:null, winSupplier:'', docDate:'', dept:'', contact:'', procType:'自行组织', evalMethod:'', todoRef:null });
     case 'handovers': return Object.assign({}, base, { date:'', giver:'', receiver:'', matter:'', status:'待交接', note:'' });
     case 'funds':     return Object.assign({}, base, { name:'', category:'', budget:0, note:'', status:'进行中' });
+    case 'meetings': return Object.assign({}, base, { name:'', date:'', startTime:'', endTime:'', location:'', organizer:'', attendees:[], actionItems:[] });
+    case 'trainings':return Object.assign({}, base, { name:'', startDate:'', endDate:'', organizer:'', content:'' });
+    case 'fundRecords':return Object.assign({}, base, { name:'', fundId:null, subcategoryId:'',date:'',content:'',amount:0,expenseRef:null,note:'' });
     default:          return base;
   }
 }
-// 由速记归档创建台账条目（统一入口）
+// 智能录入创建所属板块记录（统一入口）
 function createLedgerItem(ledgerKey, {title, requirement, due_date, priority, isGoal, parentGoal, state, extra}){
   const arr=DB.raw(ledgerKey);
   const rec=ledgerDefaults(ledgerKey);
@@ -2578,7 +2592,13 @@ function createLedgerItem(ledgerKey, {title, requirement, due_date, priority, is
   if(ledgerKey==='todos') rec.deadline = due_date||'';
   rec.priority = normPriority(priority);
   rec.state = state ? state : (isGoal ? STATE.DOING : STATE.TODO);
+  rec.state_manual = true;
+  rec.owner_ledger = ledgerKey;
   if(isGoal) rec.is_goal=true;
+  if(ledgerKey==='todos'){
+    rec.status=rec.state;
+    finishWorkRecord(rec);
+  }
   if(parentGoal) rec.parent_goal='todos:'+parentGoal;
   // 目标不能关联自身：否则 goalProgress 会把目标自身算进子任务、进度环错乱
   if(rec.is_goal && rec.parent_goal===('todos:'+rec.id)) rec.parent_goal='';
@@ -2607,75 +2627,6 @@ function createLedgerItem(ledgerKey, {title, requirement, due_date, priority, is
   arr.push(rec); DB.set(ledgerKey, arr);
   return rec;
 }
-function sharedWorkOrigin(key,rec){
-  if(rec.origin)return rec.origin;
-  if(key==='todos'){
-    for(const [field,target] of [['contractRef','contracts'],['purchaseRef','purchases'],['expenseRef','expenses'],['agencyRef','agencys']]){
-      if(rec[field])return target+':'+rec[field];
-    }
-  }
-  return key+':'+rec.id;
-}
-function linkedLedgerRecord(sourceKey,source,targetKey){
-  const id=source.linked_ledgers?.[targetKey] || (sourceKey==='todos'?({contracts:source.contractRef,purchases:source.purchaseRef,expenses:source.expenseRef,agencys:source.agencyRef}[targetKey]):null) || (targetKey==='todos'?source.todoRef:null);
-  if(id&&DB.get(targetKey).some(r=>String(r.id)===String(id)))return true;
-  const origin=sharedWorkOrigin(sourceKey,source);
-  return DB.get(targetKey).some(r=>r.origin===origin || (targetKey+':'+r.id)===origin || (sourceKey==='purchases'&&String(r._fromPurchase||'')===String(source.id)));
-}
-function matchingLedgerFields(sourceKey,source,targetKey){
-  const note=source.note||source.content||source.requirement||'';
-  const common={assignee:source.assignee||''};
-  if(targetKey==='contracts')return {...common,party:source.party||(sourceKey==='purchases'?source.supplier||'':''),amount:Number(source.amount)||0,note,expiry:source.expiry||''};
-  if(targetKey==='purchases')return {...common,supplier:source.supplier||'',amount:Number(source.amount)||0,note};
-  if(targetKey==='expenses')return {...common,content:source.content||source.name||source.title||'',amount:Number(source.amount)||0,supplier:source.supplier||'',invoice:source.invoice||'',appDate:source.appDate||'',note,fundItem:source.fundItem||null,subcategoryId:source.subcategoryId||''};
-  if(targetKey==='agencys')return {...common,budget:Number(source.budget)||0,agent:source.agent||'',contact:source.contact||'',note};
-  if(targetKey==='handovers')return {...common,giver:source.giver||'',receiver:source.receiver||'',matter:source.matter||source.name||source.title||'',note};
-  if(targetKey==='funds')return {...common,budget:Number(source.budget)||0,note,subcategories:[]};
-  return {...common,content:source.content||source.note||'',note};
-}
-function openMultiLedger(sourceKey,id){
-  const source=DB.get(sourceKey).find(r=>String(r.id)===String(id));
-  if(!source)return;
-  document.getElementById('multiLedgerSourceKey').value=sourceKey;
-  document.getElementById('multiLedgerSourceId').value=id;
-  document.getElementById('multiLedgerSource').textContent='当前事项：'+(source.name||source.title||source.content||source.matter||'记录');
-  document.getElementById('multiLedgerOptions').innerHTML=LEDGER_KEYS.filter(key=>key!==sourceKey).map(key=>{
-    const linked=linkedLedgerRecord(sourceKey,source,key);
-    return `<label style="display:block;padding:7px;border-bottom:1px solid var(--color-border)"><input type="checkbox" data-target="${key}" ${linked?'disabled':''}> ${esc(LEDGER_META[key].label)}${linked?'（已关联）':''}</label>`;
-  }).join('');
-  openModal('multiLedgerModal');
-}
-function applyMultiLedger(){
-  const sourceKey=document.getElementById('multiLedgerSourceKey').value;
-  const sourceId=document.getElementById('multiLedgerSourceId').value;
-  const checked=[...document.querySelectorAll('#multiLedgerOptions input:checked')];
-  if(!checked.length){toast('请先选择要加入的台账');return;}
-  const rows=DB.raw(sourceKey);
-  const source=rows.find(r=>String(r.id)===String(sourceId)&&!r.deleted);
-  if(!source){toast('原始记录已不存在');return;}
-  const origin=sharedWorkOrigin(sourceKey,source);
-  source.origin=origin;
-  source.linked_ledgers=source.linked_ledgers||{};
-  let created=0;
-  checked.forEach(input=>{
-    const target=input.dataset.target;
-    if(linkedLedgerRecord(sourceKey,source,target))return;
-    const extra=matchingLedgerFields(sourceKey,source,target);
-    extra.origin=origin;extra.linked_from_work=target!=='todos';
-    extra.linked_ledgers={[sourceKey]:source.id};
-    const result=createLedgerItem(target,{
-      title:source.name||source.title||source.content||source.matter||'记录',
-      requirement:source.content||source.note||'',due_date:'',priority:source.priority,
-      extra
-    });
-    source.linked_ledgers[target]=result.id;
-    created++;
-  });
-  DB.set(sourceKey,rows);
-  closeModal('multiLedgerModal');
-  rerenderCurrent();
-  toast(created?'已生成 '+created+' 条关联台账记录':'所选台账已有对应记录');
-}
 // 当前活跃目标列表（用于"关联目标"下拉，T7）
 function activeGoalOptions(){
   const goals=getAllLedgerItems().filter(r=>r.is_goal && (r.state===STATE.TODO||r.state===STATE.DOING));
@@ -2683,27 +2634,6 @@ function activeGoalOptions(){
   return goals.map(g=>`<option value="${g.id}">${esc(g.name||g.title||'未命名目标')}${g.recurrence!=='none'?'（周期）':''}</option>`).join('');
 }
 // 新建长期目标（T7）：建 todos 条目 is_goal=true，state=进行中
-function openNewGoal(){
-  document.getElementById('newGoalTitle').value='';
-  document.getElementById('newGoalDue').value='';
-  document.getElementById('newGoalPriority').value='不重要不紧急';
-  openModal('newGoalModal');
-}
-function openNewTodoFromActive(){
-  clearTodoForm();
-  document.getElementById('todoModalTitle').textContent='新建待办';
-  openModal('todoModal');
-}
-function applyNewGoal(){
-  const title=document.getElementById('newGoalTitle').value.trim();
-  if(!title){ toast('请填写目标名称'); return; }
-  const due=document.getElementById('newGoalDue').value;
-  const priority=document.getElementById('newGoalPriority').value;
-  createLedgerItem('todos',{title,due_date:due,priority,isGoal:true});
-  closeModal('newGoalModal');
-  if(currentPage==='长期目标') renderGoals(); else navigate('长期目标');
-  toast('已创建长期目标');
-}
 function renderQuick(){
   const all=DB.get('quick_notes');
   const inbox=all.filter(n=>n.status==='inbox').sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||''));
@@ -2713,16 +2643,14 @@ function renderQuick(){
   if(!box) return;
   const cEl=document.getElementById('quickInboxCount'); if(cEl) cEl.textContent = inbox.length?('('+inbox.length+')'):'';
   if(!list.length){
-    box.innerHTML='<div class="empty-state"><p>'+(quickView==='inbox'?'收件箱是空的，点右上角"写一句"记录念头':'暂无已归档速记')+'</p></div>';
+    box.innerHTML='<div class="empty-state"><p>'+(quickView==='inbox'?'收件箱是空的，可通过「智能录入」记录新事项':'暂无已归档速记')+'</p></div>';
     return;
   }
   box.innerHTML=list.map(n=>{
     const tgt = n.target_ledger? (LEDGER_META[n.target_ledger]?LEDGER_META[n.target_ledger].label:'灵感') : '';
     const linked = n.linked_id? ' → '+esc(tgt) : '';
     const actions = quickView==='inbox'
-      ? `<button class="btn btn-ghost btn-sm" onclick="openArchiveModal(${n.id})">整理</button>
-         <button class="btn btn-ghost btn-sm" onclick="moveQuickToInspiration(${n.id})">转灵感</button>
-         <button class="btn btn-ghost btn-sm" onclick="deleteQuickNote(${n.id})" style="color:var(--color-danger)">删除</button>`
+      ? `<button class="btn btn-ghost btn-sm" onclick="deleteQuickNote(${n.id})" style="color:var(--color-danger)">删除</button>`
       : `<span class="tag">已归档${esc(linked)}</span>`;
     return `<div class="insp-card" data-bulk-key="quick_notes" data-bulk-id="${esc(n.id)}">
       <div class="insp-card-body">${esc(n.content)}</div>
@@ -2737,190 +2665,14 @@ function switchQuickView(v, el){
   if(el) el.classList.add('active');
   renderQuick();
 }
-function openQuickCompose(){
-  document.getElementById('quickComposeText').value='';
-  openModal('quickComposeModal');
-  setTimeout(()=>{const t=document.getElementById('quickComposeText'); if(t)t.focus();},50);
-}
-function saveQuickCompose(){
-  const txt=document.getElementById('quickComposeText').value;
-  if(!txt.trim()){ toast('写点什么吧'); return; }
-  saveQuickNote(txt,'quick_add');
-  closeModal('quickComposeModal');
-  if(currentPage==='quick') renderQuick();
-  updateQuickBadge();
-  toast('已收入速记箱');
-}
-function openArchiveModal(id){
-  const n=DB.raw('quick_notes').find(x=>x.id===id);
-  if(!n) return;
-  document.getElementById('archiveMode').value='quick';
-  document.getElementById('archiveItemId').value='';
-  document.getElementById('archiveQuickId').value=id;
-  document.getElementById('archiveQuickPreview').textContent=n.content||'';
-  document.getElementById('archiveTitle').value=(n.content||'').slice(0,30);
-  document.getElementById('archiveRequirement').value=(n.content||'');
-  document.getElementById('archiveDue').value='';
-  document.getElementById('archivePriority').value='不重要不紧急';
-  const stEl=document.getElementById('archiveState');
-  if(stEl) stEl.value='TODO';
-  const sel=document.getElementById('archiveLedger');
-  sel.disabled=false;
-  sel.innerHTML=LEDGER_KEYS.map(k=>`<option value="${k}">${LEDGER_META[k].label}</option>`).join('');
-  const goalSel=document.getElementById('archiveGoal');
-  if(goalSel) goalSel.innerHTML='<option value="">不关联</option>'+activeGoalOptions();
-  onArchiveLedgerChange();
-  openModal('quickArchiveModal');
-}
-function onArchiveLedgerChange(){
-  const k=document.getElementById('archiveLedger').value;
-  const hint=document.getElementById('archiveInfoHint');
-  if(k && LEDGER_META[k] && LEDGER_META[k].hard){
-    hint.textContent='硬台账「'+LEDGER_META[k].label+'」只填最小字段，其余标记"信息不全"，稍后在台账补全（先归后补）。';
-  } else { hint.textContent=''; }
-  // 按目标台账动态渲染补字段（key 与 save*/详情一致）
-  const box=document.getElementById('archiveFields');
-  if(box){
-    const fields=LEDGER_FIELDS[k]||[];
-    if(!fields.length){ box.innerHTML=''; return; }
-    box.innerHTML=fields.map(f=>`<div class="form-group"><label class="form-label">${f.label}</label><input class="form-control" id="af_${f.key}" type="${f.type}"></div>`).join('');
-  }
-}
-function applyArchive(){
-  const id=+document.getElementById('archiveQuickId').value;
-  const ledger=document.getElementById('archiveLedger').value;
-  const title=document.getElementById('archiveTitle').value.trim();
-  if(!title){ toast('请填写标题'); return; }
-  let requirement=document.getElementById('archiveRequirement').value.trim();
-  // 要求为空时，用速记正文兜底作占位
-  if(!requirement){ const n=DB.raw('quick_notes').find(x=>x.id===id); requirement=(n&&n.content)||''; }
-  const due=document.getElementById('archiveDue').value;
-  const priorityRaw=document.getElementById('archivePriority').value;
-  const st=document.getElementById('archiveState')?document.getElementById('archiveState').value:'TODO';
-  const parentGoal=document.getElementById('archiveGoal').value;
-  // 未设截止时间则默认标"重要"，确保进入待办时醒目（C 方案）
-  const priority=normPriority(priorityRaw);
-  // 收集动态补字段（空值不写入，避免覆盖默认值）
-  const extra={};
-  (LEDGER_FIELDS[ledger]||[]).forEach(f=>{
-    const v=document.getElementById('af_'+f.key);
-    if(v){
-      let val=v.value;
-      if(f.type==='number'){ val=val===''?'': +val; }
-      if(val!=='' && val!==undefined && val!==null) extra[f.key]=val;
-    }
-  });
-  const rec=createLedgerItem(ledger,{title,requirement,due_date:due,priority, parentGoal: parentGoal?+parentGoal:undefined, state:st, extra});
-  const notes=DB.raw('quick_notes');
-  const i=notes.findIndex(n=>String(n.id)===String(id));
-  if(i>=0){
-    notes[i]=Object.assign({},notes[i],{status:'archived',archived_at:new Date().toISOString(),target_ledger:ledger,linked_id:rec.id});
-    DB.set('quick_notes',notes);
-  }
-  closeModal('quickArchiveModal');
-  renderQuick(); updateQuickBadge();
-  if(st===STATE.DONE||st===STATE.CLOSED) toast('已整理到'+LEDGER_META[ledger].label+'（'+st+'，不进待办）');
-  else toast('已整理到'+LEDGER_META[ledger].label+'（进待办）');
-}
-// 弹窗确认分发：速记→新建台账项走 applyArchive；台账项编辑走 applyOrganize
-function applyOrganizeDispatch(){
-  const mode=document.getElementById('archiveMode').value;
-  if(mode==='ledger') applyOrganize(); else applyArchive();
-}
-// 打开"待办项编辑/整理"弹窗（改造自原速记归档弹窗，承载问题4"整理在待办完成"+问题2目标编辑）
 function openOrganizeModal(ledgerKey, id){
-  const rec=DB.raw(ledgerKey).find(r=>String(r.id)===String(id));
-  if(!rec) return;
-  document.getElementById('archiveMode').value='ledger';
-  document.getElementById('archiveQuickId').value='';
-  document.getElementById('archiveItemId').value=id;
-  document.getElementById('archiveLedger').value=ledgerKey;
-  document.getElementById('archiveLedger').disabled=true; // 编辑时不跨台账移动
-  document.getElementById('archiveQuickPreview').textContent=LEDGER_META[ledgerKey].label+' · '+(rec.name||rec.title||'');
-  document.getElementById('archiveTitle').value=rec.name||rec.title||'';
-  document.getElementById('archiveRequirement').value=rec.content||rec.requirement||'';
-  document.getElementById('archiveDue').value=rec.due_date||'';
-  document.getElementById('archivePriority').value=normPriority(rec.priority);
-  const stEl=document.getElementById('archiveState'); if(stEl) stEl.value=rec.state||'TODO';
-  const goalSel=document.getElementById('archiveGoal');
-  if(goalSel){ goalSel.innerHTML='<option value="">不关联</option>'+activeGoalOptions();
-    if(rec.parent_goal){ const gid=String(rec.parent_goal).replace('todos:',''); const o=[...goalSel.options].find(o=>o.value==gid); if(o)o.selected=true; } }
-  onArchiveLedgerChange();
-  (LEDGER_FIELDS[ledgerKey]||[]).forEach(f=>{ const el=document.getElementById('af_'+f.key); if(el && rec[f.key]!==undefined && rec[f.key]!==null) el.value=rec[f.key]; });
-  openModal('quickArchiveModal');
-}
-// 保存台账项编辑（不新建、不归档 quick_notes）
-function applyOrganize(){
-  const ledger=document.getElementById('archiveLedger').value;
-  const id=+document.getElementById('archiveItemId').value;
-  const title=document.getElementById('archiveTitle').value.trim();
-  if(!title){ toast('请填写标题'); return; }
-  let requirement=document.getElementById('archiveRequirement').value.trim();
-  const due=document.getElementById('archiveDue').value;
-  const priorityRaw=document.getElementById('archivePriority').value;
-  const st=document.getElementById('archiveState')?document.getElementById('archiveState').value:'TODO';
-  const parentGoal=document.getElementById('archiveGoal').value;
-  const priority=normPriority(priorityRaw);
-  const extra={};
-  (LEDGER_FIELDS[ledger]||[]).forEach(f=>{ const v=document.getElementById('af_'+f.key); if(v){ let val=v.value; if(f.type==='number'){ val=val===''?'':+val; } if(val!==''&&val!==undefined&&val!==null) extra[f.key]=val; } });
-  // 类型安全查找：legacy 数据 id 可能为字符串，强转数字后严格比较会匹配失败（v1.4 #2 修复"确认没反应"）
-  const recs=DB.raw(ledger); const i=recs.findIndex(r=>String(r.id)===String(id));
-  if(i<0){ toast('未找到该台账项（可能已被删除）'); closeModal('quickArchiveModal'); return; }
-  const rec=recs[i];
-  rec.name=title; rec.title=title; rec.content=requirement; rec.requirement=requirement;
-  rec.due_date=due; if(ledger==='todos') rec.deadline=due;
-  rec.priority=priority; rec.state=st; rec.state_manual=true;
-  if(ledger==='todos'){rec.status=st;finishWorkRecord(rec);}
-  // 目标关闭前确认活跃子任务（与 setState 一致）
-  if((st===STATE.DONE||st===STATE.CLOSED) && rec.is_goal){
-    const kids=getAllLedgerItems().filter(r=>r.parent_goal===('todos:'+rec.id) && (r.state===STATE.TODO||r.state===STATE.DOING));
-    if(kids.length && !confirm('该目标还有 '+kids.length+' 个进行中的子任务，确认关闭目标？')){ return; }
-  }
-  // 关停周期（v1.4 #4 修复）：整理弹窗标"已关闭"的周期项同样整链停止
-  if(st===STATE.CLOSED && rec.recurrence && rec.recurrence!=='none'){
-    stopRecurrenceGroup(recs, rec);
-  }
-  // 目标不能关联自身：否则 goalProgress 会把目标自身算进子任务、进度环错乱
-  let pg = parentGoal? 'todos:'+parentGoal : '';
-  if(rec.is_goal && pg===('todos:'+rec.id)) pg='';
-  rec.parent_goal = pg;
-  if(extra) Object.assign(rec, extra);
-  // todos 备注并入 content（沿用 createLedgerItem 逻辑，保持一致）
-  if(ledger==='todos' && extra && extra.note){ rec.content=(rec.content?rec.content+'｜':'')+'备注：'+extra.note; }
-  // 硬台账信息不全重算
-  if(LEDGER_META[ledger] && LEDGER_META[ledger].hard){
-    const reqs=(LEDGER_FIELDS[ledger]||[]).filter(f=>f.required).map(f=>f.key);
-    const missing=reqs.filter(k=> !rec[k] || rec[k]==='' || (typeof rec[k]==='number'&&isNaN(rec[k])));
-    rec.info_complete = missing.length? false : true;
-    if(missing.length){ const labels=missing.map(k=>{const f=(LEDGER_FIELDS[ledger]||[]).find(x=>x.key===k);return f?f.label:k;});
-      rec.note=(rec.note||'').replace(/（信息不全：.*?）/g,'')+'（信息不全：缺'+labels.join('、')+'）'; }
-    else { rec.note=(rec.note||'').replace(/（信息不全：.*?）/g,''); }
-  }
-  if(ledger==='funds'){ rec.info_complete=true; rec.note=(rec.note||'').replace(/（经费为两级结构.*?）/g,'')+'（经费为两级结构，转账开支请到经费台账补全）'; }
-  recs[i]=rec; DB.set(ledger, recs);
-  syncLinkedWorkState(ledger,rec);
-  // 周期项再生下一期（v1.4 #4）：仅"已完成(DONE)"触发；"已关闭(CLOSED)"为关停不生成
-  if((st===STATE.DONE) && rec.recurrence && rec.recurrence!=='none' && !rec.next_generated){
-    maybeRegenerate(ledger, recs, i, rec);
-    DB.set(ledger, recs);
-  }
-  closeModal('quickArchiveModal');
-  renderTodos(); updateTodoBadge();
-  if(st===STATE.DONE||st===STATE.CLOSED) toast('已保存（'+LEDGER_META[ledger].label+'，'+st+'，不进待办）');
-  else toast('已保存（'+LEDGER_META[ledger].label+'，进待办）');
-}
-function moveQuickToInspiration(id){
-  const notes=DB.raw('quick_notes');
-  const i=notes.findIndex(n=>String(n.id)===String(id));
-  if(i<0) return;
-  const n=notes[i];
-  const insp=DB.raw('inspirations');
-  const item={id:DB.nextId(insp),title:(n.content||'').slice(0,30),content:n.content||'',tags:['想法'],status:'active',createdAt:todayStr(),archived_to:null,deleted:false};
-  insp.push(item); DB.set('inspirations',insp);
-  notes[i]=Object.assign({},n,{status:'archived',archived_at:new Date().toISOString(),target_ledger:'inspiration',linked_id:item.id});
-  DB.set('quick_notes',notes);
-  renderQuick(); updateQuickBadge();
-  toast('已转入灵感');
+  const editors={todos:editTodo,contracts:editContract,purchases:editPurchase,expenses:editExpense,
+    agencys:editAgency,handovers:editHandover,funds:editFund,meetings:editMeeting,trainings:editTraining,fundRecords:editFundRecord};
+  const modalIds={todos:'todoModal',contracts:'contractModal',purchases:'purchaseModal',expenses:'expenseModal',
+    agencys:'agencyModal',handovers:'handoverModal',funds:'fundModal',meetings:'meetingModal',trainings:'trainingModal',fundRecords:'fundRecordModal'};
+  if(!editors[ledgerKey]){toast('所属板块表单不可用');return;}
+  editors[ledgerKey](id);
+  hideLifecycleStatusField(modalIds[ledgerKey]);
 }
 function deleteQuickNote(id){
   if(!confirm('确定删除这条速记？')) return;
@@ -2937,7 +2689,7 @@ function updateQuickBadge(){
 }
 
 // ============================================================
-//  待办视图 v1.4 —— 跨七台账活跃态过滤视图（不复制不搬家）
+//  待办视图 v1.5 —— 跨业务板块的活跃状态视图。
 // ============================================================
 // 目标进度（按 recurrence_group_id 去重，防周期任务灌水）
 function goalProgress(goalId){
@@ -2952,20 +2704,21 @@ function goalProgress(goalId){
   return {total, closed, pct: total?Math.round(closed/total*100):0};
 }
 function renderTodos(){
-  const active=getActiveItems();
+  const visible=getVisibleTodoItems();
   const box=document.getElementById('todoActiveList');
   if(!box) return;
+  renderReminders();
   updateTodoBadge();
   const sum=document.getElementById('todoActiveSummary');
-  if(sum) sum.textContent='共 '+active.filter(r=>!r.is_goal).length+' 项进行中';
-  if(!active.length){
+  if(sum) sum.textContent='共 '+visible.length+' 项进行中';
+  if(!visible.length){
     box.innerHTML='<div class="empty-state"><p>🎉 没有进行中的事项。有念头？去「智能录入」添加一笔吧。</p></div>';
     return;
   }
-  const normal=active.filter(r=>!r.is_goal);
   let html='';
   const groups={};
-  normal.forEach(r=>{ (groups[r._ledgerLabel]=groups[r._ledgerLabel]||[]).push(r); });
+  const groupLabels={todos:'工作',contracts:'合同',purchases:'采购',expenses:'报销',meetings:'会议',trainings:'培训',agencys:'委托',handovers:'交接',funds:'经费',fundRecords:'经费开支'};
+  visible.forEach(r=>{ const label=groupLabels[r._ledger]||r._ledgerLabel; (groups[label]=groups[label]||[]).push(r); });
   const prio=PRIORITY_WEIGHT;
   Object.keys(groups).sort().forEach(k=>{
     const items=groups[k].sort((a,b)=>{
@@ -2985,7 +2738,6 @@ function renderTodos(){
           <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">${stateBadge(r)}
             <button class="btn btn-ghost btn-sm" onclick="openStateModal('${r._ledger}',${r.id})">状态</button>
             <button class="btn btn-ghost btn-sm" onclick="openOrganizeModal('${r._ledger}',${r.id})">整理</button>
-            <button class="btn btn-ghost btn-sm" onclick="openMultiLedger('${r._ledger}',${r.id})">加入台账</button>
           </div>
         </div>
         <div class="todo-card-meta">
@@ -3025,7 +2777,7 @@ function renderGoals(){
   const sumEl=document.getElementById('goalSummary');
   if(sumEl) sumEl.textContent='共 '+all.length+' 个目标（进行中 '+active.length+'）';
   if(!all.length){
-    box.innerHTML='<div class="empty-state"><p>🎯 还没有长期目标。点右上角"＋ 新建长期目标"，把想长期推进的事放进来；待办页只放具体要做的事。</p></div>';
+    box.innerHTML='<div class="empty-state"><p>🎯 还没有长期目标，可通过「智能录入」选择长期目标。</p></div>';
     return;
   }
   let html='';
@@ -3068,15 +2820,61 @@ function goalCardHtml(g){
     +'</div>';
 }
 function updateTodoBadge(){
-  const n=getActiveItems().filter(r=>!r.is_goal).length;
+  const n=getVisibleTodoItems().length;
   const el=document.getElementById('todoActiveCount');
   if(el){ if(n>0){el.style.display='';el.textContent=n;}else{el.style.display='none';} }
+}
+function refreshDataBadges(){
+  updateTodoBadge();
+  updateRemindBadge();
+  updateQuickBadge();
+  updateGoalBadge(DB.get('todos').filter(r=>r.is_goal && [STATE.TODO,STATE.DOING].includes(recordState('todos',r))).length);
+  const todos=formalLedgerItems('todos');
+  TODO_TYPES.forEach(type=>{
+    const n=todos.length;
+    const tab=document.getElementById('tabCount-'+type);
+    if(tab)tab.textContent=n;
+  });
+  const badge=document.getElementById('todoCount');
+  if(badge)badge.style.display='none';
 }
 
 // ============================================================
 //  提醒机制 v1.4（C 方案）：到期/逾期通知 + 轻量提醒中心
 // ============================================================
+const REMINDER_IGNORED_KEY='wb_ignored_reminders_v1';
 const remindShown = new Set(); // 本次会话已提醒过的条目 key，避免重复打扰
+function reminderKey(rec,due){
+  return [rec._ledger,String(rec.id),'due',String(due||''),String(rec.createdAt||'')].join('|');
+}
+function ignoredReminderKeys(){
+  try{
+    const value=JSON.parse(localStorage.getItem(REMINDER_IGNORED_KEY)||'[]');
+    return new Set(Array.isArray(value)?value.filter(key=>typeof key==='string'):[]);
+  }catch(e){return new Set();}
+}
+function isReminderIgnored(rec,due,ignored=ignoredReminderKeys()){
+  return ignored.has(reminderKey(rec,due));
+}
+function getDueReminderItems(){
+  const today=todayStr();
+  const ignored=ignoredReminderKeys();
+  return getActiveItems().map(r=>{
+    const due=getDueDate(r,r._ledger);
+    return Object.assign({},r,{_due:due});
+  }).filter(r=>r._due&&r._due<=today&&!isReminderIgnored(r,r._due,ignored));
+}
+function ignoreReminder(key){
+  if(!key)return;
+  const ignored=ignoredReminderKeys();
+  ignored.add(String(key));
+  localStorage.setItem(REMINDER_IGNORED_KEY,JSON.stringify([...ignored]));
+  remindShown.delete(String(key));
+  renderRemindCenter();
+  renderReminders();
+  updateRemindBadge();
+  toast('已忽略该提醒，原记录保持不变');
+}
 // 触发系统通知（桌面 Notification）+ 应用内 toast
 function fireNotification(title, body){
   if('Notification' in window && Notification.permission==='granted'){
@@ -3103,10 +2901,10 @@ function updateRemindPermBtn(){
 // 扫描活跃条目：今天到期/已逾期的，未提醒过的弹通知 + toast
 function checkReminders(force){
   const today=todayStr();
-  const items=getActiveItems().map(r=>{const d=getDueDate(r,r._ledger);return Object.assign({},r,{_due:d});}).filter(r=>r._due && r._due<=today);
+  const items=getDueReminderItems();
   let count=0;
   items.forEach(r=>{
-    const key=r._ledger+':'+r.id;
+    const key=reminderKey(r,r._due);
     if(!force && remindShown.has(key)) return;
     remindShown.add(key);
     const overdue=r._due<today;
@@ -3120,8 +2918,7 @@ function checkReminders(force){
 // 提醒中心列表渲染
 function renderRemindCenter(){
   const today=todayStr();
-  const items=getActiveItems().map(r=>{const d=getDueDate(r,r._ledger);return Object.assign({},r,{_due:d});}).filter(r=>r._due && r._due<=today)
-    .sort((a,b)=>a._due.localeCompare(b._due));
+  const items=getDueReminderItems().sort((a,b)=>a._due.localeCompare(b._due));
   const box=document.getElementById('remindList');
   if(!box) return;
   updateRemindPermBtn();
@@ -3143,13 +2940,13 @@ function renderRemindCenter(){
         ${priorityTag(r.priority)}
         <button class="btn btn-ghost btn-sm" onclick="openStateModal('${r._ledger}',${r.id})">状态</button>
         <button class="btn btn-ghost btn-sm" onclick="openSearchHit('${r._ledger}','${r.id}')">查看原记录</button>
+        <button class="btn btn-ghost btn-sm" data-reminder-key="${esc(reminderKey(r,r._due))}" onclick="ignoreReminder(this.dataset.reminderKey)">忽略提醒</button>
       </div>
     </div>`;
   }).join('')+'</div>';
 }
 function updateRemindBadge(){
-  const today=todayStr();
-  const n=getActiveItems().map(r=>({d:getDueDate(r,r._ledger)})).filter(r=>r.d&&r.d<=today).length;
+  const n=getDueReminderItems().length;
   const el=document.getElementById('remindCount');
   if(el){ if(n>0){el.style.display='';el.textContent=n;}else{el.style.display='none';} }
 }
@@ -3160,7 +2957,7 @@ function renderDashboardV14(){
   const all=getAllLedgerItems();
   const counts={todo:0,doing:0,done:0,closed:0};
   all.forEach(r=>{ const state=recordState(r._ledger,r);if(state===STATE.TODO)counts.todo++; else if(state===STATE.DOING)counts.doing++; else if(state===STATE.DONE)counts.done++; else if(state===STATE.CLOSED)counts.closed++; });
-  const ledgerRows=LEDGER_KEYS.map(k=>{
+  const ledgerRows=ENTRY_KEYS.map(k=>{
     const items=all.filter(r=>r._ledger===k);
     const total=items.length;
     const closed=items.filter(r=>[STATE.CLOSED,STATE.DONE].includes(recordState(k,r))).length;
@@ -3405,16 +3202,6 @@ function repairData(){
 
   if(repaired)console.log('✅ 历史数据已自动修复（格式迁移+ID修复+字段补齐）');
 
-  // P1-2 回填：为 P1-2 之前创建的台账补全工作记录联动（一次性，幂等）
-  ['contracts','purchases','expenses'].forEach(key=>{
-    const records=DB.raw(key);
-    const missing=records.filter(r=>r.id&&!r.deleted&&!r.todoRef&&!r._fromPurchase);
-    if(!missing.length)return;
-    const mod=key==='expenses'?'expenses':key.slice(0,-1);
-    missing.forEach(r=>syncLedgerTodo(mod,r));
-    console.log('🔗 '+key+'：为 '+missing.length+' 条历史记录补全了工作记录联动');
-  });
-
   // v1.4：追加统一生命周期字段并按原生 status 计算 state（幂等，只加不改）
   ensureV14();
 }
@@ -3467,7 +3254,18 @@ function closeSidebar(){
 // ============================================================
 //  MODAL
 // ============================================================
-function openModal(id){document.getElementById(id).classList.add('open')}
+function openModal(id){
+  const modal=document.getElementById(id);
+  modal.querySelectorAll('#contractStatus,#purchaseStatus,#expenseStatus,#agencyStatus').forEach(el=>{
+    const group=el.closest('.form-group');if(group)group.style.display='';
+  });
+  modal.classList.add('open');
+}
+function hideLifecycleStatusField(modalId){
+  document.getElementById(modalId).querySelectorAll('#contractStatus,#purchaseStatus,#expenseStatus,#agencyStatus').forEach(el=>{
+    const group=el.closest('.form-group');if(group)group.style.display='none';
+  });
+}
 function closeModal(id){document.getElementById(id).classList.remove('open')}
 document.querySelectorAll('.modal-overlay').forEach(m=>{
   m.addEventListener('click',function(e){if(e.target===this)closeModal(this.id)});
@@ -3607,20 +3405,20 @@ function updateDateRangeUI() {
 //  DASHBOARD (全时驾驶舱 - 所有时间汇总)
 // ============================================================
 function renderDashboard() {
-  const todos = DB.get('todos');
-  const contracts = DB.get('contracts');
-  const purchases = DB.get('purchases');
-  const expenses = DB.get('expenses');
-  const meetings = DB.get('meetings');
-  const trainings = DB.get('trainings');
+  const todos = DB.get('todos').filter(t=>belongsToLedger('todos',t));
+  const contracts = formalLedgerItems('contracts');
+  const purchases = formalLedgerItems('purchases');
+  const expenses = formalLedgerItems('expenses');
+  const meetings = formalLedgerItems('meetings');
+  const trainings = formalLedgerItems('trainings');
   const inspirations = DB.get('inspirations');
-  const agencys = DB.get('agencys');
-  const handovers = DB.get('handovers');
-  const funds = DB.get('funds');
-  const fundRecords = DB.get('fundRecords');
+  const agencys = formalLedgerItems('agencys');
+  const handovers = formalLedgerItems('handovers');
+  const funds = formalLedgerItems('funds');
+  const fundRecords = formalLedgerItems('fundRecords');
 
   // === 1. KPI ===
-  const totalCompleted = todos.filter(t => t.type === 'record').length;
+  const totalCompleted = todos.filter(t => t.type === 'record' && [STATE.DONE,STATE.CLOSED].includes(recordState('todos',t))).length;
   const activeTasks = todos.filter(t => t.type !== 'record' && t.type !== 'recurring' && [STATE.TODO,STATE.DOING].includes(recordState('todos',t))).length;
   const overdueTasks = todos.filter(t => t.type !== 'record' && isOverdue(t,'todos')).length;
   const today = new Date(); today.setHours(0,0,0,0);
@@ -3853,12 +3651,12 @@ function renderSummary(){
     const nextY = nm >= 11 ? ny + 1 : ny; const nextM = nm >= 11 ? 1 : nm + 2;
     document.getElementById('summaryNextMonthLabel').textContent = '截止日期在 ' + nextY + '年' + nextM + '月 的任务'; }
 
-  const todos=DB.get('todos');
-  const contracts=DB.get('contracts');
-  const purchases=DB.get('purchases');
-  const expenses=DB.get('expenses');
-  const meetings=DB.get('meetings');
-  const trainings=DB.get('trainings');
+  const todos=DB.get('todos').filter(t=>belongsToLedger('todos',t));
+  const contracts=formalLedgerItems('contracts');
+  const purchases=formalLedgerItems('purchases');
+  const expenses=formalLedgerItems('expenses');
+  const meetings=formalLedgerItems('meetings');
+  const trainings=formalLedgerItems('trainings');
 
   // ----- 日期范围筛选辅助函数 -----
   const inRange = function(s) {
@@ -3940,9 +3738,9 @@ function renderSummary(){
   const monthPurchases=purchases.filter(p=>p.date&&inRange(p.date));
   const monthExpensesApp=expenses.filter(e=>e.appDate&&inRange(e.appDate));
   const monthExpensesReimb=expenses.filter(e=>e.reimbDate&&inRange(e.reimbDate));
-  const handovers_render=DB.get('handovers');
+  const handovers_render=formalLedgerItems('handovers');
   const monthHandovers=handovers_render.filter(h=>h.date&&inRange(h.date));
-  const funds_render=DB.get('funds');
+  const funds_render=formalLedgerItems('funds');
   const fundRecords_render=funds_render.flatMap(f=>fundUsage(f.id).records);
   const monthFundUsed=fundRecords_render.filter(r=>r.date&&inRange(r.date)).reduce((s,r)=>s+(+r.amount||0),0);
   const totalFundBudget=funds_render.reduce((s,f)=>s+(+f.budget||0),0);
@@ -3987,15 +3785,15 @@ function renderSummary(){
   let ledgerDetailHTML=`<div id="summaryLedgerDrill" style="margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px">`;
   ledgerDetailHTML+=`<div id="summaryContractDetail" style="display:none;margin-bottom:8px"><strong style="font-size:12px">合同明细：</strong>`+
     (monthContracts.length?monthContracts.map(c=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('contract')">
-      <span>${esc(c.name)} · ${esc(c.party||'')}</span><span class="badge badge-gray" style="font-size:10px">${c.status}</span><span style="font-size:12px;color:var(--color-text2);margin-left:auto">${fmtCNY(c.amount)}</span>
+      <span>${esc(c.name)} · ${esc(c.party||'')}</span><span class="badge badge-gray" style="font-size:10px">${esc(recordState('contracts',c))}</span><span style="font-size:12px;color:var(--color-text2);margin-left:auto">${fmtCNY(c.amount)}</span>
     </div>`).join(''):'<div class="empty-state" style="padding:8px"><p>本月无合同签署</p></div>')+'</div>';
   ledgerDetailHTML+=`<div id="summaryPurchaseDetail" style="display:none;margin-bottom:8px"><strong style="font-size:12px">采购明细：</strong>`+
     (monthPurchases.length?monthPurchases.map(p=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('purchase')">
-      <span>${esc(p.name)} · ${esc(p.supplier||'')}</span><span class="badge badge-gray" style="font-size:10px">${p.status}</span><span style="font-size:12px;color:var(--color-text2);margin-left:auto">${fmtCNY(p.amount)}</span>
+      <span>${esc(p.name)} · ${esc(p.supplier||'')}</span><span class="badge badge-gray" style="font-size:10px">${esc(recordState('purchases',p))}</span><span style="font-size:12px;color:var(--color-text2);margin-left:auto">${fmtCNY(p.amount)}</span>
     </div>`).join(''):'<div class="empty-state" style="padding:8px"><p>本月无采购记录</p></div>')+'</div>';
   ledgerDetailHTML+=`<div id="summaryExpenseDetail" style="display:none;margin-bottom:8px"><strong style="font-size:12px">报销明细：</strong>`+
     (monthExpensesApp.length?monthExpensesApp.map(e=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('expense')">
-      <span>${esc(e.content||'报销').slice(0,30)} · ${esc(e.supplier||'')}</span><span class="badge badge-gray" style="font-size:10px">${e.status}</span><span style="font-size:12px;color:var(--color-text2);margin-left:auto">${fmtCNY(e.amount)}</span>
+      <span>${esc(e.content||'报销').slice(0,30)} · ${esc(e.supplier||'')}</span><span class="badge badge-gray" style="font-size:10px">${esc(recordState('expenses',e))}</span><span style="font-size:12px;color:var(--color-text2);margin-left:auto">${fmtCNY(e.amount)}</span>
     </div>`).join(''):'<div class="empty-state" style="padding:8px"><p>本月无报销记录</p></div>')+'</div>';
   ledgerDetailHTML+=`<div id="summaryHandoverDetail" style="display:none;margin-bottom:8px"><strong style="font-size:12px">交接明细：</strong>`+
     (monthHandovers.length?monthHandovers.map(h=>`<div class="todo-item" style="cursor:pointer" onclick="navigate('handover')">
@@ -4046,12 +3844,12 @@ function renderSummary(){
     </div>
   `;
   document.getElementById('summaryTrainingDetail').innerHTML=monthTrainings.length
-    ? monthTrainings.sort((a,b)=>a.startDate.localeCompare(b.startDate)).map(t=>{
+    ? monthTrainings.sort((a,b)=>(a.startDate||'').localeCompare(b.startDate||'')).map(t=>{
       const typeBadge={线上:'badge-blue',线下:'badge-green',混合:'badge-purple'};
       return `<div class="todo-item" style="cursor:pointer" onclick="navigate('training')">
-        <span class="badge ${typeBadge[t.type]||'badge-gray'}" style="font-size:10px">${t.type}</span>
+        ${businessLabel(t.type)?`<span class="badge ${typeBadge[t.type]||'badge-gray'}" style="font-size:10px">${esc(t.type)}</span>`:''}
         <span>${esc(t.name)}</span>
-        <span style="font-size:11px;color:var(--color-text3)">${t.startDate}${t.endDate?'→'+t.endDate:''}</span>
+        ${businessLabel(t.startDate)?`<span style="font-size:11px;color:var(--color-text3)">${esc(t.startDate)}${businessLabel(t.endDate)?'→'+esc(t.endDate):''}</span>`:''}
         ${t.credits?`<span class="badge badge-green" style="font-size:10px">${t.credits}学分</span>`:''}
       </div>`;
     }).join('')
@@ -4103,42 +3901,39 @@ function toggleSummaryDetail(sectionId){
 }
 
 // ============================================================
-//  TODO V2 - 4板块：待办/重点/周期/记录
+//  工作台账：仅展示已完成和已关闭的工作；工作类型仍保存在原记录中。
 // ============================================================
-let activeTodoTab='pending';
-const TODO_TYPES=['pending','key','recurring','record'];
+let activeTodoTab='record';
+const TODO_TYPES=['record'];
 const TYPE_LABELS={pending:'待办工作',key:'重点工作',recurring:'周期工作',record:'工作记录'};
 const PRIORITY_MAP={'重要且紧急':0,'重要不紧急':1,'紧急不重要':2,'不重要不紧急':3};
 const PRIORITY_LABEL={'重要且紧急':'重要且紧急','重要不紧急':'重要不紧急','紧急不重要':'紧急不重要','不重要不紧急':'不重要不紧急'};
 const PRIORITY_COLOR={'重要且紧急':'#d93025','重要不紧急':'#e8920c','紧急不重要':'#d98300','不重要不紧急':'#9aa0a6'};
 
 function switchTodoTab(tab){
-  activeTodoTab=tab;
-  document.querySelectorAll('.todo-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  activeTodoTab='record';
+  document.querySelectorAll('.todo-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab==='record'));
   renderTodo();
 }
 
 function renderTodo(){
-  const todos=DB.get('todos');
+  const todos=formalLedgerItems('todos');
   // update tab counts + sidebar badge
-  let pendingCount=0;
   TODO_TYPES.forEach(type=>{
-    const count=todos.filter(t=>t.type===type && (type==='record'||[STATE.TODO,STATE.DOING].includes(recordState('todos',t)))).length;
+    const count=todos.length;
     const el=document.getElementById('tabCount-'+type);
     if(el)el.textContent=count;
-    if(type==='pending')pendingCount=count;
   });
   const badge=document.getElementById('todoCount');
-  if(badge){if(pendingCount>0){badge.style.display='';badge.textContent=pendingCount}else{badge.style.display='none'}}
+  if(badge)badge.style.display='none';
 
-  let filtered=todos.filter(t=>t.type===activeTodoTab && (activeTodoTab==='record'||[STATE.TODO,STATE.DOING].includes(recordState('todos',t))));
+  let filtered=todos;
   // Apply extra filters from filter panel
   try{filtered=applyTodoFilters(filtered);}catch(e){console.error('applyTodoFilters error:',e);}
   updateTodoFilterCount(filtered.length);
 
   if(!filtered.length){
-    document.getElementById('todoTabContent').innerHTML='<div class="empty-state"><p>暂无符合筛选的'+TYPE_LABELS[activeTodoTab]+'（共'+todos.length+'条数据，当前标签'+todos.filter(t=>t.type===activeTodoTab).length+'条）</p><button class="btn btn-primary" style="margin-top:12px" onclick="resetTodoFilter()">🔄 重置所有筛选条件</button></div>';
-    renderReminders();
+    document.getElementById('todoTabContent').innerHTML='<div class="empty-state"><p>暂无符合筛选的已结束工作</p><button class="btn btn-primary" style="margin-top:12px" onclick="resetTodoFilter()">🔄 重置所有筛选条件</button></div>';
     return;
   }
 
@@ -4155,9 +3950,6 @@ function renderTodo(){
     const st=(t.subtasks||[]).length;
     const cats=toArray(t.category).filter(Boolean);
     const srcs=toArray(t.source).filter(Boolean);
-    const status=recordState('todos',t);
-    const statusOpts=['未开始','进行中','已完成','已取消'];
-    const isTerminal=status==='已完成'||status==='已取消';
     return `
     <div class="todo-card" id="todo-${t.id}">
       <div class="todo-card-header">
@@ -4176,13 +3968,10 @@ function renderTodo(){
         </div>
         <div class="todo-card-actions">
           ${t.type==='recurring'?`
-            <button class="btn btn-ghost btn-sm" onclick="completeRecurringTodo(${t.id})" style="color:var(--color-success);font-weight:500" title="完成本期并生成下期">✓ 完成本期</button>
             <button class="btn btn-ghost btn-sm" onclick="skipRecurringPeriod(${t.id})" title="跳过本期">⏭ 跳过</button>
             <button class="btn btn-ghost btn-sm" onclick="toggleRecurringPause(${t.id})" title="${t.paused?'恢复':'暂停'}">${t.paused?'▶ 恢复':'⏸ 暂停'}</button>
           `:''}
-          ${isRecord?`<button class="restore-btn" onclick="restoreTodo(${t.id})" title="恢复到原类别">↩ 恢复</button>`:''}
           <button class="btn btn-ghost btn-sm" onclick="editTodo(${t.id})" title="编辑">✏️</button>
-          <button class="btn btn-ghost btn-sm" onclick="openMultiLedger('todos',${t.id})" title="加入其他台账">加入台账</button>
           <button class="btn btn-ghost btn-sm" onclick="deleteTodo(${t.id})" title="删除" style="color:var(--color-danger)">🗑</button>
         </div>
       </div>
@@ -4214,7 +4003,6 @@ function renderTodo(){
       </div>
     </div>`;
   }).join('');
-  renderReminders();
 }
 
 function renderSubtasks(t){
@@ -4277,36 +4065,6 @@ function deleteSubtask(todoId,idx){
   renderTodo();
 }
 
-function changeTodoStatus(id,newStatus){
-  const todos=DB.get('todos');
-  const t=todos.find(x=>x.id===id);
-  if(!t)return;
-  const now=new Date().toISOString().slice(0,10);
-  t.status=newStatus;
-  t.state=mapStatusToState('todos',newStatus);
-  t.state_manual=false;
-  finishWorkRecord(t);
-  if(t.type==='record')toast('已移入工作台账');
-  DB.set('todos',todos);
-  renderTodo();
-}
-
-function restoreTodo(id){
-  const todos=DB.raw('todos');
-  const t=todos.find(x=>x.id===id);
-  if(!t)return;
-  t.deleted=false;
-  if(t.type!=='record'){toast('该记录不在工作记录中');return;}
-  t.type=t._prevType||'pending';
-  t.status='进行中';
-  t.state=STATE.DOING;
-  t.state_manual=false;
-  t.completeDate='';
-  DB.set('todos',todos);
-  toast('已恢复到'+TYPE_LABELS[t.type]);
-  renderTodo();
-}
-
 const TYPE_LABEL={pending:'待办',key:'重点',recurring:'周期'};
 
 function checkDeadlineReminders(){
@@ -4315,11 +4073,14 @@ function checkDeadlineReminders(){
   const today=now.toISOString().slice(0,10);
   const in3Days=new Date(now.getTime()+3*86400000).toISOString().slice(0,10);
   const reminders=[];
+  const ignored=ignoredReminderKeys();
   todos.forEach(t=>{
     const due=getDueDate(t,'todos'); // v1.4：统一字段优先，回退原生 deadline
     if(!due)return;
     if(t.type==='record')return;
     if(![STATE.TODO,STATE.DOING].includes(recordState('todos',t)))return;
+    const reminder=Object.assign({},t,{_ledger:'todos'});
+    if(isReminderIgnored(reminder,due,ignored))return;
     if(due===today){
       reminders.push(Object.assign({},t,{deadline:due,urgency:'today'}));
     }else if(due<=in3Days&&due>today){
@@ -4364,7 +4125,7 @@ function saveTodo(){
   const now=new Date().toISOString().slice(0,10);
   const item={
     id:id||DB.nextId(todos),
-    type:document.getElementById('todoType').value||'pending',
+    type:document.getElementById('todoType').value,
     name,
     category:getMultiSelected('todoCategory'),
     source:getMultiSelected('todoSource'),
@@ -4421,6 +4182,7 @@ function saveTodo(){
       item.state=old.state;
       item.state_manual=old.state_manual;
       item.origin=old.origin||'';
+      item.owner_ledger=old.owner_ledger||'todos';
       item.linked_ledgers=old.linked_ledgers||{};
       item.closed_at=old.closed_at||'';
       item.closed_reason=old.closed_reason||'';
@@ -4430,7 +4192,10 @@ function saveTodo(){
       item.parent_goal=old.parent_goal||'';
       item.is_goal=old.is_goal||false;
       item.due_date=item.deadline;
-      if(old.type==='record')item.type='record';
+      if(old.type==='record'){
+        item._prevType=item.type;
+        item.type='record';
+      }
       finishWorkRecord(item);
       todosRaw[i]=item;
     }else{todosRaw.push(item);}
@@ -4449,7 +4214,7 @@ function editTodo(id){
   document.getElementById('todoModalTitle').textContent='编辑工作';
   document.getElementById('todoId').value=t.id;
   document.getElementById('todoName').value=t.name||'';
-  document.getElementById('todoType').value=(t.type==='record')?'pending':(t.type||'pending');
+  document.getElementById('todoType').value=t.type==='record'?(t._prevType==='key'||t._prevType==='recurring'?t._prevType:''):(t.type==='key'||t.type==='recurring'?t.type:'');
   document.getElementById('todoPriority').value=normPriority(t.priority);
   setMultiSelected('todoCategory',toArray(t.category));
   setMultiSelected('todoSource',toArray(t.source));
@@ -4459,7 +4224,7 @@ function editTodo(id){
   document.getElementById('todoBlocker').value=t.blocker||'';
   document.getElementById('todoAssignee').value=t.assignee||'';
   // 加载周期配置
-  if(t.type==='recurring'){
+  if((t.type==='record'?t._prevType:t.type)==='recurring'){
     document.getElementById('recurrenceConfig').style.display='block';
     const rec=t.recurrence||{};
     document.getElementById('recType').value=rec.type||'';
@@ -4477,7 +4242,7 @@ function editTodo(id){
 function clearTodoForm(){
   ['todoId','todoName','todoContent','todoIssueDate','todoDeadline','todoBlocker','todoAssignee'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('todoPriority').value='不重要不紧急';
-  document.getElementById('todoType').value='pending';
+  document.getElementById('todoType').value='';
   document.getElementById('todoModalTitle').textContent='新建工作';
   setMultiSelected('todoCategory',[]);
   setMultiSelected('todoSource',[]);
@@ -4579,45 +4344,6 @@ function calcNextDue(recurrence,fromDate){
   return d.toISOString().slice(0,10);
 }
 
-// 完成本期周期工作 → 归档一份记录 + 下次到期时间自动后推
-function completeRecurringTodo(id){
-  const todos=DB.get('todos');
-  const t=todos.find(x=>x.id===id);
-  if(!t||t.type!=='recurring')return;
-  t.completedCount=(t.completedCount||0)+1;
-  const today=new Date().toISOString().slice(0,10);
-  // 生成一份工作记录（归档）
-  const recordId=Math.max(...todos.map(x=>x.id),0)+1;
-  todos.push({
-    id:recordId,
-    type:'record',
-    name:t.name||'',
-    category:toArray(t.category),
-    source:toArray(t.source),
-    priority:normPriority(t.priority),
-    content:t.content||'',
-    deadline:t.deadline||today,
-    blocker:'',
-    status:'已完成',
-    completeDate:today,
-    subtasks:[],
-    createdAt:today,
-    _prevType:'recurring',
-    contractRef:t.contractRef||null,
-    purchaseRef:t.purchaseRef||null,
-    expenseRef:t.expenseRef||null,
-    meetingRef:t.meetingRef||null,
-    trainingRef:t.trainingRef||null,
-    deleted:false
-  });
-  // 下次到期时间后推
-  let nextDue=calcNextDue(t.recurrence,t.deadline||today);
-  while(nextDue&&nextDue<=today)nextDue=calcNextDue(t.recurrence,nextDue);
-  t.deadline=nextDue;
-  DB.set('todos',todos);
-  renderTodo();
-}
-
 // 跳过本期（不完成，直接推到期日期）
 function skipRecurringPeriod(id){
   const todos=DB.get('todos');
@@ -4694,6 +4420,8 @@ function applyTodoFilters(list){
   const doneFrom=document.getElementById('todoF_doneFrom')?.value||'';
   const doneTo=document.getElementById('todoF_doneTo')?.value||'';
   return list.filter(t=>{
+    const type=document.getElementById('todoF_type')?.value||'';
+    if(type&&(t.type==='record'?t._prevType:t.type)!==type)return false;
     if(name&&!(t.name||'').toLowerCase().includes(name))return false;
     if(status&&recordState('todos',t)!==mapStatusToState('todos',status))return false;
     if(priority&&normPriority(t.priority)!==priority)return false;
@@ -4713,6 +4441,7 @@ function applyTodoFilters(list){
 function getTodoFilterActiveCount(){
   let n=0;
   if((document.getElementById('todoF_name')?.value||''))n++;
+  if(document.getElementById('todoF_type')?.value)n++;
   if(document.getElementById('todoF_status')?.value)n++;
   if(document.getElementById('todoF_priority')?.value)n++;
   if(getMultiSelected('todoF_cat').length)n++;
@@ -4743,6 +4472,7 @@ function applyTodoFilter(){
 
 function resetTodoFilter(){
   document.getElementById('todoF_name').value='';
+  document.getElementById('todoF_type').value='';
   document.getElementById('todoF_status').value='';
   document.getElementById('todoF_priority').value='';
   setMultiSelected('todoF_cat',[]);renderMultiOptions('todoF_cat');
@@ -4757,23 +4487,15 @@ function resetTodoFilter(){
 }
 
 function getVisibleTodos(){
-  const todos=DB.get('todos');
-  const typeFilter=document.getElementById('todoF_type')?.value||'';
-  let filtered=typeFilter?todos.filter(t=>t.type===typeFilter):todos.filter(t=>t.type===activeTodoTab);
-  filtered=applyTodoFilters(filtered);
-  return filtered;
+  return applyTodoFilters(formalLedgerItems('todos'));
 }
 
 function exportTodos(mode){
   let data;
   if(mode==='all'){
-    data=DB.get('todos');
+    data=formalLedgerItems('todos');
   }else if(mode==='current'){
-    // Apply current filters across all tabs
-    const todos=DB.get('todos');
-    const typeFilter=document.getElementById('todoF_type')?.value||'';
-    let filtered=typeFilter?todos.filter(t=>t.type===typeFilter):todos;
-    data=applyTodoFilters(filtered);
+    data=getVisibleTodos();
   }else{
     data=getVisibleTodos();
   }
@@ -5029,25 +4751,25 @@ let activeInspStatus='active';
 
 function renderInspiration(){
   const insps=DB.get('inspirations');
+  const statusItems=insps.filter(i=>activeInspStatus==='all' ||
+    (activeInspStatus==='active' ? (!i.status||i.status==='active') : i.status===activeInspStatus));
+  const allTags=[...new Set(statusItems.flatMap(i=>Array.isArray(i.tags)?i.tags:[]).filter(t=>typeof t==='string'&&t.trim()))];
+  if(activeInspTag&&!allTags.includes(activeInspTag))activeInspTag='';
   const q=(document.getElementById('inspSearch').value||'').toLowerCase();
-  const filtered=insps.filter(i=>{
+  const filtered=statusItems.filter(i=>{
     if(q&&!(i.title+i.content).toLowerCase().includes(q))return false;
-    if(activeInspTag&&!(i.tags||[]).includes(activeInspTag))return false;
-    if(activeInspStatus==='active'&&i.status&&i.status!=='active')return false;
-    if(activeInspStatus==='archived'&&i.status!=='archived')return false;
-    if(activeInspStatus==='abandoned'&&i.status!=='abandoned')return false;
+    if(activeInspTag&&!(Array.isArray(i.tags)?i.tags:[]).includes(activeInspTag))return false;
     return true;
   }).sort((a,b)=>b.createdAt>a.createdAt?1:-1);
 
-  // tags — based on current filtered set
-  const allTags=[...new Set(insps.flatMap(i=>i.tags||[]))];
+  // 标签只来自当前状态下仍存在的记录，删除或修改后立即重算。
   document.getElementById('inspTagFilter').innerHTML=[
     `<button class="tag-pill ${!activeInspTag?'active':''}" onclick="filterInspTag('')">全部</button>`,
-    ...allTags.map(t=>`<button class="tag-pill ${activeInspTag===t?'active':''}" onclick="filterInspTag('${esc(t)}')">${esc(t)}</button>`)
+    ...allTags.map(t=>`<button class="tag-pill ${activeInspTag===t?'active':''}" data-tag="${esc(t)}" onclick="filterInspTag(this.dataset.tag)">${esc(t)}</button>`)
   ].join('');
 
   if(!filtered.length){
-    document.getElementById('inspList').innerHTML='<div class="empty-state" style="grid-column:1/-1"><p>暂无灵感记录，点击右上角添加</p></div>';
+    document.getElementById('inspList').innerHTML='<div class="empty-state" style="grid-column:1/-1"><p>暂无灵感记录，可通过「智能录入」添加。</p></div>';
     return;
   }
 
@@ -5059,8 +4781,7 @@ function renderInspiration(){
       <div class="insp-tags" style="margin-top:10px">${(x.tags||[]).map((t,i)=>`<span class="badge ${tagColors[i%tagColors.length]}">${esc(t)}</span>`).join('')}</div>
       <div class="insp-card-actions" style="margin-top:8px">
         ${(x.status==='active'||!x.status)?
-          `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openInspToLedger(${x.id})" title="转台账（移动语义：转入后进入待办，灵感隐去）">🗂️</button>
-          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();archiveInsp(${x.id})" title="归档（已实现）">📦</button>
+          `<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();archiveInsp(${x.id})" title="归档（已实现）">📦</button>
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();abandonInsp(${x.id})" title="放弃">🚫</button>`
           :`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();restoreInsp(${x.id})" title="撤回">↩️</button>`}
         <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editInsp(${x.id})" title="编辑">✏️</button>
@@ -5103,54 +4824,6 @@ function restoreInsp(id){
   if(x){x.status='active';DB.set('inspirations',insps);toast('已撤回');renderInspiration();}
 }
 
-// v1.4 T5：灵感转台账（移动语义）——建 ledger_item + 置 archived_to 使其从 active 列表隐藏
-function openInspToLedger(id){
-  const x=DB.raw('inspirations').find(i=>i.id===id);
-  if(!x) return;
-  document.getElementById('inspToLedgerId').value=id;
-  document.getElementById('inspToLedgerPreview').textContent=(x.content||x.title||'').slice(0,200);
-  document.getElementById('inspToLedgerTitle').value=(x.title||'').slice(0,30);
-  document.getElementById('inspToLedgerRequirement').value='';
-  document.getElementById('inspToLedgerDue').value='';
-  document.getElementById('inspToLedgerPriority').value='不重要不紧急';
-  const sel=document.getElementById('inspToLedgerLedger');
-  sel.innerHTML=LEDGER_KEYS.map(k=>`<option value="${k}">${LEDGER_META[k].label}</option>`).join('');
-  const goalSel=document.getElementById('inspToLedgerGoal');
-  if(goalSel) goalSel.innerHTML='<option value="">不关联</option>'+activeGoalOptions();
-  onInspToLedgerChange();
-  openModal('inspToLedgerModal');
-}
-// 切换目标台账时提示硬台账"先归后补"
-function onInspToLedgerChange(){
-  const k=document.getElementById('inspToLedgerLedger').value;
-  const hint=document.getElementById('inspToLedgerHint');
-  if(k && LEDGER_META[k] && LEDGER_META[k].hard){
-    hint.textContent='硬台账「'+LEDGER_META[k].label+'」只填最小字段，其余标记"信息不全"，稍后在台账补全（先归后补）。';
-  } else { hint.textContent=''; }
-}
-// 执行转台账：复用 T3 统一建条目入口，灵感置 archived + archived_to
-function applyInspToLedger(){
-  const id=+document.getElementById('inspToLedgerId').value;
-  const ledger=document.getElementById('inspToLedgerLedger').value;
-  const title=document.getElementById('inspToLedgerTitle').value.trim();
-  if(!title){ toast('请填写标题'); return; }
-  const requirement=document.getElementById('inspToLedgerRequirement').value.trim();
-  const due=document.getElementById('inspToLedgerDue').value;
-  const priorityRaw=document.getElementById('inspToLedgerPriority').value;
-  const parentGoal=document.getElementById('inspToLedgerGoal').value;
-  const priority=priorityRaw;
-  const rec=createLedgerItem(ledger,{title,requirement,due_date:due,priority, parentGoal: parentGoal?+parentGoal:undefined});
-  const insps=DB.raw('inspirations');
-  const i=insps.findIndex(x=>x.id===id);
-  if(i>=0){
-    insps[i]=Object.assign({},insps[i],{status:'archived', archived_at:new Date().toISOString(), archived_to:rec.id});
-    DB.set('inspirations',insps);
-  }
-  closeModal('inspToLedgerModal');
-  renderInspiration();
-  toast('已转入'+LEDGER_META[ledger].label+'（进待办）');
-}
-
 function handleTagInput(e,hiddenId){
   if(e.key==='Enter'||e.key===','){
     e.preventDefault();
@@ -5190,6 +4863,7 @@ function saveInspiration(){
   const insps=DB.get('inspirations');
   const id=+document.getElementById('inspId').value;
   const item={
+    ...existingRecord('inspirations',id),
     id:id||DB.nextId(insps),
     title,
     content:document.getElementById('inspContent').value,
@@ -5254,7 +4928,7 @@ function viewInsp(id){
 const contractStatusBadge={执行中:'badge-blue',已完成:'badge-green',已关闭:'badge-gray',已终止:'badge-gray',已解除:'badge-gray',已过期:'badge-red',待签:'badge-yellow'};
 
 function renderContracts(){
-  const contracts=DB.get('contracts');
+  const contracts=formalLedgerItems('contracts');
   const q=(document.getElementById('contractF_name')?.value||'').toLowerCase();
   const party=(document.getElementById('contractF_party')?.value||'').toLowerCase();
   const sf=document.getElementById('contractF_status')?.value||'';
@@ -5296,170 +4970,12 @@ function renderContracts(){
       <td>
         <div style="display:flex;gap:4px">
           <button class="btn btn-ghost btn-sm" onclick="editContract(${c.id})">✏️</button>
-          <button class="btn btn-ghost btn-sm" onclick="openMultiLedger('contracts',${c.id})">加入台账</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteContract(${c.id})">🗑</button>
         </div>
       </td>
     </tr>
   `).join('');
   updateGenericFilterCount('contract');
-}
-
-// ============================================================
-//  P1-2 台账 ↔ 工作记录自动同步
-//  原则：台账创建/更新时自动在工作记录(todos)中生成/同步对应条目
-//  删除台账时同步软删除关联的工作记录
-// ============================================================
-
-const SYNC_MODULE_LABELS={contract:'合同',purchase:'采购',expenses:'报销',meeting:'会议',training:'培训',agency:'委托'};
-const SYNC_MODULE_CATEGORIES={contract:'合同管理',purchase:'采购管理',expenses:'报销管理',meeting:'会议管理',training:'培训管理',agency:'委托管理'};
-
-function syncLedgerTodo(module, ledger, action){
-  if(ledger.linked_from_work)return;
-  const todos=DB.raw('todos');
-  const now=new Date().toISOString().slice(0,10);
-
-  // 生成工作记录名称
-  let todoName;
-  if(module==='contract'){
-    todoName='合同「'+ledger.name+'」';
-  }else if(module==='purchase'){
-    todoName='采购「'+ledger.name+'」';
-  }else if(module==='meeting'){
-    todoName='会议「'+ledger.name+'」';
-  }else if(module==='training'){
-    todoName='培训「'+ledger.name+'」';
-  }else if(module==='agency'){
-    todoName='委托「'+ledger.name+'」';
-  }else{
-    todoName='报销「'+(ledger.content||'未知内容').slice(0,20)+'」';
-  }
-
-  // 生成工作记录内容摘要
-  const detailParts=[];
-  if(ledger.amount)detailParts.push('金额 ¥'+Number(ledger.amount).toLocaleString());
-  if(module==='contract'&&ledger.party)detailParts.push('对方单位 '+ledger.party);
-  if(module==='purchase'&&ledger.supplier)detailParts.push('供应商 '+ledger.supplier);
-  if(module==='expenses'&&ledger.supplier)detailParts.push('供应商 '+ledger.supplier);
-  if(module==='agency'&&ledger.agent)detailParts.push('代理机构 '+ledger.agent);
-  if(module==='agency'&&ledger.budget)detailParts.push('预算 ¥'+(+ledger.budget).toLocaleString());
-  if(module==='meeting'){
-    if(ledger.date)detailParts.push('日期 '+ledger.date);
-    if(ledger.location)detailParts.push('地点 '+ledger.location);
-    if(ledger.type)detailParts.push('类型 '+ledger.type);
-  }
-  if(module==='training'){
-    if(ledger.startDate)detailParts.push('开始 '+ledger.startDate);
-    if(ledger.organizer)detailParts.push('组织方 '+ledger.organizer);
-    if(ledger.credits)detailParts.push(ledger.credits+'学分');
-  }
-  const todoContent=detailParts.join('\n');
-
-  // 台账状态 → 工作记录状态映射
-  let todoStatus='未开始';
-  if(module==='contract'){
-    if(ledger.status==='已签')todoStatus='进行中';
-    else if(ledger.status==='执行中')todoStatus='进行中';
-    else if(ledger.status==='已到期')todoStatus='进行中';
-    else if(ledger.status==='已完成')todoStatus='已完成';
-    else if(['已终止','已解除','已关闭'].includes(ledger.status))todoStatus='已关闭';
-  }else if(module==='purchase'){
-    if(ledger.status==='已到货')todoStatus='已完成';
-    else if(ledger.status==='已拒绝')todoStatus='已取消';
-    else if(ledger.status==='审批通过')todoStatus='进行中';
-  }else if(module==='meeting'){
-    // 会议基于日期判断状态
-    const meetingDate=ledger.date||'';
-    if(meetingDate>now)todoStatus='未开始';
-    else if(meetingDate===now)todoStatus='进行中';
-    else todoStatus='已完成';
-  }else if(module==='training'){
-    // 培训基于日期判断状态
-    const trainingEnd=ledger.endDate||ledger.startDate||'';
-    if(trainingEnd>now)todoStatus='未开始';
-    else if(trainingEnd===now)todoStatus='进行中';
-    else todoStatus='已完成';
-  }else if(module==='agency'){
-    if(ledger.status==='已完成')todoStatus='已完成';
-    else if(ledger.status==='已流标'||ledger.status==='已取消')todoStatus='已取消';
-    else todoStatus='进行中';
-  }else{
-    if(ledger.status==='已报销')todoStatus='已完成';
-  }
-  const moduleKey=module==='contract'?'contracts':module==='purchase'?'purchases':module==='agency'?'agencys':module;
-  if(LEDGER_META[moduleKey]) todoStatus=mapStatusToState(moduleKey,ledger.status);
-
-  if(action==='delete'){
-    // 软删除关联的工作记录
-    if(ledger.todoRef){
-      const todo=todos.find(t=>t.id===ledger.todoRef);
-      if(todo&&!todo.deleted){
-        todo.deleted=true;
-        DB.set('todos',todos);
-      }
-    }
-    return;
-  }
-
-  if(ledger.todoRef){
-    // 更新已有工作记录
-    const idx=todos.findIndex(t=>t.id===ledger.todoRef);
-    if(idx>-1){
-      const todo=todos[idx];
-      todo.name=todoName;
-      todo.content=todoContent;
-      todo.status=todoStatus;
-      todo.state=mapStatusToState('todos',todoStatus);
-      todo.state_manual=false;
-      todo.assignee=ledger.assignee||todo.assignee||'';
-      finishWorkRecord(todo);
-      todo.issueDate=ledger.signDate||ledger.date||ledger.appDate||todo.issueDate;
-      if(module==='contract'&&ledger.expiry)todo.deadline=ledger.expiry;
-      if(todoStatus==='已完成'&&!todo.completeDate)todo.completeDate=now;
-      DB.set('todos',todos);
-    }
-  }else{
-    // 新建工作记录
-    const todoId=DB.nextId(todos);
-    const newTodo={
-      id:todoId,
-      type:'pending',
-      name:todoName,
-      category:[SYNC_MODULE_CATEGORIES[module]],
-      source:['台账生成'],
-      priority:'low',
-      content:todoContent,
-      issueDate:ledger.signDate||ledger.date||ledger.appDate||'',
-      deadline:module==='contract'?ledger.expiry||'':'',
-      completeDate:todoStatus==='已完成'?now:'',
-      blocker:'',
-      status:todoStatus,
-      state:mapStatusToState('todos',todoStatus),
-      state_manual:false,
-      assignee:ledger.assignee||'',
-      origin:(module==='expenses'?'expenses':module+'s')+':'+ledger.id,
-      subtasks:[],
-      createdAt:ledger.createdAt||now,
-      contractRef:module==='contract'?ledger.id:null,
-      purchaseRef:module==='purchase'?ledger.id:null,
-      expenseRef:module==='expenses'?ledger.id:null,
-      meetingRef:module==='meeting'?ledger.id:null,
-      trainingRef:module==='training'?ledger.id:null,
-      agencyRef:module==='agency'?ledger.id:null,
-      deleted:false
-    };
-    finishWorkRecord(newTodo);
-    todos.push(newTodo);
-    DB.set('todos',todos);
-    // 将 todoRef 回写到 ledger
-    const key=module==='expenses'?'expenses':(module+'s');
-    const ledgers=DB.raw(key);
-    const lIdx=ledgers.findIndex(l=>l.id===ledger.id);
-    if(lIdx>-1){
-      ledgers[lIdx].todoRef=todoId;
-      DB.set(key,ledgers);
-    }
-  }
 }
 
 function saveContract(){
@@ -5479,19 +4995,17 @@ function saveContract(){
     category:document.getElementById('contractCategory').value,
     signDate:document.getElementById('contractSignDate').value,
     expiry:document.getElementById('contractExpiry').value,
-    status:document.getElementById('contractStatus').value,
+    status:id?existingRecord('contracts',id).status:document.getElementById('contractStatus').value,
     no:document.getElementById('contractNo').value,
     note:document.getElementById('contractNote').value,
     todoRef:null,
     deleted:false,
     createdAt:now
   };
-  item.state=mapStatusToState('contracts',item.status);item.state_manual=false;
+  item.state=recordState('contracts',existingRecord('contracts',id));item.state_manual=true;
   if(id){const i=contracts.findIndex(c=>c.id===id);if(i>-1){item.todoRef=contracts[i].todoRef;item.deleted=contracts[i].deleted;contracts[i]=item;}else contracts.push(item);}
   else contracts.push(item);
   DB.set('contracts',contracts);
-  // P1-2: 自动同步工作记录
-  syncLedgerTodo('contract',item);
   closeModal('contractModal');
   clearContractForm();
   renderContracts();
@@ -5514,6 +5028,7 @@ function editContract(id){
   document.getElementById('contractNo').value=c.no||'';
   document.getElementById('contractNote').value=c.note||'';
   openModal('contractModal');
+  hideLifecycleStatusField('contractModal');
 }
 
 function clearContractForm(){
@@ -5529,8 +5044,6 @@ function deleteContract(id){
   if(c){
     c.deleted=true;
     DB.set('contracts',contracts);
-    // P1-2: 同步软删除关联的工作记录
-    syncLedgerTodo('contract',c,'delete');
   }
   renderContracts();toast('已删除');
 }
@@ -5541,7 +5054,7 @@ function deleteContract(id){
 const purchaseStatusBadge={申请中:'badge-yellow',审批通过:'badge-blue',已到货:'badge-green',已拒绝:'badge-red'};
 
 function renderPurchases(){
-  const purchases=DB.get('purchases');
+  const purchases=formalLedgerItems('purchases');
   // 筛选
   const q=(document.getElementById('purchaseF_name')?.value||'').toLowerCase();
   const supplier=(document.getElementById('purchaseF_supplier')?.value||'').toLowerCase();
@@ -5570,7 +5083,7 @@ function renderPurchases(){
     <div class="metric"><div class="metric-label">合计金额</div><div class="metric-value" style="font-size:20px;color:var(--color-danger)">¥${fmt(fAmt)}</div></div>
     ${Object.entries(catCounts).map(([k,v])=>`<div class="metric"><div class="metric-label">${k}</div><div class="metric-value" style="font-size:18px">${v}</div></div>`).join('')}
   </div>`:'';
-  
+
   if(!filtered.length){
     document.getElementById('purchaseTable').innerHTML=`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--color-text3)">暂无采购记录</td></tr>`;
     return;
@@ -5588,7 +5101,6 @@ function renderPurchases(){
       <td>
         <div style="display:flex;gap:4px">
           <button class="btn btn-ghost btn-sm" onclick="editPurchase(${p.id})">✏️</button>
-          <button class="btn btn-ghost btn-sm" onclick="openMultiLedger('purchases',${p.id})">加入台账</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deletePurchase(${p.id})">🗑</button>
         </div>
       </td>
@@ -5612,7 +5124,7 @@ function savePurchase(){
     amount:+(document.getElementById('purchaseAmount').value||0),
     date:document.getElementById('purchaseDate').value,
     category:document.getElementById('purchaseCategory').value,
-    status:document.getElementById('purchaseStatus').value,
+    status:id?existingRecord('purchases',id).status:document.getElementById('purchaseStatus').value,
     note:document.getElementById('purchaseNote').value,
     hasContract:document.getElementById('purchaseHasContract').value,
     contractDept:document.getElementById('purchaseContractDept').value,
@@ -5623,11 +5135,11 @@ function savePurchase(){
     deleted:false,
     createdAt:now
   };
-  item.state=mapStatusToState('purchases',item.status);item.state_manual=false;
+  item.state=recordState('purchases',existingRecord('purchases',id));item.state_manual=true;
   if(id){const i=purchases.findIndex(p=>p.id===id);if(i>-1){item.todoRef=purchases[i].todoRef;item.deleted=purchases[i].deleted;purchases[i]=item;}else purchases.push(item);}
   else purchases.push(item);
   DB.set('purchases',purchases);
-  
+
   // 跨模块联动：是否签订合同 → 自动生成合同记录
   if(item.hasContract==='是'){
     const contracts=DB.raw('contracts');
@@ -5635,7 +5147,7 @@ function savePurchase(){
     if(!autoContract){
       autoContract={id:DB.nextId(contracts),name:item.name,party:item.supplier,amount:item.amount,
         category:item.category,signDate:'',expiry:'',status:'待签',no:'',note:'（由采购自动生成）',createdAt:now,
-        assignee:item.assignee||'',origin:'purchases:'+item.id,linked_from_work:true,
+        assignee:item.assignee||'',state:STATE.TODO,state_manual:true,owner_ledger:'contracts',origin:'purchases:'+item.id,linked_from_work:true,
         todoRef:null,deleted:false,_fromPurchase:item.id};
       contracts.push(autoContract);DB.set('contracts',contracts);
     }
@@ -5649,16 +5161,14 @@ function savePurchase(){
       autoExpense={id:DB.nextId(expenses),appDate:now,amount:item.amount,supplier:item.supplier,
         supplierCode:'',invoice:'',invoiceDate:'',content:item.name,
         status:'待报销',reimbDate:'',createdAt:now,
-        assignee:item.assignee||'',origin:'purchases:'+item.id,linked_from_work:true,
+        assignee:item.assignee||'',state:STATE.TODO,state_manual:true,owner_ledger:'expenses',origin:'purchases:'+item.id,linked_from_work:true,
         todoRef:null,deleted:false,category:'其他',_fromPurchase:item.id};
       expenses.push(autoExpense);DB.set('expenses',expenses);
     }
     (item.linked_ledgers??={}).expenses=autoExpense.id;
   }
   if(item.linked_ledgers)DB.set('purchases',purchases);
-  
-  // P1-2: 自动同步工作记录
-  syncLedgerTodo('purchase',item);
+
 
   closeModal('purchaseModal');
   clearPurchaseForm();
@@ -5690,6 +5200,7 @@ function editPurchase(id){
   document.getElementById('purchaseStatus').value=p.status;
   document.getElementById('purchaseNote').value=p.note||'';
   openModal('purchaseModal');
+  hideLifecycleStatusField('purchaseModal');
 }
 
 function clearPurchaseForm(){
@@ -5881,8 +5392,6 @@ function deletePurchase(id){
   if(p){
     p.deleted=true;
     DB.set('purchases',purchases);
-    // P1-2: 同步软删除关联的工作记录
-    syncLedgerTodo('purchase',p,'delete');
   }
   renderPurchases();toast('已删除');
 }
@@ -5893,7 +5402,7 @@ function deletePurchase(id){
 const agencyStatusBadge={待委托:'badge-yellow',已委托:'badge-blue',已完成:'badge-green',已流标:'badge-red',已取消:'badge-gray'};
 
 function renderAgencys(){
-  const data=DB.get('agencys');
+  const data=formalLedgerItems('agencys');
   const q=(document.getElementById('agencyF_name')?.value||'').toLowerCase();
   const qm=(document.getElementById('agencyF_method')?.value||'').toLowerCase();
   const qa=(document.getElementById('agencyF_agent')?.value||'').toLowerCase();
@@ -5947,7 +5456,6 @@ function renderAgencys(){
       <td>${a.savingsRate!=null?a.savingsRate+'%':'—'}</td>
       <td>
         <button class="btn btn-ghost btn-sm" onclick="editAgency(${a.id})">✏️</button>
-        <button class="btn btn-ghost btn-sm" onclick="openMultiLedger('agencys',${a.id})">加入台账</button>
         <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteAgency(${a.id})">🗑</button>
       </td>
     </tr>
@@ -6005,7 +5513,7 @@ function saveAgency(){
     budget:budget,
     date:document.getElementById('agencyDate').value,
     agent:agentEl&&agentEl.dataset.selected?JSON.parse(agentEl.dataset.selected)[0]||'':'',
-    status:document.getElementById('agencyStatus').value,
+    status:id?existingRecord('agencys',id).status:document.getElementById('agencyStatus').value,
     dealAmount:deal,
     savingsRate:savingsRate,
     winSupplier:supplierEl&&supplierEl.dataset.selected?JSON.parse(supplierEl.dataset.selected)[0]||'':'',
@@ -6016,14 +5524,14 @@ function saveAgency(){
     deleted:false,
     createdAt:now
   };
-  item.state=mapStatusToState('agencys',item.status);item.state_manual=false;
+  item.state=recordState('agencys',existingRecord('agencys',id));item.state_manual=true;
   if(id){
     const i=agencys.findIndex(a=>a.id===id);
     if(i>-1){item.createdAt=agencys[i].createdAt;item.todoRef=agencys[i].todoRef;agencys[i]=item;}
     else agencys.push(item);
   }else agencys.push(item);
   DB.set('agencys',agencys);
-  syncLedgerTodo('agency',item);
+
   closeModal('agencyModal');
   clearAgencyForm();
   renderAgencys();
@@ -6053,13 +5561,14 @@ function editAgency(id){
   document.getElementById('agencyDocDate').value=a.docDate||'';
   calcAgencySavings();
   openModal('agencyModal');
+  hideLifecycleStatusField('agencyModal');
 }
 
 function deleteAgency(id){
   if(!confirm('确认删除？'))return;
   const agencys=DB.raw('agencys');
   const a=agencys.find(p=>p.id===id);
-  if(a){a.deleted=true;DB.set('agencys',agencys);syncLedgerTodo('agency',a,'delete');}
+  if(a){a.deleted=true;DB.set('agencys',agencys);}
   renderAgencys();toast('已删除');
 }
 
@@ -6131,7 +5640,7 @@ function removeHandoverItem(btn){
 }
 
 function renderHandovers(){
-  const data=DB.get('handovers');
+  const data=formalLedgerItems('handovers');
   const giver=(document.getElementById('handoverF_giver')?.value||'').toLowerCase();
   const receiver=(document.getElementById('handoverF_receiver')?.value||'').toLowerCase();
   const content=(document.getElementById('handoverF_content')?.value||'').toLowerCase();
@@ -6187,7 +5696,6 @@ function renderHandovers(){
           <td rowspan="${rowspan}" style="vertical-align:top">
             <div style="display:flex;gap:4px">
               <button class="btn btn-ghost btn-sm" onclick="editHandover(${h.id})" title="编辑">✏️</button>
-              <button class="btn btn-ghost btn-sm" onclick="openMultiLedger('handovers',${h.id})">加入台账</button>
               <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteHandover(${h.id})" title="删除">🗑</button>
             </div>
             ${h.note?`<div style="font-size:10px;color:var(--color-text3);margin-top:4px">${esc(h.note)}</div>`:''}
@@ -6324,17 +5832,16 @@ function expenseFundId(expense){
   return DB.get('fundRecords').find(r=>String(r.expenseRef)===String(expense.id))?.fundId||null;
 }
 function fundUsage(fundId){
-  const allExpenses=DB.get('expenses');
+  const allExpenses=formalLedgerItems('expenses');
   const reimbursements=allExpenses.filter(e=>String(expenseFundId(e))===String(fundId));
   const expenseIds=new Set(DB.raw('expenses').map(e=>String(e.id)));
-  const manual=DB.get('fundRecords').filter(r=>String(r.fundId)===String(fundId) && (!r.expenseRef||!expenseIds.has(String(r.expenseRef))));
-  const records=[...manual,...reimbursements.map(e=>({id:'expense:'+e.id,fundId,amount:e.amount,subcategoryId:e.subcategoryId||'',date:e.appDate,content:e.content,source:'报销',expenseRef:e.id}))];
+  const manual=formalLedgerItems('fundRecords').filter(r=>String(r.fundId)===String(fundId) && (!r.expenseRef||!expenseIds.has(String(r.expenseRef))));
+  const records=[...manual,...reimbursements.map(e=>({id:'expense:'+e.id,fundId,amount:e.amount,subcategoryId:e.subcategoryId||'',date:e.appDate,content:e.content,assignee:e.assignee||'',source:'报销',expenseRef:e.id}))];
   return {records,used:records.reduce((n,r)=>n+(Number(r.amount)||0),0),subcategoryUsed(id){return records.filter(r=>String(r.subcategoryId||'')===String(id)).reduce((n,r)=>n+(Number(r.amount)||0),0);}};
 }
 
 function renderFunds(){
-  const funds=DB.get('funds');
-  const fundRecords_all=DB.get('fundRecords');
+  const funds=formalLedgerItems('funds');
   const nameQ=(document.getElementById('fundF_name')?.value||'').toLowerCase();
   const bMin=+(document.getElementById('fundF_budgetMin')?.value||0);
   const bMax=+(document.getElementById('fundF_budgetMax')?.value||0);
@@ -6369,7 +5876,7 @@ function renderFunds(){
     </div>`;
 
   if(!filtered.length){
-    document.getElementById('fundList').innerHTML='<div class="card"><div class="empty-state" style="padding:40px"><p>暂无经费记录，点击右上角新增</p></div></div>';
+    document.getElementById('fundList').innerHTML='<div class="card"><div class="empty-state" style="padding:40px"><p>暂无经费记录，可通过「智能录入」添加。</p></div></div>';
     return;
   }
 
@@ -6383,7 +5890,7 @@ function renderFunds(){
     return `<div class="card" style="margin-bottom:12px">
       <div class="card-header" style="cursor:pointer" onclick="toggleFundDetail(${f.id})">
         <div style="display:flex;align-items:center;gap:12px;flex:1;flex-wrap:wrap">
-          <span style="font-weight:600;font-size:14px">${esc(f.name)}</span>
+           <span style="font-weight:600;font-size:14px">${esc(f.name)}</span>${f.assignee?`<span class="assignee-note">经办人：${esc(f.assignee)}</span>`:''}
           <div style="flex:1;min-width:120px;height:6px;background:var(--color-bg2);border-radius:3px;max-width:200px">
             <div style="height:6px;border-radius:3px;background:${barColor};width:${pct}%"></div>
           </div>
@@ -6395,9 +5902,7 @@ function renderFunds(){
           </span>
         </div>
         <div style="display:flex;gap:4px">
-          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openFundRecordModal(${f.id})">+ 开支</button>
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editFund(${f.id})">✏️</button>
-          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openMultiLedger('funds',${f.id})">加入台账</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="event.stopPropagation();deleteFund(${f.id})">🗑</button>
         </div>
       </div>
@@ -6405,7 +5910,6 @@ function renderFunds(){
         <div style="margin-bottom:12px;font-size:12px">${(f.subcategories||[]).map(s=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:3px 0"><span>${esc(s.name)}</span><span>预算 ${fmtCNY(s.budget)} · 已用 ${fmtCNY(usage.subcategoryUsed(s.id))} · 剩余 ${fmtCNY((+s.budget||0)-usage.subcategoryUsed(s.id))}</span></div>`).join('')||'暂无子开支类别'}<div>未分配预算：${fmtCNY((+f.budget||0)-(f.subcategories||[]).reduce((n,s)=>n+(+s.budget||0),0))}</div></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <span style="font-weight:500;font-size:13px">开支明细（共 ${records.length} 条）</span>
-          <button class="btn btn-sm btn-outline" onclick="openFundRecordModal(${f.id})">+ 新增开支</button>
         </div>
         ${records.length?`<div class="table-wrap"><table>
           <thead><tr><th>日期</th><th>内容</th><th>子类别</th><th>金额</th><th>来源</th><th>备注</th><th>操作</th></tr></thead>
@@ -6415,7 +5919,7 @@ function renderFunds(){
             <td>${esc((f.subcategories||[]).find(s=>String(s.id)===String(r.subcategoryId))?.name||'未分类')}</td>
             <td style="font-weight:600;color:var(--color-danger);white-space:nowrap">${fmtCNY(r.amount)}</td>
             <td>${r.source||'手工开支'}</td>
-            <td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.note||'')||'—'}</td>
+            <td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.note||'')||'—'}${r.assignee?`<div>经办人：${esc(r.assignee)}</div>`:''}</td>
             <td>${r.source==='报销'?`<button class="btn btn-ghost btn-sm" onclick="editExpense(${String(r.id).slice(8)})">查看报销</button>`:`<button class="btn btn-ghost btn-sm" onclick="editFundRecord(${r.id})">✏️</button><button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteFundRecord(${r.id})">🗑</button>`}</td>
           </tr>`).join('')}</tbody>
         </table></div>`:`<div style="padding:16px;text-align:center;color:var(--color-text3);font-size:13px">暂无开支记录</div>`}
@@ -6446,6 +5950,7 @@ function saveFund(){
     ...existingRecord('funds',id),
     id:id||DB.nextId(funds),
     name:name,
+    assignee:document.getElementById('fundAssignee').value.trim(),
     budget,
     subcategories,
     note:document.getElementById('fundNote').value.trim()||'',
@@ -6469,6 +5974,7 @@ function editFund(id){
   if(!f)return;
   document.getElementById('fundModalTitle').textContent='编辑经费';
   document.getElementById('fundId').value=f.id;
+  document.getElementById('fundAssignee').value=f.assignee||'';
   document.getElementById('fundName').value=f.name;
   document.getElementById('fundSubcategories').innerHTML='';
   (f.subcategories||[]).forEach(addFundSubcategory);
@@ -6491,7 +5997,7 @@ function deleteFund(id){
 }
 
 function clearFundForm(){
-  ['fundId','fundName','fundBudget','fundNote']
+  ['fundId','fundName','fundBudget','fundNote','fundAssignee']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('fundSubcategories').innerHTML='';
   document.getElementById('fundModalTitle').textContent='新增经费';
@@ -6572,6 +6078,7 @@ function saveFundRecord(){
     subcategoryId,
     date:date,
     content:content,
+    assignee:document.getElementById('fundRecordAssignee').value.trim(),
     amount:amount,
     expenseRef:expenseRef?+expenseRef:null,
     note:document.getElementById('fundRecordNote').value.trim()||'',
@@ -6603,6 +6110,7 @@ function editFundRecord(id){
   document.getElementById('fundRecordFundId').value=r.fundId;
   document.getElementById('fundRecordDate').value=r.date;
   document.getElementById('fundRecordContent').value=r.content;
+  document.getElementById('fundRecordAssignee').value=r.assignee||'';
   document.getElementById('fundRecordAmount').value=r.amount;
   document.getElementById('fundRecordSubcategory').innerHTML=subcategoryOptions(r.fundId,r.subcategoryId);
   document.getElementById('fundRecordNote').value=r.note||'';
@@ -6621,7 +6129,7 @@ function deleteFundRecord(id){
 }
 
 function clearFundRecordForm(){
-  ['fundRecordId','fundRecordFundId','fundRecordDate','fundRecordContent','fundRecordAmount','fundRecordNote','fundRecordSubcategory']
+  ['fundRecordId','fundRecordFundId','fundRecordDate','fundRecordContent','fundRecordAmount','fundRecordNote','fundRecordSubcategory','fundRecordAssignee']
     .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('fundRecordModalTitle').textContent='新增开支记录';
 }
@@ -6632,7 +6140,7 @@ function clearFundRecordForm(){
 const expenseStatusBadge={待报销:'badge-yellow',已报销:'badge-green'};
 
 function renderExpenses(){
-  const expenses=DB.get('expenses');
+  const expenses=formalLedgerItems('expenses');
   const now=new Date().toISOString().slice(0,7);
   const monthExp=expenses.filter(e=>e.appDate&&e.appDate.startsWith(now));
   const monthSum=monthExp.reduce((s,e)=>s+(+e.amount||0),0);
@@ -6691,7 +6199,6 @@ function renderExpenses(){
       <td>
         <div style="display:flex;gap:4px">
           <button class="btn btn-ghost btn-sm" onclick="editExpense(${e.id})">✏️</button>
-          <button class="btn btn-ghost btn-sm" onclick="openMultiLedger('expenses',${e.id})">加入台账</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteExpense(${e.id})">🗑</button>
         </div>
       </td>
@@ -6714,12 +6221,12 @@ function saveExpense(){
   const subcategoryId=document.getElementById('expenseSubcategory').value||'';
   if(fundItem&&!DB.get('funds').some(f=>String(f.id)===String(fundItem))){toast('关联的经费项目不存在');return;}
   if(subcategoryId&&!fundSubcategories(fundItem).some(s=>String(s.id)===String(subcategoryId))){toast('请选择该经费项目下的子类别');return;}
-  const status=document.getElementById('expenseStatus').value;
   const expenses=DB.raw('expenses');
   const id=+document.getElementById('expenseId').value;
+  const status=id?existingRecord('expenses',id).status:document.getElementById('expenseStatus').value;
   // 已报销时自动记录报销日期
   let reimbDate=document.getElementById('expenseReimbDate').value;
-  if(status==='已报销'&&!reimbDate)reimbDate=new Date().toISOString().slice(0,10);
+  if(!id&&status==='已报销'&&!reimbDate)reimbDate=new Date().toISOString().slice(0,10);
   const now=new Date().toISOString().slice(0,10);
   const item={
     ...existingRecord('expenses',id),
@@ -6743,12 +6250,10 @@ function saveExpense(){
     deleted:false,
     createdAt:now
   };
-  item.state=mapStatusToState('expenses',item.status);item.state_manual=false;
+  item.state=recordState('expenses',existingRecord('expenses',id));item.state_manual=true;
   if(id){const i=expenses.findIndex(e=>e.id===id);if(i>-1){item.todoRef=expenses[i].todoRef;item.deleted=expenses[i].deleted;expenses[i]=item;}else expenses.push(item);}
   else expenses.push(item);
   DB.set('expenses',expenses);
-  // P1-2: 自动同步工作记录
-  syncLedgerTodo('expenses',item);
   closeModal('expenseModal');
   clearExpenseForm();
   renderExpenses();
@@ -6777,6 +6282,7 @@ function editExpense(id){
   populateExpenseSubcategories();
   document.getElementById('expenseSubcategory').value=e.subcategoryId||'';
   openModal('expenseModal');
+  hideLifecycleStatusField('expenseModal');
 }
 
 // ============================================================
@@ -6821,8 +6327,6 @@ function deleteExpense(id){
   if(e){
     e.deleted=true;
     DB.set('expenses',expenses);
-    // P1-2: 同步软删除关联的工作记录
-    syncLedgerTodo('expenses',e,'delete');
   }
   renderExpenses();if(currentPage==='fund')renderFunds();toast('已删除');
 }
@@ -6859,7 +6363,7 @@ function renderMeetingCalendar(year,month){
   const today=new Date();
   const todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
 
-  const meetings=DB.get('meetings');
+  const meetings=formalLedgerItems('meetings');
   // 本月有会议的日期
   const meetingDates={};
   meetings.forEach(m=>{
@@ -6932,13 +6436,14 @@ function showDayMeetings(day){
 }
 
 function openQuickMeeting(dateStr){
-  clearMeetingForm();
-  document.getElementById('meetingDate').value=dateStr;
-  openModal('meetingModal');
+  openSmartModal();
+  document.getElementById('smartInput').value=dateStr+' ';
+  smartSetCat('meetings');
+  document.getElementById('smartInput').focus();
 }
 
 function renderMeetingList(highlightDay){
-  const meetings=DB.get('meetings');
+  const meetings=formalLedgerItems('meetings');
   const typeFilter=document.getElementById('meetingF_type')?.value||'';
   const searchQ=(document.getElementById('meetingF_search')?.value||'').toLowerCase();
 
@@ -7047,9 +6552,6 @@ function saveMeeting(){
   }else meetings.push(item);
   DB.set('meetings',meetings);
 
-  // P1-2 扩展：会议同步工作记录
-  syncLedgerTodo('meeting',item);
-
   closeModal('meetingModal');
   clearMeetingForm();
   renderMeetings();
@@ -7089,8 +6591,6 @@ function deleteMeeting(id){
   if(m){
     m.deleted=true;
     DB.set('meetings',meetings);
-    // P1-2 扩展：软删除关联工作记录
-    syncLedgerTodo('meeting',m,'delete');
   }
   renderMeetings();toast('已删除');
 }
@@ -7134,7 +6634,7 @@ function addMeetingActionItem(data){
 // ============================================================
 
 function renderTrainings(){
-  const trainings=DB.get('trainings');
+  const trainings=formalLedgerItems('trainings');
   const catFilter=document.getElementById('trainingF_cat')?.value||'';
   const typeFilter=document.getElementById('trainingF_type')?.value||'';
   const searchQ=(document.getElementById('trainingF_search')?.value||'').toLowerCase();
@@ -7157,7 +6657,7 @@ function renderTrainings(){
   if(expiringOnly)filtered=filtered.filter(t=>t.hasCertificate&&t.certificateExpiry&&t.certificateExpiry>=todayStr&&t.certificateExpiry<=soonStr);
 
   // 按日期降序
-  filtered.sort((a,b)=>b.startDate.localeCompare(a.startDate));
+  filtered.sort((a,b)=>(b.startDate||'').localeCompare(a.startDate||''));
 
   // 统计
   const totalCredits=filtered.reduce((s,t)=>s+(t.credits||0),0);
@@ -7187,12 +6687,12 @@ function renderTrainings(){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
-            <span class="badge ${typeBadge[t.type]||'badge-gray'}">${t.type}</span>
-            <span class="badge badge-gray">${esc(t.category||'其他')}</span>
+            ${businessLabel(t.type)?`<span class="badge ${typeBadge[t.type]||'badge-gray'}">${esc(t.type)}</span>`:''}
+            ${businessLabel(t.category)?`<span class="badge badge-gray">${esc(t.category)}</span>`:''}
             <strong style="font-size:15px">${esc(t.name)}</strong>${t.assignee?`<span class="assignee-note">经办人：${esc(t.assignee)}</span>`:''}
           </div>
           <div style="color:var(--color-text2);font-size:12px;line-height:1.6;display:flex;flex-wrap:wrap;gap:12px">
-            <span>📅 ${t.startDate}${t.endDate?'→'+t.endDate:''}</span>
+            ${businessLabel(t.startDate)?`<span>📅 ${esc(t.startDate)}${businessLabel(t.endDate)?'→'+esc(t.endDate):''}</span>`:''}
             ${t.organizer?`<span>👤 ${esc(t.organizer)}</span>`:''}
             ${t.credits?`<span>📝 ${t.credits}学分${t.creditType?'('+esc(t.creditType)+')':''}</span>`:''}
             ${t.fee?`<span>💰 ${esc(t.feeStatus||'自费')} ¥${t.fee.toLocaleString()}</span>`:''}
@@ -7258,9 +6758,6 @@ function saveTraining(){
   }else trainings.push(item);
   DB.set('trainings',trainings);
 
-  // P1-2 扩展：培训同步工作记录
-  syncLedgerTodo('training',item);
-
   closeModal('trainingModal');
   clearTrainingForm();
   renderTrainings();
@@ -7275,8 +6772,8 @@ function editTraining(id){
   document.getElementById('trainingAssignee').value=t.assignee||'';
   document.getElementById('trainingName').value=t.name;
   document.getElementById('trainingOrganizer').value=t.organizer||'';
-  document.getElementById('trainingType').value=t.type||'线下';
-  document.getElementById('trainingCategory').value=t.category||'业务培训';
+  document.getElementById('trainingType').value=businessLabel(t.type)?t.type:'';
+  document.getElementById('trainingCategory').value=businessLabel(t.category)?t.category:'';
   document.getElementById('trainingFeeStatus').value=t.feeStatus||'自费';
   document.getElementById('trainingStartDate').value=t.startDate;
   document.getElementById('trainingEndDate').value=t.endDate||'';
@@ -7304,7 +6801,7 @@ function deleteTraining(id){
   if(t){
     t.deleted=true;
     DB.set('trainings',trainings);
-    syncLedgerTodo('training',t,'delete');
+
   }
   renderTrainings();toast('已删除');
 }
@@ -7330,21 +6827,63 @@ function clearTrainingForm(){
 // ============================================================
 //  EXPORT / IMPORT DATA
 // ============================================================
+const SYNC_BUSINESS_KEYS=['todos','inspirations','contracts','purchases','expenses','meetings',
+  'trainings','agencys','handovers','funds','fundRecords','quick_notes'];
+const SYNC_REMOTE_PATH='data.json';
+const TEST_DATA_CLEAR_MARKER='wb_v15_test_data_cleared_20260915';
+// 用户确认现有记录均为测试数据：只执行一次，清空业务数组及旧业务快照，保留设备配置。
+function clearTestBusinessDataOnce(){
+  if(localStorage.getItem(TEST_DATA_CLEAR_MARKER)==='1')return false;
+  SYNC_BUSINESS_KEYS.forEach(key=>localStorage.setItem(key,'[]'));
+  localStorage.removeItem('wb_v14_restore');
+  localStorage.removeItem('wb_v14_snapshot');
+  localStorage.removeItem('wb_v15_todos_before_mirror_cleanup');
+  localStorage.removeItem(REMINDER_IGNORED_KEY);
+  localStorage.setItem(TEST_DATA_CLEAR_MARKER,'1');
+  console.log('一次性测试业务数据清理完成',{keys:[...SYNC_BUSINESS_KEYS]});
+  return true;
+}
+function normalizedSyncRows(data,key){
+  return (Array.isArray(data?.[key])?data[key]:[]).filter(row=>row&&!row.deleted);
+}
+function sameBusinessSnapshot(a,b){
+  return mismatchedBusinessKeys(a,b).length===0;
+}
+function mismatchedBusinessKeys(a,b){
+  return SYNC_BUSINESS_KEYS.filter(key=>!Array.isArray(a?.[key])||!Array.isArray(b?.[key])||
+    JSON.stringify(a[key])!==JSON.stringify(b[key]));
+}
+function sameBusinessIds(a,b){
+  return SYNC_BUSINESS_KEYS.every(key=>{
+    const ids=data=>normalizedSyncRows(data,key).map(row=>String(row.id??'')).sort();
+    return JSON.stringify(ids(a))===JSON.stringify(ids(b));
+  });
+}
+function syncSummary(data){
+  const boards={};let total=0;
+  SYNC_BUSINESS_KEYS.forEach(key=>{
+    const rows=normalizedSyncRows(data,key);
+    const ids=rows.map(row=>String(row.id??'')).sort().join('|');
+    let hash=2166136261;
+    for(let i=0;i<ids.length;i++)hash=Math.imul(hash^ids.charCodeAt(i),16777619)>>>0;
+    boards[key]={count:rows.length,idHash:hash.toString(16).padStart(8,'0')};
+    total+=rows.length;
+  });
+  return {total,boards};
+}
+function logSyncSnapshot(stage,target,data){
+  console.log(stage,{repo:target.owner+'/'+target.repo,branch:target.branch,path:target.path,...syncSummary(data)});
+}
+function safeSyncErrorMessage(error,token){
+  let message=String(error?.message||'未知错误').replace(/access_token=[^&\s]+/gi,'access_token=[已隐藏]');
+  if(token)message=message.split(token).join('[已隐藏]');
+  return message;
+}
 function dumpData(){
-  return {
-    todos:DB.get('todos'),
-    inspirations:DB.get('inspirations'),
-    contracts:DB.get('contracts'),
-    purchases:DB.get('purchases'),
-    expenses:DB.get('expenses'),
-    meetings:DB.get('meetings'),
-    trainings:DB.get('trainings'),
-    agencys:DB.get('agencys'),
-    handovers:DB.get('handovers'),
-    funds:DB.get('funds'),
-    fundRecords:DB.get('fundRecords'),
-    exportedAt:new Date().toISOString()
-  };
+  const data={};
+  SYNC_BUSINESS_KEYS.forEach(key=>{data[key]=DB.get(key);});
+  data.exportedAt=new Date().toISOString();
+  return data;
 }
 
 function exportData(){
@@ -7369,7 +6908,7 @@ function importData(e){
     try{
       const data=JSON.parse(ev.target.result);
       let imported=0;
-      ['todos','inspirations','contracts','purchases','expenses','meetings','trainings','agencys','handovers','funds','fundRecords'].forEach(k=>{        if(Array.isArray(data[k])){DB.set(k,data[k]);imported+=data[k].length;}
+      SYNC_BUSINESS_KEYS.forEach(k=>{        if(Array.isArray(data[k])){DB.set(k,data[k]);imported+=data[k].length;}
       });
       toast('已导入 '+imported+' 条数据');
       renderCurrentPage();
@@ -7418,6 +6957,7 @@ function dismissBackup(){
 //  GITEE SYNC ENGINE
 // ============================================================
 const GITEE={
+  _applyingSnapshot:false,
   getConfig(){
     return {
       user:localStorage.getItem('wb_gitee_user')||'',
@@ -7438,30 +6978,42 @@ const GITEE={
     lbl.textContent=label;
   },
 
-  _knownSha(cfg,branch){
-    try{
-      const saved=JSON.parse(localStorage.getItem('wb_gitee_data_revision')||'null');
-      return saved&&saved.user===cfg.user&&saved.repo===cfg.repo&&saved.branch===branch ? saved.sha||'' : '';
-    }catch(e){return '';}
-  },
-
   _rememberSha(cfg,branch,sha){
     localStorage.setItem('wb_gitee_data_revision',JSON.stringify({user:cfg.user,repo:cfg.repo,branch,sha}));
   },
 
-  // get default branch
-  async _getDefaultBranch(){
-    const cfg=this.getConfig();
-    try{
-      const resp=await fetch(
-        `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}?access_token=${cfg.token}`
-      );
-      if(resp.ok){
-        const info=await resp.json();
-        return info.default_branch||'master';
-      }
-    }catch(e){}
-    return 'master';
+  // 每次操作先取得唯一目标。解析失败时停止，不回退到可能存着旧数据的分支。
+  async _resolveTarget(cfg){
+    const base=`https://gitee.com/api/v5/repos/${encodeURIComponent(cfg.user)}/${encodeURIComponent(cfg.repo)}`;
+    const auth=cfg.token?'?access_token='+encodeURIComponent(cfg.token):'';
+    const resp=await fetch(base+auth,{cache:'no-store'});
+    if(!resp.ok)throw new Error('仓库信息读取失败 (HTTP '+resp.status+')');
+    const info=await resp.json();
+    const branch=String(info.default_branch||'').trim();
+    if(!branch)throw new Error('仓库未返回默认分支');
+    return {owner:cfg.user,repo:cfg.repo,branch,path:SYNC_REMOTE_PATH};
+  },
+  _apiFilePath(target){
+    return `https://gitee.com/api/v5/repos/${encodeURIComponent(target.owner)}/${encodeURIComponent(target.repo)}/contents/${target.path}`;
+  },
+  _apiFileUrl(target,cfg){
+    return this._apiFilePath(target)+
+      `?access_token=${encodeURIComponent(cfg.token)}&ref=${encodeURIComponent(target.branch)}&_t=${Date.now()}`;
+  },
+  _rawFileUrl(target){
+    return `https://gitee.com/${encodeURIComponent(target.owner)}/${encodeURIComponent(target.repo)}/raw/${encodeURIComponent(target.branch)}/${target.path}?_t=${Date.now()}`;
+  },
+  async _readApiFile(target,cfg,allowMissing=false){
+    const resp=await fetch(this._apiFileUrl(target,cfg),{cache:'no-store'});
+    if(resp.status===404&&allowMissing)return null;
+    if(!resp.ok)throw new Error('远端文件读取失败 (HTTP '+resp.status+')');
+    const file=await resp.json();
+    if(!file.sha||!file.content)throw new Error('远端文件缺少 SHA 或内容');
+    let data;
+    try{data=JSON.parse(decodeURIComponent(escape(atob(String(file.content).replace(/\s/g,'')))));}
+    catch(e){throw new Error('远端文件 JSON 无效');}
+    if(!data||typeof data!=='object'||Array.isArray(data))throw new Error('远端文件结构无效');
+    return {sha:file.sha,data};
   },
 
   // push data to Gitee (needs token)
@@ -7471,45 +7023,31 @@ const GITEE={
 
     this.setSyncStatus('loading','同步中…');
     try{
-      const data=JSON.stringify(dumpData(),null,0);
+      const target=await this._resolveTarget(cfg);
+      const localData=dumpData();
+      logSyncSnapshot('LOCAL SNAPSHOT',target,localData);
+      const before=await this._readApiFile(target,cfg,true);
+      const metadata=Object.fromEntries(Object.entries(before?.data||{}).filter(([key])=>
+        !SYNC_BUSINESS_KEYS.includes(key)&&key!=='exportedAt'&&!/(token|credential|secret|password|key)/i.test(key)));
+      const data=JSON.stringify({...metadata,...localData});
       // base64 encode (utf8-safe via percent-encoding roundtrip)
       const content=btoa(unescape(encodeURIComponent(data)));
-
-      const branch=await this._getDefaultBranch();
-      console.log('Gitee push: using branch',branch);
-
-      // 只用本机上次拉取或上传确认的 SHA 作为上传基线。
-      let sha='';
-      const getResp=await fetch(
-        `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}/contents/data.json?access_token=${cfg.token}&ref=${branch}&_t=${Date.now()}`,
-        {cache:'no-store'}
-      );
-      if(getResp.ok){
-        const info=await getResp.json();
-        sha=info.sha||'';
-        if(!sha)throw new Error('Gitee data.json SHA missing');
-      }else if(getResp.status!==404){
-        throw new Error('Gitee data.json read failed: '+getResp.status);
-      }
-      if(this._knownSha(cfg,branch)!==sha){
-        this.setSyncStatus('error','云端已更新');
-        toast('云端数据已在其他设备更新，请先拉取最新数据后再上传。');
-        return 'conflict';
-      }
-
-      const body={access_token:cfg.token,content,message:'workbench auto-sync '+new Date().toLocaleString('zh-CN'),branch};
-      if(sha)body.sha=sha;
+      const body={access_token:cfg.token,content,message:'workbench snapshot '+new Date().toLocaleString('zh-CN'),branch:target.branch};
+      if(before)body.sha=before.sha;
 
       // POST for create, PUT for update
-      const method=sha?'PUT':'POST';
+      const method=before?'PUT':'POST';
       const resp=await fetch(
-        `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}/contents/data.json`,
+        this._apiFilePath(target),
         {method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}
       );
 
       if(!resp.ok){
-        const errText=await resp.text().catch(()=>'');
-        console.error('Gitee push failed:',resp.status,errText);
+        console.error('Gitee push failed: HTTP',resp.status);
+        if(resp.status===409||resp.status===422){
+          this.setSyncStatus('error','云端版本冲突');
+          return 'conflict';
+        }
         this.setSyncStatus('error','推送失败('+resp.status+')');
         return false;
       }
@@ -7517,15 +7055,31 @@ const GITEE={
       const result=await resp.json();
       const pushedSha=result&&result.content&&result.content.sha;
       if(!pushedSha)throw new Error('Gitee push response SHA missing');
-      this._rememberSha(cfg,branch,pushedSha);
-      console.log('Gitee push: success on branch',branch);
-      this.setSyncStatus('ok','已同步');
+      const after=await this._readApiFile(target,cfg);
+      logSyncSnapshot('REMOTE AFTER PUSH',target,after.data);
+      const mismatches=mismatchedBusinessKeys(localData,after.data);
+      if(mismatches.length){
+        this.setSyncStatus('error','远端回读不一致');
+        console.error('Gitee push verification failed',{repo:target.owner+'/'+target.repo,
+          branch:target.branch,path:target.path,mismatchedKeys:mismatches});
+        return false;
+      }
+      if(!sameBusinessSnapshot(localData,dumpData())){
+        this.setSyncStatus('error','推送期间本机数据已变化，请重试');
+        console.error('Gitee push verification failed: local snapshot changed during upload');
+        return false;
+      }
+      this._rememberSha(cfg,target.branch,after.sha);
+      console.log('Gitee push verified',{repo:target.owner+'/'+target.repo,branch:target.branch,path:target.path,match:true});
+      this.setSyncStatus('ok','已验证一致 · '+target.branch+'/'+target.path+' · '+syncSummary(after.data).total+'条');
+      refreshDataBadges();
       // store branch for pull reference
-      localStorage.setItem('wb_gitee_branch',branch);
+      localStorage.setItem('wb_gitee_branch',target.branch);
       return 'ok';
     }catch(e){
-      console.error('Gitee push error:',e);
-      this.setSyncStatus('error','同步失败');
+      const message=safeSyncErrorMessage(e,cfg.token);
+      console.error('Gitee push error:',message);
+      this.setSyncStatus('error','推送未验证：'+message);
       return false;
     }
   },
@@ -7533,93 +7087,55 @@ const GITEE={
   // pull data from Gitee
   async pull(){
     const cfg=this.getConfig();
-    const savedBranch=localStorage.getItem('wb_gitee_branch')||'';
-
-    // try branches in order: saved > main > master
-    const branches=[];
-    if(savedBranch)branches.push(savedBranch);
-    branches.push('main','master');
-
-    // strategy 1: use API with token if available
-    if(cfg.token){
-      for(const b of branches){
-        try{
-          const resp=await fetch(
-            `https://gitee.com/api/v5/repos/${cfg.user}/${cfg.repo}/contents/data.json?access_token=${cfg.token}&ref=${b}&_t=${Date.now()}`
-          );
-          if(resp.ok){
-            const json=await resp.json();
-            const decoded=decodeURIComponent(escape(atob(json.content)));
-            const data=JSON.parse(decoded);
-            const result=this._mergeData(data);
-            if(result==='ok'&&json.sha)this._rememberSha(cfg,b,json.sha);
-            return result;
-          }
-          if(resp.status===404)continue; // try next branch
-          if(resp.status===401){this.setSyncStatus('error','令牌无效');return false;}
-        }catch(e){continue;}
-      }
-      // all branches tried, maybe file doesn't exist yet
-      this.setSyncStatus('ok','云端暂无数据');
-      return false;
-    }
-
-    // strategy 2: no token — try raw URL, then API with auth error hint
     if(!cfg.user||!cfg.repo){
-      this.setSyncStatus('ok','仅本地');
+      this.setSyncStatus('error','未配置仓库');
       return false;
     }
-
-    for(const b of branches){
-      try{
-        const resp=await fetch(
-          `https://gitee.com/${cfg.user}/${cfg.repo}/raw/${b}/data.json?_t=${Date.now()}`
-        );
-        if(resp.ok){
-          const data=await resp.json();
-          return this._mergeData(data);
-        }
-        if(resp.status===404)continue; // try next branch
-        if(resp.status===403){
-          this.setSyncStatus('error','仓库为私有，需令牌');
-          return false;
-        }
-      }catch(e){continue;}
+    this.setSyncStatus('loading','拉取中…');
+    try{
+      const target=await this._resolveTarget(cfg);
+      let remote;
+      if(cfg.token){
+        remote=await this._readApiFile(target,cfg);
+      }else{
+        const resp=await fetch(this._rawFileUrl(target),{cache:'no-store'});
+        if(!resp.ok)throw new Error('远端文件读取失败 (HTTP '+resp.status+')');
+        remote={sha:'',data:await resp.json()};
+      }
+      logSyncSnapshot('REMOTE BEFORE PULL',target,remote.data);
+      const result=this._applySnapshot(remote.data);
+      if(result!== 'ok')return result;
+      const local=dumpData();
+      logSyncSnapshot('LOCAL AFTER PULL',target,local);
+      if(!sameBusinessIds(remote.data,local))throw new Error('拉取后本机记录 ID 与云端不一致');
+      if(remote.sha)this._rememberSha(cfg,target.branch,remote.sha);
+      localStorage.setItem('wb_gitee_branch',target.branch);
+      console.log('Gitee pull verified',{repo:target.owner+'/'+target.repo,branch:target.branch,path:target.path,idsMatch:true});
+      this.setSyncStatus('ok','已按云端覆盖 · '+target.branch+'/'+target.path+' · '+syncSummary(local).total+'条');
+      return 'ok';
+    }catch(e){
+      const message=safeSyncErrorMessage(e,cfg.token);
+      console.error('Gitee pull error:',message);
+      this.setSyncStatus('error','拉取失败：'+message);
+      return false;
     }
-
-    // raw URL all failed — maybe private repo, suggest using token
-    this.setSyncStatus('error','拉取失败，需令牌');
-    return false;
   },
 
-  _mergeData(data){
-    if(data&&data.todos!==undefined){
-      let itemsMerged=0;
-      ['todos','inspirations','contracts','purchases','expenses','meetings','trainings','agencys','handovers','funds','fundRecords'].forEach(k=>{        if(Array.isArray(data[k])){
-          const local=DB.get(k);
-          const localRaw=DB.raw(k);
-          const deletedIds=new Set(localRaw.filter(r=>r.deleted).map(r=>r.id));
-          const localMap={};
-          local.forEach(item=>{localMap[item.id]=item;});
-          // cloud overwrites local items with same id, but skip locally deleted ids
-          data[k].forEach(item=>{
-            if(deletedIds.has(item.id))return;
-            localMap[item.id]=item;
-          });
-          const merged=Object.values(localMap);
-          // safety: never wipe local data with empty cloud data
-          if(merged.length===0&&local.length>0){
-            console.log('Merge: keeping local data for',k,'(cloud is empty, local has',local.length,'items)');
-            return; // skip this key, keep local
-          }
-          DB.set(k,merged);
-          itemsMerged+=merged.length;
-        }
-      });
-      this.setSyncStatus('ok','已同步 ('+itemsMerged+'条)');
-      return 'ok';
+  _applySnapshot(data){
+    if(!data || typeof data!=='object'||Array.isArray(data)||
+       SYNC_BUSINESS_KEYS.some(k=>data[k]!==undefined&&!Array.isArray(data[k]))){
+      this.setSyncStatus('error','云端数据格式错误');return false;
     }
-    this.setSyncStatus('ok','云端无数据');
+    clearTimeout(_syncTimer);_syncTimer=null;
+    this._applyingSnapshot=true;
+    try{
+      SYNC_BUSINESS_KEYS.forEach(k=>{
+        DB.set(k,Array.isArray(data[k])?data[k]:[]);
+      });
+      repairData(); // 仅规范刚拉到的记录；不会读取备份或合并旧本机业务数组。
+    }finally{this._applyingSnapshot=false;}
+    refreshDataBadges();
+    renderCurrentPage();
     return 'ok';
   },
 
@@ -7643,23 +7159,22 @@ const GITEE={
 };
 
 // ============================================================
-//  AUTO SYNC ON SAVE (debounced)
+//  UPDATE LOCAL BADGES AFTER STORAGE CHANGES
 // ============================================================
 let _syncTimer=null;
-function triggerSync(){
-  if(!GITEE.isConfigured())return;
-  clearTimeout(_syncTimer);
-  _syncTimer=setTimeout(()=>{GITEE.push();},1500);
-}
 
-// override DB.set to auto-sync
+// 业务写入只更新本机界面；云端变更由用户明确点击“推送数据”触发。
 const _origDBSet=DB.set;
+let _badgeRefreshQueued=false;
 DB.set=function(key,val){
   _origDBSet(key,val);
   if(document.getElementById('globalSearch')?.value)renderGlobalSearch();
   // only sync for main data keys
-  if(['todos','inspirations','contracts','purchases','expenses','meetings','trainings','agencys','handovers','funds','fundRecords'].includes(key)){
-    triggerSync();
+  if(SYNC_BUSINESS_KEYS.includes(key)){
+    if(!_badgeRefreshQueued){
+      _badgeRefreshQueued=true;
+      queueMicrotask(()=>{_badgeRefreshQueued=false;refreshDataBadges();renderCurrentPage();});
+    }
   }
 };
 
@@ -7696,13 +7211,7 @@ function saveSettings(){
   closeModal('settingsModal');
   loadSettings();
 
-  // if newly configured, do an initial push
-  if(GITEE.isConfigured()){
-    toast('设置已保存，正在同步数据…');
-    GITEE.push().then(()=>{renderCurrentPage();});
-  }else{
-    toast('设置已保存');
-  }
+  toast('设置已保存');
 }
 
 async function testSync(){
@@ -7725,13 +7234,13 @@ async function manualPush(){
   const result=await GITEE.push();
   btn.disabled=false; btn.textContent='⬆️ 推送数据';
   if(result==='ok'){
-    GITEE.setSyncStatus('ok','已同步');
-    toast('✓ 数据已推送到云端');
+    toast('✓ 已推送并回读验证：云端业务数据与本机一致');
     renderCurrentPage();
   }else if(result==='conflict'){
+    toast('✗ 云端版本冲突，未修改本机数据');
     return;
   }else{
-    toast('✗ 推送失败：'+result);
+    toast('✗ 推送未验证，请查看同步状态和控制台诊断');
   }
 }
 
@@ -7746,12 +7255,10 @@ async function manualPull(){
   const result=await GITEE.pull();
   btn.disabled=false; btn.textContent='⬇️ 拉取数据';
   if(result==='ok'){
-    repairData(); // 拉取后自动修复旧数据格式
-    GITEE.setSyncStatus('ok','已同步');
-    toast('✓ 数据已从云端拉取');
+    toast('✓ 本机业务数据已按云端快照覆盖');
     renderCurrentPage();
   }else{
-    toast('✗ 拉取失败：'+result);
+    toast('✗ 拉取失败，请查看同步状态和控制台诊断');
   }
 }
 
@@ -7873,8 +7380,8 @@ function smartExtract(text,cat){
   const firstLine=text.split(/[。！？\n]/)[0]?.trim()||text.trim().slice(0,40);
 
   // amount
-  const amtMatch=text.match(/([\d,]+\.?\d*)\s*[万元块]/);
-  if(amtMatch)result.amount=parseFloat(amtMatch[1].replace(/,/g,''));
+  const amtMatch=text.match(/([\d,]+\.?\d*)\s*(万|元|块)/);
+  if(amtMatch)result.amount=parseFloat(amtMatch[1].replace(/,/g,''))*(amtMatch[2]==='万'?10000:1);
 
   // date
   const dateMatch=text.match(/(\d{4}[年/-]\d{1,2}[月/-]\d{1,2})/);
@@ -7940,19 +7447,17 @@ function smartAnalyze(){
   }
 
   const cls=smartClassify(text);
-  const fields=smartExtract(text,cls.cat);
-
-  _smartDetected=JSON.stringify({cat:cls.cat,fields});
-
-  // 同步识别到的类别到下拉（识别类别→台账 key 映射）
   const sb=document.getElementById('smartCat');
-  if(sb) sb.value=SMART_CAT_TO_LEDGER[cls.cat]||cls.cat;
+  const selected=sb.dataset.manual==='1'?sb.value:(SMART_CAT_TO_LEDGER[cls.cat]||cls.cat);
+  if(sb.dataset.manual!=='1')sb.value=selected;
+  const fields=smartExtract(text,LEDGER_TO_SMART_CAT[selected]||selected);
+  _smartDetected=JSON.stringify({cat:selected,fields});
 
   // build preview
   const catNames={todo:'工作台账',inspiration:'灵感',contract:'合同台账',purchase:'采购台账',expense:'报销台账',agency:'委托台账',handover:'交接台账',fund:'经费台账',reminder:'提醒'};
   const catEmoji={todo:'✅',inspiration:'💡',contract:'📄',purchase:'🛒',expense:'💰',agency:'🤝',handover:'📦',fund:'💵',reminder:'⏰'};
 
-  let html=`<div class="field"><span class="field-label">类型</span><span class="field-value">${catEmoji[cls.cat]||''} ${catNames[cls.cat]||cls.cat}</span></div>`;
+  let html=`<div class="field"><span class="field-label">所属板块</span><span class="field-value">${catEmoji[cls.cat]||''} ${LEDGER_META[selected]?.label||catNames[cls.cat]||selected}</span></div>`;
 
   Object.entries(fields).forEach(([k,v])=>{
     if(v===undefined||v===null)return;
@@ -7969,7 +7474,7 @@ function smartAnalyze(){
 }
 
 function smartSetCat(cat){
-  const c=document.getElementById('smartCat'); if(c) c.value=cat;
+  const c=document.getElementById('smartCat'); if(c){c.value=cat;c.dataset.manual='1';}
   const text=document.getElementById('smartInput').value.trim();
   if(!text){ return; }
   const sc=LEDGER_TO_SMART_CAT[cat]||cat; // 台账 key→识别类别，供 smartExtract 正确提取字段
@@ -7978,8 +7483,8 @@ function smartSetCat(cat){
 
   // rebuild preview
   const previewFields=document.getElementById('previewFields');
-  const catNames={todos:'工作台账',contracts:'合同台账',purchases:'采购台账',expenses:'报销台账',agencys:'委托台账',handovers:'交接台账',funds:'经费台账',inspiration:'灵感',reminder:'提醒'};
-  const catEmoji={todos:'✅',contracts:'📄',purchases:'🛒',expenses:'💰',agencys:'🤝',handovers:'📦',funds:'💵',inspiration:'💡',reminder:'⏰'};
+  const catNames={todos:'工作台账',contracts:'合同台账',purchases:'采购台账',expenses:'报销台账',agencys:'委托台账',handovers:'交接台账',funds:'经费台账',meetings:'会议',trainings:'培训记录',fundRecords:'经费开支',goal:'长期目标',inspiration:'灵感',reminder:'提醒'};
+  const catEmoji={todos:'✅',contracts:'📄',purchases:'🛒',expenses:'💰',agencys:'🤝',handovers:'📦',funds:'💵',meetings:'📅',trainings:'📚',fundRecords:'💸',goal:'🎯',inspiration:'💡',reminder:'⏰'};
 
   let html=`<div class="field"><span class="field-label">类型</span><span class="field-value">${catEmoji[cat]||''} ${catNames[cat]||cat} <span style="font-size:10px;color:var(--color-text3)">(手动)</span></span></div>`;
 
@@ -7999,8 +7504,11 @@ function smartSetCat(cat){
 
 function smartClear(){
   const t=document.getElementById('smartInput'); if(t) t.value='';
+  document.getElementById('smartState').value=STATE.TODO;
+  document.getElementById('smartAssignee').value='';
   closePreview();
   const c=document.getElementById('smartCat'); if(c) c.value=LEDGER_KEYS[0];
+  if(c)delete c.dataset.manual;
 }
 
 function closePreview(){
@@ -8013,39 +7521,49 @@ function smartSave(){
   const text=document.getElementById('smartInput').value.trim();
   if(!text){ toast('写点什么吧'); return; }
   const cat=document.getElementById('smartCat').value;
+  const initialState=document.getElementById('smartState').value;
+  const assignee=document.getElementById('smartAssignee').value.trim();
+  if(![STATE.TODO,STATE.DOING,STATE.DONE,STATE.CLOSED].includes(initialState)){toast('请选择有效状态');return;}
   const sGoalEl=document.getElementById('smartGoal');
   const sGoalVal=sGoalEl?sGoalEl.value:'';
   let fields={};
   try{ fields=(JSON.parse(_smartDetected).fields)||{}; }catch(e){}
-  const due = fields.deadline||fields.date||'';
+  const due = normalizeDate(String(fields.deadline||fields.date||'').replace(/年|月/g,'-').replace(/日/g,''));
   const prio = (fields.title&&/急|紧急|尽快|马上|立即/.test(fields.title))?'重要且紧急':'不重要不紧急';
   if(cat==='inspiration'){
     const insps=DB.get('inspirations');
-    insps.push({id:DB.nextId(insps),title:text.slice(0,30),content:text,tags:['想法'],createdAt:todayStr(),archived_to:null,deleted:false});
+    insps.push({id:DB.nextId(insps),title:text.slice(0,30),content:text,tags:['想法'],state:initialState,state_manual:true,owner_ledger:'inspirations',assignee,createdAt:todayStr(),archived_to:null,deleted:false});
     DB.set('inspirations',insps);
   } else if(cat==='reminder'){
-    createLedgerItem('todos',{title:text,requirement:'',due_date:due,priority:'重要且紧急',state:STATE.TODO, parentGoal: sGoalVal?+sGoalVal:undefined});
+    createLedgerItem('todos',{title:text,requirement:'',due_date:due,priority:'重要且紧急',state:initialState,extra:{assignee}, parentGoal: sGoalVal?+sGoalVal:undefined});
+  } else if(cat==='goal'){
+    createLedgerItem('todos',{title:text,requirement:text,due_date:due,priority:prio,isGoal:true,state:initialState,extra:{assignee,owner_ledger:'goals'}});
   } else {
-    // 台账类别 → 直接进待办（最小项，稍后在待办整理补全字段）
-    createLedgerItem(cat,{title:text,requirement:'',due_date:due,priority:prio,state:STATE.TODO, parentGoal: sGoalVal?+sGoalVal:undefined});
+    if(!ENTRY_KEYS.includes(cat)||cat==='fundRecords'){toast('请选择所属板块');return;}
+    const extra={assignee};
+    ['party','supplier','amount','invoice'].forEach(k=>{if(fields[k]!==undefined)extra[k]=fields[k];});
+    if(due)extra.date=due;
+    if(cat==='expenses'&&due)extra.appDate=due;
+    if(cat==='trainings'&&due)extra.startDate=due;
+    createLedgerItem(cat,{title:fields.title||fields.name||text.slice(0,60),requirement:text,due_date:due,priority:prio,state:initialState,extra,parentGoal:sGoalVal?+sGoalVal:undefined});
   }
-  document.getElementById('smartInput').value='';
-  closePreview();
+  smartClear();
   closeModal('smartModal');
-  renderTodos(); updateTodoBadge();   // 确认后自动刷新待办（问题6：不刷新页面即可见）
-  toast('已加入待办');
+  toast([STATE.DONE,STATE.CLOSED].includes(initialState)?'已保存至所属板块':'已加入待办');
 }
 
 // 智能录入作为统一入口：输入内容 + 选类别 + 清空 + 确认；确认直接进待办
 function openSmartModal(){
   const sel=document.getElementById('smartCat');
   if(sel && !sel.dataset.filled){
-    sel.innerHTML = LEDGER_KEYS.map(k=>`<option value="${k}">${LEDGER_META[k].label}</option>`).join('')
+    sel.innerHTML = ENTRY_KEYS.filter(k=>k!=='fundRecords').map(k=>`<option value="${k}">${LEDGER_META[k].label}</option>`).join('')
+      + '<option value="goal">长期目标</option>'
       + '<option value="inspiration">💡 灵感</option>'
       + '<option value="reminder">⏰ 提醒</option>';
     sel.dataset.filled='1';
   }
   if(sel) sel.value=LEDGER_KEYS[0];
+  if(sel)delete sel.dataset.manual;
   const gEl=document.getElementById('smartGoal');
   if(gEl) gEl.innerHTML='<option value="">不关联</option>'+activeGoalOptions();
   openModal('smartModal');
@@ -8067,14 +7585,22 @@ function renderCurrentPage(){
   if(currentPage==='agency')renderAgencys();
   if(currentPage==='handover')renderHandovers();
   if(currentPage==='fund')renderFunds();
+  if(currentPage==='待办')renderTodos();
+  if(currentPage==='长期目标')renderGoals();
+  if(currentPage==='提醒')renderRemindCenter();
+  if(currentPage==='quick')renderQuick();
 }
 
 // ============================================================
 //  XSS escape
 // ============================================================
 function esc(s){
-  if(!s)return'';
+  if(!businessLabel(s))return'';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function businessLabel(value){
+  return value!==undefined&&value!==null&&String(value).trim()!==''&&
+    !['undefined','null'].includes(String(value).trim().toLowerCase());
 }
 function toArray(v){ return Array.isArray(v) ? v : v ? [v] : []; }
 const SEARCH_FIELDS={
@@ -8103,7 +7629,7 @@ function globalSearchHits(query){
   if(!terms.length)return [];
   const hits=[];
   Object.entries(SEARCH_FIELDS).forEach(([key,fields])=>{
-    DB.get(key).forEach(rec=>{
+    DB.get(key).filter(rec=>belongsToLedger(key,rec)).forEach(rec=>{
       const values=fields.map(field=>searchableValue(rec[field]));
       const haystack=values.join(' ').toLocaleLowerCase();
       if(!terms.every(term=>haystack.includes(term)))return;
@@ -8131,7 +7657,8 @@ function openSearchHit(key,id){
   document.getElementById('globalSearchResults').style.display='none';
   if(key==='todos'){
     const rec=DB.get('todos').find(r=>String(r.id)===String(id));
-    if(rec)activeTodoTab=rec.type||'pending';
+    if(rec && ![STATE.DONE,STATE.CLOSED].includes(recordState('todos',rec))){navigate('待办');return;}
+    activeTodoTab='record';
   }
   navigate(page);
   if(SEARCH_EDIT[key])SEARCH_EDIT[key](/^\d+$/.test(id)?Number(id):id);
@@ -8184,7 +7711,7 @@ function decorateBulk(group,containerId,buttonSelector,cardSelector){
 function deleteBulk(group){
   const chosen=visibleBulkInputs(group).filter(input=>input.checked);
   if(!chosen.length)return;
-  if(!confirm('确认删除选中的 '+chosen.length+' 条记录？关联的自动工作记录也会一起移出列表。'))return;
+  if(!confirm('确认删除选中的 '+chosen.length+' 条记录？'))return;
   const byKey={};
   chosen.forEach(input=>{(byKey[input.dataset.bulkKey]??=new Set()).add(input.dataset.bulkId);});
   Object.entries(byKey).forEach(([key,ids])=>{
@@ -8242,16 +7769,18 @@ function removeObsoleteInvoiceCredentials(){
 removeObsoleteInvoiceCredentials();
 loadSettings();
 checkBackup();
+const testDataCleared=clearTestBusinessDataOnce();
 snapshotBeforeV14();
-repairData(); // 自动修复第一版智能录入产生的旧格式数据
-updateQuickBadge(); // v1.4 速记箱角标
+GITEE._applyingSnapshot=true;
+try{
+  repairData(); // 本机历史数据修复不应触发云端推送
+  retireVerifiedLegacyMirrors();
+}finally{GITEE._applyingSnapshot=false;}
+if(testDataCleared)toast('已完成一次性测试数据清理；Gitee 与本机设置已保留');
+refreshDataBadges(); // 启动即按统一数据源刷新待办、提醒、速记和目标角标
 checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/逾期项
-// try to pull data from cloud on startup
-(async function(){
-  if(GITEE.getConfig().user&&GITEE.getConfig().repo){
-    await GITEE.pull();
-    repairData(); // 拉取云端数据后也跑一次修复
-  }
+// 拉取会覆盖本机业务快照，因此仅由用户点击“拉取数据”触发。
+(function(){
   renderDashboard();
   // 每小时检查一次截止提醒
   setInterval(()=>{
@@ -8273,168 +7802,6 @@ checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/
   });
 })();
 </script>
-
-<!-- 速记撰写 Modal（v1.4 零字段采集） -->
-<div class="modal-overlay" id="quickComposeModal">
-  <div class="modal" style="max-width:460px">
-    <div class="modal-header">
-      <span class="modal-title">速记一句</span>
-      <button class="close-btn" onclick="closeModal('quickComposeModal')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="quick-compose">
-        <textarea id="quickComposeText" placeholder="脑子里的念头，先写下来，不用想分类…" onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey))saveQuickCompose()"></textarea>
-      </div>
-      <div style="font-size:11px;color:var(--color-text3);margin-top:6px">Ctrl/⌘ + Enter 保存</div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('quickComposeModal')">取消</button>
-      <button class="btn btn-primary" onclick="saveQuickCompose()">保存</button>
-    </div>
-  </div>
-</div>
-
-<!-- 速记整理（归档）Modal（v1.4 先归后补） -->
-<div class="modal-overlay" id="quickArchiveModal">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-header">
-      <span class="modal-title">整理 / 编辑事项</span>
-      <button class="close-btn" onclick="closeModal('quickArchiveModal')">×</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="archiveQuickId">
-      <input type="hidden" id="archiveItemId">
-      <input type="hidden" id="archiveMode" value="quick">
-      <div class="form-group">
-        <label class="form-label">当前内容</label>
-        <div id="archiveQuickPreview" style="background:var(--color-bg);padding:8px;border-radius:8px;font-size:13px;white-space:pre-wrap"></div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">目标台账 *</label>
-        <select class="form-control" id="archiveLedger" onchange="onArchiveLedgerChange()"></select>
-      </div>
-      <div id="archiveFields"></div>
-      <div class="form-group">
-        <label class="form-label">标题 *</label>
-        <input class="form-control" id="archiveTitle" placeholder="一句话概括">
-      </div>
-      <div class="form-group">
-        <label class="form-label">要求 / 做到啥程度</label>
-        <textarea class="form-control" id="archiveRequirement" rows="2" placeholder="先归后补：硬台账其余字段稍后在台账补全"></textarea>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">截止时间</label>
-          <input type="date" class="form-control" id="archiveDue">
-        </div>
-        <div class="form-group">
-          <label class="form-label">优先级</label>
-          <select class="form-control" id="archivePriority"><option value="重要且紧急">重要且紧急</option><option value="重要不紧急">重要不紧急</option><option value="紧急不重要">紧急不重要</option><option value="不重要不紧急">不重要不紧急</option></select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">状态 *</label>
-          <select class="form-control" id="archiveState">
-            <option value="未开始">未开始</option>
-            <option value="进行中">进行中</option>
-            <option value="已完成">已完成</option>
-            <option value="已关闭">已关闭（取消/终止，直接归档不进待办）</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">关联目标（计入该目标进度）</label>
-        <select class="form-control" id="archiveGoal"><option value="">不关联</option></select>
-        <div style="font-size:12px;color:var(--color-text3);margin-top:2px">选长期目标后，该事项会归入对应目标进度统计；不选则为独立事项。</div>
-      </div>
-      <div id="archiveInfoHint" class="form-group" style="font-size:12px;color:#d98300"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('quickArchiveModal')">取消</button>
-      <button class="btn btn-primary" onclick="applyOrganizeDispatch()">确认</button>
-    </div>
-  </div>
-</div>
-
-<!-- v1.4 T5：灵感转台账弹窗 -->
-<div class="modal-overlay" id="inspToLedgerModal">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-header">
-      <span class="modal-title">灵感转台账</span>
-      <button class="close-btn" onclick="closeModal('inspToLedgerModal')">×</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="inspToLedgerId">
-      <div class="form-group">
-        <label class="form-label">灵感内容</label>
-        <div id="inspToLedgerPreview" style="background:var(--color-bg);padding:8px;border-radius:8px;font-size:13px;white-space:pre-wrap"></div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">目标台账 *</label>
-        <select class="form-control" id="inspToLedgerLedger" onchange="onInspToLedgerChange()"></select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">标题 *</label>
-        <input class="form-control" id="inspToLedgerTitle" placeholder="一句话概括">
-      </div>
-      <div class="form-group">
-        <label class="form-label">要求 / 做到啥程度</label>
-        <textarea class="form-control" id="inspToLedgerRequirement" rows="2" placeholder="先归后补：硬台账其余字段稍后在台账补全"></textarea>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">截止时间</label>
-          <input type="date" class="form-control" id="inspToLedgerDue">
-        </div>
-        <div class="form-group">
-          <label class="form-label">优先级</label>
-          <select class="form-control" id="inspToLedgerPriority"><option value="重要且紧急">重要且紧急</option><option value="重要不紧急">重要不紧急</option><option value="紧急不重要">紧急不重要</option><option value="不重要不紧急">不重要不紧急</option></select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">关联目标（可选）</label>
-        <select class="form-control" id="inspToLedgerGoal"><option value="">不关联</option></select>
-      </div>
-      <div id="inspToLedgerHint" class="form-group" style="font-size:12px;color:#d98300"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('inspToLedgerModal')">取消</button>
-      <button class="btn btn-primary" onclick="applyInspToLedger()">转台账（进待办）</button>
-    </div>
-  </div>
-</div>
-
-<!-- v1.4 T7：新建长期目标 -->
-<div class="modal-overlay" id="newGoalModal">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-header">
-      <span class="modal-title">🎯 新建长期目标</span>
-      <button class="close-btn" onclick="closeModal('newGoalModal')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">目标名称 *</label>
-        <input class="form-control" id="newGoalTitle" placeholder="如：完成 XX 项目立项">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">目标期限</label>
-          <input type="date" class="form-control" id="newGoalDue">
-        </div>
-        <div class="form-group">
-          <label class="form-label">优先级</label>
-          <select class="form-control" id="newGoalPriority"><option value="重要且紧急">重要且紧急</option><option value="重要不紧急">重要不紧急</option><option value="紧急不重要">紧急不重要</option><option value="不重要不紧急">不重要不紧急</option></select>
-        </div>
-      </div>
-      <div class="form-group" style="font-size:12px;color:var(--color-text3)">目标创建后进入独立的「长期目标」页；在速记整理 / 灵感转台账时可选"关联目标"，目标卡显示去重进度。</div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('newGoalModal')">取消</button>
-      <button class="btn btn-primary" onclick="applyNewGoal()">创建目标</button>
-    </div>
-  </div>
-</div>
 
 <!-- 全局悬浮速记按钮（v1.4） -->
 <button class="fab-quick" onclick="openSmartModal()" title="快速记录/智能录入">+</button>
