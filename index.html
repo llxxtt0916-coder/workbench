@@ -2289,6 +2289,10 @@ function getAllLedgerItems(){
 function getActiveItems(){
   return getAllLedgerItems().filter(r=>[STATE.TODO,STATE.DOING].includes(recordState(r._ledger,r)));
 }
+// 待办页唯一数据源：只含该页实际渲染的普通活跃事项（长期目标在独立页面展示）。
+function getVisibleTodoItems(){
+  return getActiveItems().filter(r=>!r.is_goal && !!LEDGER_META[r._ledger]);
+}
 
 // v1.4 数据层保障：追加统一生命周期字段 + 首次运行快照 localStorage（回退 safety）
 function snapshotBeforeV14(){
@@ -2700,22 +2704,21 @@ function goalProgress(goalId){
   return {total, closed, pct: total?Math.round(closed/total*100):0};
 }
 function renderTodos(){
-  const active=getActiveItems();
+  const visible=getVisibleTodoItems();
   const box=document.getElementById('todoActiveList');
   if(!box) return;
   renderReminders();
   updateTodoBadge();
   const sum=document.getElementById('todoActiveSummary');
-  if(sum) sum.textContent='共 '+active.filter(r=>!r.is_goal).length+' 项进行中';
-  if(!active.length){
+  if(sum) sum.textContent='共 '+visible.length+' 项进行中';
+  if(!visible.length){
     box.innerHTML='<div class="empty-state"><p>🎉 没有进行中的事项。有念头？去「智能录入」添加一笔吧。</p></div>';
     return;
   }
-  const normal=active.filter(r=>!r.is_goal);
   let html='';
   const groups={};
   const groupLabels={todos:'工作',contracts:'合同',purchases:'采购',expenses:'报销',meetings:'会议',trainings:'培训',agencys:'委托',handovers:'交接',funds:'经费',fundRecords:'经费开支'};
-  normal.forEach(r=>{ const label=groupLabels[r._ledger]||r._ledgerLabel; (groups[label]=groups[label]||[]).push(r); });
+  visible.forEach(r=>{ const label=groupLabels[r._ledger]||r._ledgerLabel; (groups[label]=groups[label]||[]).push(r); });
   const prio=PRIORITY_WEIGHT;
   Object.keys(groups).sort().forEach(k=>{
     const items=groups[k].sort((a,b)=>{
@@ -2817,7 +2820,7 @@ function goalCardHtml(g){
     +'</div>';
 }
 function updateTodoBadge(){
-  const n=getActiveItems().filter(r=>!r.is_goal).length;
+  const n=getVisibleTodoItems().length;
   const el=document.getElementById('todoActiveCount');
   if(el){ if(n>0){el.style.display='';el.textContent=n;}else{el.style.display='none';} }
 }
@@ -2839,7 +2842,39 @@ function refreshDataBadges(){
 // ============================================================
 //  提醒机制 v1.4（C 方案）：到期/逾期通知 + 轻量提醒中心
 // ============================================================
+const REMINDER_IGNORED_KEY='wb_ignored_reminders_v1';
 const remindShown = new Set(); // 本次会话已提醒过的条目 key，避免重复打扰
+function reminderKey(rec,due){
+  return [rec._ledger,String(rec.id),'due',String(due||''),String(rec.createdAt||'')].join('|');
+}
+function ignoredReminderKeys(){
+  try{
+    const value=JSON.parse(localStorage.getItem(REMINDER_IGNORED_KEY)||'[]');
+    return new Set(Array.isArray(value)?value.filter(key=>typeof key==='string'):[]);
+  }catch(e){return new Set();}
+}
+function isReminderIgnored(rec,due,ignored=ignoredReminderKeys()){
+  return ignored.has(reminderKey(rec,due));
+}
+function getDueReminderItems(){
+  const today=todayStr();
+  const ignored=ignoredReminderKeys();
+  return getActiveItems().map(r=>{
+    const due=getDueDate(r,r._ledger);
+    return Object.assign({},r,{_due:due});
+  }).filter(r=>r._due&&r._due<=today&&!isReminderIgnored(r,r._due,ignored));
+}
+function ignoreReminder(key){
+  if(!key)return;
+  const ignored=ignoredReminderKeys();
+  ignored.add(String(key));
+  localStorage.setItem(REMINDER_IGNORED_KEY,JSON.stringify([...ignored]));
+  remindShown.delete(String(key));
+  renderRemindCenter();
+  renderReminders();
+  updateRemindBadge();
+  toast('已忽略该提醒，原记录保持不变');
+}
 // 触发系统通知（桌面 Notification）+ 应用内 toast
 function fireNotification(title, body){
   if('Notification' in window && Notification.permission==='granted'){
@@ -2866,10 +2901,10 @@ function updateRemindPermBtn(){
 // 扫描活跃条目：今天到期/已逾期的，未提醒过的弹通知 + toast
 function checkReminders(force){
   const today=todayStr();
-  const items=getActiveItems().map(r=>{const d=getDueDate(r,r._ledger);return Object.assign({},r,{_due:d});}).filter(r=>r._due && r._due<=today);
+  const items=getDueReminderItems();
   let count=0;
   items.forEach(r=>{
-    const key=r._ledger+':'+r.id;
+    const key=reminderKey(r,r._due);
     if(!force && remindShown.has(key)) return;
     remindShown.add(key);
     const overdue=r._due<today;
@@ -2883,8 +2918,7 @@ function checkReminders(force){
 // 提醒中心列表渲染
 function renderRemindCenter(){
   const today=todayStr();
-  const items=getActiveItems().map(r=>{const d=getDueDate(r,r._ledger);return Object.assign({},r,{_due:d});}).filter(r=>r._due && r._due<=today)
-    .sort((a,b)=>a._due.localeCompare(b._due));
+  const items=getDueReminderItems().sort((a,b)=>a._due.localeCompare(b._due));
   const box=document.getElementById('remindList');
   if(!box) return;
   updateRemindPermBtn();
@@ -2906,13 +2940,13 @@ function renderRemindCenter(){
         ${priorityTag(r.priority)}
         <button class="btn btn-ghost btn-sm" onclick="openStateModal('${r._ledger}',${r.id})">状态</button>
         <button class="btn btn-ghost btn-sm" onclick="openSearchHit('${r._ledger}','${r.id}')">查看原记录</button>
+        <button class="btn btn-ghost btn-sm" data-reminder-key="${esc(reminderKey(r,r._due))}" onclick="ignoreReminder(this.dataset.reminderKey)">忽略提醒</button>
       </div>
     </div>`;
   }).join('')+'</div>';
 }
 function updateRemindBadge(){
-  const today=todayStr();
-  const n=getActiveItems().map(r=>({d:getDueDate(r,r._ledger)})).filter(r=>r.d&&r.d<=today).length;
+  const n=getDueReminderItems().length;
   const el=document.getElementById('remindCount');
   if(el){ if(n>0){el.style.display='';el.textContent=n;}else{el.style.display='none';} }
 }
@@ -4039,11 +4073,14 @@ function checkDeadlineReminders(){
   const today=now.toISOString().slice(0,10);
   const in3Days=new Date(now.getTime()+3*86400000).toISOString().slice(0,10);
   const reminders=[];
+  const ignored=ignoredReminderKeys();
   todos.forEach(t=>{
     const due=getDueDate(t,'todos'); // v1.4：统一字段优先，回退原生 deadline
     if(!due)return;
     if(t.type==='record')return;
     if(![STATE.TODO,STATE.DOING].includes(recordState('todos',t)))return;
+    const reminder=Object.assign({},t,{_ledger:'todos'});
+    if(isReminderIgnored(reminder,due,ignored))return;
     if(due===today){
       reminders.push(Object.assign({},t,{deadline:due,urgency:'today'}));
     }else if(due<=in3Days&&due>today){
@@ -6793,6 +6830,19 @@ function clearTrainingForm(){
 const SYNC_BUSINESS_KEYS=['todos','inspirations','contracts','purchases','expenses','meetings',
   'trainings','agencys','handovers','funds','fundRecords','quick_notes'];
 const SYNC_REMOTE_PATH='data.json';
+const TEST_DATA_CLEAR_MARKER='wb_v15_test_data_cleared_20260915';
+// 用户确认现有记录均为测试数据：只执行一次，清空业务数组及旧业务快照，保留设备配置。
+function clearTestBusinessDataOnce(){
+  if(localStorage.getItem(TEST_DATA_CLEAR_MARKER)==='1')return false;
+  SYNC_BUSINESS_KEYS.forEach(key=>localStorage.setItem(key,'[]'));
+  localStorage.removeItem('wb_v14_restore');
+  localStorage.removeItem('wb_v14_snapshot');
+  localStorage.removeItem('wb_v15_todos_before_mirror_cleanup');
+  localStorage.removeItem(REMINDER_IGNORED_KEY);
+  localStorage.setItem(TEST_DATA_CLEAR_MARKER,'1');
+  console.log('一次性测试业务数据清理完成',{keys:[...SYNC_BUSINESS_KEYS]});
+  return true;
+}
 function normalizedSyncRows(data,key){
   return (Array.isArray(data?.[key])?data[key]:[]).filter(row=>row&&!row.deleted);
 }
@@ -7719,13 +7769,15 @@ function removeObsoleteInvoiceCredentials(){
 removeObsoleteInvoiceCredentials();
 loadSettings();
 checkBackup();
+const testDataCleared=clearTestBusinessDataOnce();
 snapshotBeforeV14();
 GITEE._applyingSnapshot=true;
 try{
   repairData(); // 本机历史数据修复不应触发云端推送
   retireVerifiedLegacyMirrors();
 }finally{GITEE._applyingSnapshot=false;}
-updateQuickBadge(); // v1.4 速记箱角标
+if(testDataCleared)toast('已完成一次性测试数据清理；Gitee 与本机设置已保留');
+refreshDataBadges(); // 启动即按统一数据源刷新待办、提醒、速记和目标角标
 checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/逾期项
 // 拉取会覆盖本机业务快照，因此仅由用户点击“拉取数据”触发。
 (function(){
