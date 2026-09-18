@@ -55,7 +55,7 @@ const store=new Map([
 BUSINESS_KEYS.forEach((key,index)=>store.set(key,JSON.stringify([{id:index+1,name:'旧测试 '+key}])));
 
 let runtime=createRuntime(store);
-BUSINESS_KEYS.forEach(key=>assert.deepEqual(JSON.parse(store.get(key)),[],`一次性清理 ${key}`));
+BUSINESS_KEYS.forEach(key=>assert.equal(JSON.parse(store.get(key)).length,1,`v1.6 启动不得清空已有 ${key}`));
 assert.equal(store.get('wb_gitee_user'),'LingXngTian');
 assert.equal(store.get('wb_gitee_repo'),'workbench');
 assert.equal(store.get('wb_gitee_token'),'secret-kept');
@@ -63,10 +63,9 @@ assert.equal(store.get('wb_gitee_branch'),'master');
 assert.equal(store.get('wb_backup_interval'),'30');
 assert.equal(store.get('wb_last_backup'),'2026-09-14T00:00:00.000Z');
 assert.equal(store.get('wb_opts_todoCategory'),'["保留选项"]');
-assert.equal(store.get('wb_v15_test_data_cleared_20260915'),'1');
-assert.equal(store.has('wb_v15_todos_before_mirror_cleanup'),false,'旧工作副本快照已清除');
-const cleanRestore=JSON.parse(store.get('wb_v14_restore'));
-BUSINESS_KEYS.forEach(key=>assert.deepEqual(JSON.parse(cleanRestore[key]),[],`新回退快照中的 ${key} 也为空`));
+assert.equal(store.get('wb_v15_todos_before_mirror_cleanup'),'[{"id":98}]','启动不得删除已有本地回退资料');
+assert.equal(JSON.parse(store.get('wb_v14_restore')).todos,'[{"id":99}]','启动不得改写已有回退快照');
+BUSINESS_KEYS.forEach(key=>store.set(key,'[]'));
 
 runtime.run(`
 const todayForTest=todayStr();
@@ -113,4 +112,4 @@ runtime.run(`const todo=DB.raw('todos').find(r=>r.id===101);todo.deadline='2099-
 assert.equal(runtime.run("isReminderIgnored(Object.assign({_ledger:'todos'},DB.get('todos').find(r=>r.id===101)),'2099-01-01')"),false,
   '截止日期实质变化后形成新的提醒标识');
 
-console.log('v1.5 一次性清理、待办统一统计、提醒忽略持久化测试通过');
+console.log('v1.6 不自动清理、待办统一统计、提醒忽略持久化测试通过');

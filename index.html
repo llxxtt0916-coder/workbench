@@ -1014,6 +1014,14 @@
         <label class="form-label">堵点卡点</label>
         <textarea class="form-control" id="todoBlocker" rows="2" placeholder="当前遇到的困难、阻碍…"></textarea>
       </div>
+      <div class="form-group" id="todoSubtasksGroup">
+        <div class="card-header" style="margin-bottom:8px">
+          <label class="form-label" style="margin:0">子任务</label>
+          <button type="button" class="btn btn-sm btn-outline" onclick="addFormSubtask()">添加子任务</button>
+        </div>
+        <div id="todoSubtasksEditor" class="subtask-editor-list"></div>
+        <div class="form-hint">子任务只属于当前工作；保存父工作时一并保存。</div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('todoModal')">取消</button>
@@ -3268,7 +3276,7 @@ function hideLifecycleStatusField(modalId){
 }
 function closeModal(id){document.getElementById(id).classList.remove('open')}
 document.querySelectorAll('.modal-overlay').forEach(m=>{
-  m.addEventListener('click',function(e){if(e.target===this)closeModal(this.id)});
+  m.addEventListener('click',function(e){if(e.target===this)e.stopPropagation();});
 });
 
 // ============================================================
@@ -3946,7 +3954,7 @@ function renderTodo(){
 
   document.getElementById('todoTabContent').innerHTML=filtered.map(t=>{
     const isRecord=activeTodoTab==='record';
-    const sd=(t.subtasks||[]).filter(s=>s.done).length;
+    const sd=workSubtasks(t).filter(s=>s.completed).length;
     const st=(t.subtasks||[]).length;
     const cats=toArray(t.category).filter(Boolean);
     const srcs=toArray(t.source).filter(Boolean);
@@ -4137,7 +4145,7 @@ function saveTodo(){
     assignee:document.getElementById('todoAssignee').value.trim(),
     status:'未开始',
     completeDate:'',
-    subtasks:[],
+    subtasks:normalizeSubtasks(todoFormSubtasks),
     createdAt:now,
     recurrence:null,
     contractRef:null,
@@ -4169,7 +4177,7 @@ function saveTodo(){
     const i=todosRaw.findIndex(t=>t.id===id);
     if(i>-1){
       const old=todosRaw[i];
-      item.subtasks=old.subtasks||[];
+      item.subtasks=normalizeSubtasks(todoFormSubtasks);
       item.completeDate=old.completeDate||'';
       item.status=old.status||'未开始';
       item._prevType=old._prevType;
@@ -4201,7 +4209,7 @@ function saveTodo(){
     }else{todosRaw.push(item);}
     DB.set('todos',todosRaw);
   }else{item.state=STATE.TODO;item.due_date=item.deadline;todos.push(item);DB.set('todos',todos);}
-  closeModal('todoModal');
+  closeModal('todoModal',true);
   clearTodoForm();
   renderTodo();
   if(currentPage==='待办')renderTodos();
@@ -4223,6 +4231,8 @@ function editTodo(id){
   document.getElementById('todoDeadline').value=t.deadline||'';
   document.getElementById('todoBlocker').value=t.blocker||'';
   document.getElementById('todoAssignee').value=t.assignee||'';
+  todoFormSubtasks=normalizeSubtasks(t.subtasks||[]);
+  renderFormSubtasks();
   // 加载周期配置
   if((t.type==='record'?t._prevType:t.type)==='recurring'){
     document.getElementById('recurrenceConfig').style.display='block';
@@ -4244,6 +4254,8 @@ function clearTodoForm(){
   document.getElementById('todoPriority').value='不重要不紧急';
   document.getElementById('todoType').value='';
   document.getElementById('todoModalTitle').textContent='新建工作';
+  todoFormSubtasks=[];
+  renderFormSubtasks();
   setMultiSelected('todoCategory',[]);
   setMultiSelected('todoSource',[]);
   // 重置周期字段
@@ -4266,7 +4278,7 @@ function deleteTodo(id){
   toast('已删除');
 }
 
-document.getElementById('todoModal').addEventListener('click',function(e){if(e.target===this)closeModal('todoModal')});
+document.getElementById('todoModal').addEventListener('click',function(e){if(e.target===this)e.stopPropagation();});
 // 类型切换时显示/隐藏周期配置
 document.getElementById('todoType').addEventListener('change',function(){
   document.getElementById('recurrenceConfig').style.display=this.value==='recurring'?'block':'none';
@@ -4875,7 +4887,7 @@ function saveInspiration(){
   if(id){const i=insps.findIndex(x=>x.id===id);if(i>-1){item.deleted=insps[i].deleted;item.status=insps[i].status;insps[i]=item;}else insps.push(item);}
   else insps.push(item);
   DB.set('inspirations',insps);
-  closeModal('inspModal');
+  closeModal('inspModal',true);
   clearInspForm();
   renderInspiration();
   toast('已保存');
@@ -5006,7 +5018,7 @@ function saveContract(){
   if(id){const i=contracts.findIndex(c=>c.id===id);if(i>-1){item.todoRef=contracts[i].todoRef;item.deleted=contracts[i].deleted;contracts[i]=item;}else contracts.push(item);}
   else contracts.push(item);
   DB.set('contracts',contracts);
-  closeModal('contractModal');
+  closeModal('contractModal',true);
   clearContractForm();
   renderContracts();
   toast('已保存');
@@ -5170,7 +5182,7 @@ function savePurchase(){
   if(item.linked_ledgers)DB.set('purchases',purchases);
 
 
-  closeModal('purchaseModal');
+  closeModal('purchaseModal',true);
   clearPurchaseForm();
   renderPurchases();
   toast('已保存');
@@ -5532,7 +5544,7 @@ function saveAgency(){
   }else agencys.push(item);
   DB.set('agencys',agencys);
 
-  closeModal('agencyModal');
+  closeModal('agencyModal',true);
   clearAgencyForm();
   renderAgencys();
   toast('已保存');
@@ -5749,7 +5761,7 @@ function saveHandover(){
     else handovers.push(item);
   }else handovers.push(item);
   DB.set('handovers',handovers);
-  closeModal('handoverModal');
+  closeModal('handoverModal',true);
   clearHandoverForm();
   renderHandovers();
   toast('已保存');
@@ -5963,7 +5975,7 @@ function saveFund(){
     else funds.push(item);
   }else funds.push(item);
   DB.set('funds',funds);
-  closeModal('fundModal');
+  closeModal('fundModal',true);
   clearFundForm();
   renderFunds();
   toast('已保存');
@@ -6069,7 +6081,7 @@ function saveFundRecord(){
       const old=records.find(r=>String(r.id)===String(id));
       if(old){old.deleted=true;DB.set('fundRecords',records);}
     }
-    closeModal('fundRecordModal');renderFunds();toast('已关联报销，金额按报销记录计算');return;
+    closeModal('fundRecordModal',true);renderFunds();toast('已关联报销，金额按报销记录计算');return;
   }
   const item={
     ...existingRecord('fundRecords',id),
@@ -6097,7 +6109,7 @@ function saveFundRecord(){
     if(exp){exp.fundItem=fundId;DB.set('expenses',expenses);}
   }
   DB.set('fundRecords',records);
-  closeModal('fundRecordModal');
+  closeModal('fundRecordModal',true);
   renderFunds();
   toast('已保存');
 }
@@ -6254,7 +6266,7 @@ function saveExpense(){
   if(id){const i=expenses.findIndex(e=>e.id===id);if(i>-1){item.todoRef=expenses[i].todoRef;item.deleted=expenses[i].deleted;expenses[i]=item;}else expenses.push(item);}
   else expenses.push(item);
   DB.set('expenses',expenses);
-  closeModal('expenseModal');
+  closeModal('expenseModal',true);
   clearExpenseForm();
   renderExpenses();
   if(currentPage==='fund')renderFunds();
@@ -6552,7 +6564,7 @@ function saveMeeting(){
   }else meetings.push(item);
   DB.set('meetings',meetings);
 
-  closeModal('meetingModal');
+  closeModal('meetingModal',true);
   clearMeetingForm();
   renderMeetings();
   toast('已保存');
@@ -6758,7 +6770,7 @@ function saveTraining(){
   }else trainings.push(item);
   DB.set('trainings',trainings);
 
-  closeModal('trainingModal');
+  closeModal('trainingModal',true);
   clearTrainingForm();
   renderTrainings();
   toast('已保存');
@@ -6830,19 +6842,6 @@ function clearTrainingForm(){
 const SYNC_BUSINESS_KEYS=['todos','inspirations','contracts','purchases','expenses','meetings',
   'trainings','agencys','handovers','funds','fundRecords','quick_notes'];
 const SYNC_REMOTE_PATH='data.json';
-const TEST_DATA_CLEAR_MARKER='wb_v15_test_data_cleared_20260915';
-// 用户确认现有记录均为测试数据：只执行一次，清空业务数组及旧业务快照，保留设备配置。
-function clearTestBusinessDataOnce(){
-  if(localStorage.getItem(TEST_DATA_CLEAR_MARKER)==='1')return false;
-  SYNC_BUSINESS_KEYS.forEach(key=>localStorage.setItem(key,'[]'));
-  localStorage.removeItem('wb_v14_restore');
-  localStorage.removeItem('wb_v14_snapshot');
-  localStorage.removeItem('wb_v15_todos_before_mirror_cleanup');
-  localStorage.removeItem(REMINDER_IGNORED_KEY);
-  localStorage.setItem(TEST_DATA_CLEAR_MARKER,'1');
-  console.log('一次性测试业务数据清理完成',{keys:[...SYNC_BUSINESS_KEYS]});
-  return true;
-}
 function normalizedSyncRows(data,key){
   return (Array.isArray(data?.[key])?data[key]:[]).filter(row=>row&&!row.deleted);
 }
@@ -7548,7 +7547,7 @@ function smartSave(){
     createLedgerItem(cat,{title:fields.title||fields.name||text.slice(0,60),requirement:text,due_date:due,priority:prio,state:initialState,extra,parentGoal:sGoalVal?+sGoalVal:undefined});
   }
   smartClear();
-  closeModal('smartModal');
+  closeModal('smartModal',true);
   toast([STATE.DONE,STATE.CLOSED].includes(initialState)?'已保存至所属板块':'已加入待办');
 }
 
@@ -7751,6 +7750,196 @@ const _bulkRenderMeetingList=renderMeetingList;renderMeetingList=function(...arg
 const _bulkRenderTrainings=renderTrainings;renderTrainings=function(...args){_bulkRenderTrainings(...args);decorateBulk('trainings','trainingList','button[onclick^="deleteTraining("]','.training-card');};
 
 // ============================================================
+//  v1.6 — 工作子任务、总览与表单保护
+//  子任务只嵌入 todos 记录；所有总览均从现有业务数组即时计算。
+// ============================================================
+let todoFormSubtasks=[];
+let v16DraggedSubtaskId='';
+const V16_MODAL_BASELINES={};
+function normalizeSubtasks(items,parentId=''){
+  return (Array.isArray(items)?items:[]).map((raw,index)=>{
+    const s=raw&&typeof raw==='object'?raw:{};
+    const completed=Boolean(s.completed??s.done);
+    const created=s.created_at||s.createdAt||s.addTime||s.date||todayStr();
+    return {
+      id:String(s.id||('sub_'+(parentId||'legacy')+'_'+index+'_'+created.replace(/[^0-9]/g,''))),
+      name:String(s.name??s.text??'').trim(),
+      start_date:s.start_date||s.startDate||'',
+      due_date:s.due_date||s.dueDate||'',
+      completed_date:completed?(s.completed_date||s.completedDate||s.completeTime||''): '',
+      completed,
+      sort_order:Number.isFinite(+s.sort_order)?+s.sort_order:index,
+      created_at:created,
+      updated_at:s.updated_at||s.updatedAt||created
+    };
+  }).filter(s=>s.name).sort((a,b)=>a.sort_order-b.sort_order).map((s,index)=>Object.assign(s,{sort_order:index}));
+}
+function workSubtasks(todo){return normalizeSubtasks(todo?.subtasks||[],todo?.id);}
+function subtaskSummary(todo){
+  const list=workSubtasks(todo), done=list.filter(s=>s.completed).length;
+  const overdue=list.filter(s=>!s.completed&&s.due_date&&s.due_date<todayStr());
+  const next=overdue.sort((a,b)=>a.due_date.localeCompare(b.due_date))[0]||list.find(s=>!s.completed);
+  return {list,done,total:list.length,overdue,next,pct:list.length?Math.round(done/list.length*100):0};
+}
+function ensureV16Data(){
+  const rows=DB.raw('todos'); let changed=false;
+  rows.forEach(todo=>{
+    if(todo.deleted)return;
+    const normalized=normalizeSubtasks(todo.subtasks||[],todo.id);
+    if(JSON.stringify(todo.subtasks||[])!==JSON.stringify(normalized)){
+      todo.subtasks=normalized; changed=true;
+    }
+  });
+  if(changed)DB.set('todos',rows);
+}
+function writeWorkSubtasks(todoId,items){
+  const rows=DB.raw('todos'); const i=rows.findIndex(t=>String(t.id)===String(todoId));
+  if(i<0)return false;
+  rows[i].subtasks=normalizeSubtasks(items,rows[i].id);
+  DB.set('todos',rows); return true;
+}
+function validateSubtask(s,parent){
+  if(!s.name){toast('请填写子任务名称');return false;}
+  if(s.start_date&&s.due_date&&s.start_date>s.due_date){toast('子任务开始日期不能晚于截止日期');return false;}
+  if(s.completed_date&&s.start_date&&s.completed_date<s.start_date){toast('提示：完成日期早于开始日期，请确认真实日期');}
+  if(s.due_date&&parent?.deadline&&s.due_date>parent.deadline){toast('提示：子任务截止日期晚于父工作截止日期，仍可保存');}
+  return true;
+}
+function addSubtask(todoId){
+  const input=document.getElementById('subtaskInput-'+todoId); const name=(input?.value||'').trim();
+  if(!name)return;
+  const todo=DB.get('todos').find(t=>String(t.id)===String(todoId));
+  const list=workSubtasks(todo); const item={id:'sub_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name,start_date:'',due_date:'',completed_date:'',completed:false,sort_order:list.length,created_at:todayStr(),updated_at:todayStr()};
+  if(!validateSubtask(item,todo))return;
+  writeWorkSubtasks(todoId,[...list,item]); if(input)input.value=''; rerenderV16WorkViews();
+}
+function toggleSubtask(todoId,idx){
+  const todo=DB.get('todos').find(t=>String(t.id)===String(todoId)); if(!todo)return;
+  const list=workSubtasks(todo); const item=list[idx]; if(!item)return;
+  item.completed=!item.completed; item.completed_date=item.completed?todayStr():''; item.updated_at=todayStr();
+  writeWorkSubtasks(todoId,list); rerenderV16WorkViews();
+}
+function deleteSubtask(todoId,idx){
+  const todo=DB.get('todos').find(t=>String(t.id)===String(todoId)); if(!todo)return;
+  const list=workSubtasks(todo); const item=list[idx]; if(!item)return;
+  const prompt=item.completed?'删除已完成子任务会影响历史月度成果统计，确定删除吗？':'确定删除此未完成子任务吗？';
+  if(!confirm(prompt))return;
+  list.splice(idx,1); writeWorkSubtasks(todoId,list); rerenderV16WorkViews();
+}
+function moveSubtask(todoId,idx,delta){
+  const todo=DB.get('todos').find(t=>String(t.id)===String(todoId)); const list=workSubtasks(todo); const target=idx+delta;
+  if(!todo||target<0||target>=list.length)return;
+  [list[idx],list[target]]=[list[target],list[idx]]; writeWorkSubtasks(todoId,list); rerenderV16WorkViews();
+}
+function editCardSubtask(todoId,idx){
+  const todo=DB.get('todos').find(t=>String(t.id)===String(todoId)); if(!todo)return;
+  const list=workSubtasks(todo); const s=list[idx]; if(!s)return;
+  const name=prompt('子任务名称',s.name); if(name===null)return;
+  s.name=name.trim()||s.name; const start=prompt('开始日期（YYYY-MM-DD，可留空）',s.start_date); if(start===null)return;
+  const due=prompt('截止日期（YYYY-MM-DD，可留空）',s.due_date); if(due===null)return;
+  const completedDate=prompt('完成日期（YYYY-MM-DD，未完成请留空）',s.completed_date); if(completedDate===null)return;
+  s.start_date=start.trim(); s.due_date=due.trim(); s.completed_date=completedDate.trim(); s.completed=Boolean(s.completed_date)||s.completed; s.updated_at=todayStr();
+  if(!validateSubtask(s,todo))return; writeWorkSubtasks(todoId,list); rerenderV16WorkViews();
+}
+function renderSubtasks(todo){
+  const summary=subtaskSummary(todo);
+  if(!summary.total)return '<div class="empty-state" style="padding:8px"><p>暂无子任务</p></div>';
+  return summary.list.map((s,index)=>`<div class="subtask-row ${s.completed?'done':''}" draggable="true" ondragstart="v16DraggedSubtaskId='${esc(s.id)}'" ondragover="event.preventDefault()" ondrop="event.preventDefault();moveSubtask(${todo.id},${index},workSubtasks(DB.get('todos').find(t=>String(t.id)===String(${todo.id}))).findIndex(x=>x.id===v16DraggedSubtaskId)-${index})">
+    <button class="todo-check mini ${s.completed?'checked':''}" onclick="toggleSubtask(${todo.id},${index})" aria-label="切换完成">${s.completed?'✓':''}</button>
+    <span class="subtask-text">${esc(s.name)}</span><span class="subtask-date">${s.start_date?'开始 '+esc(s.start_date):''}${s.due_date?' · 截止 '+esc(s.due_date):''}${s.completed_date?' · 完成 '+esc(s.completed_date):''}</span>
+    <button class="btn btn-ghost btn-sm" onclick="moveSubtask(${todo.id},${index},-1)" aria-label="上移">↑</button><button class="btn btn-ghost btn-sm" onclick="moveSubtask(${todo.id},${index},1)" aria-label="下移">↓</button><button class="btn btn-ghost btn-sm" onclick="editCardSubtask(${todo.id},${index})">编辑</button><button class="btn btn-ghost btn-sm" onclick="deleteSubtask(${todo.id},${index})" style="color:var(--color-danger)">删除</button>
+  </div>`).join('');
+}
+function renderFormSubtasks(){
+  const box=document.getElementById('todoSubtasksEditor'); if(!box)return;
+  box.innerHTML=todoFormSubtasks.map((s,index)=>`<div class="subtask-editor-row" draggable="true" ondragstart="v16DraggedSubtaskId='${esc(s.id)}'" ondragover="event.preventDefault()" ondrop="event.preventDefault();moveFormSubtask(${index},todoFormSubtasks.findIndex(x=>x.id===v16DraggedSubtaskId)-${index})">
+    <input class="form-control" value="${esc(s.name)}" placeholder="子任务名称" oninput="todoFormSubtasks[${index}].name=this.value">
+    <input type="date" class="form-control" value="${esc(s.start_date)}" title="开始日期" onchange="todoFormSubtasks[${index}].start_date=this.value">
+    <input type="date" class="form-control" value="${esc(s.due_date)}" title="截止日期" onchange="todoFormSubtasks[${index}].due_date=this.value">
+    <label class="subtask-check"><input type="checkbox" ${s.completed?'checked':''} onchange="setFormSubtaskCompleted(${index},this.checked)"> 完成</label>
+    <input type="date" class="form-control" value="${esc(s.completed_date)}" title="完成日期" onchange="todoFormSubtasks[${index}].completed_date=this.value;todoFormSubtasks[${index}].completed=Boolean(this.value)">
+    <button type="button" class="btn btn-ghost btn-sm" onclick="moveFormSubtask(${index},-1)">↑</button><button type="button" class="btn btn-ghost btn-sm" onclick="moveFormSubtask(${index},1)">↓</button><button type="button" class="btn btn-ghost btn-sm" onclick="todoFormSubtasks.splice(${index},1);renderFormSubtasks()" style="color:var(--color-danger)">删除</button>
+  </div>`).join('')||'<div class="form-hint">暂未添加子任务。</div>';
+}
+function addFormSubtask(){todoFormSubtasks.push({id:'sub_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name:'',start_date:'',due_date:'',completed_date:'',completed:false,sort_order:todoFormSubtasks.length,created_at:todayStr(),updated_at:todayStr()});renderFormSubtasks();}
+function setFormSubtaskCompleted(index,completed){const s=todoFormSubtasks[index];if(!s)return;s.completed=completed;s.completed_date=completed?(s.completed_date||todayStr()):'';renderFormSubtasks();}
+function moveFormSubtask(index,delta){const target=index+delta;if(target<0||target>=todoFormSubtasks.length)return;[todoFormSubtasks[index],todoFormSubtasks[target]]=[todoFormSubtasks[target],todoFormSubtasks[index]];renderFormSubtasks();}
+function rerenderV16WorkViews(){renderTodo();renderTodos();renderDashboard();renderSummary();}
+
+// 父工作“已完成”约束写在统一状态根入口；“已关闭”不受限制。
+const _v16SetState=setState;
+setState=function(ledgerKey,id,newState,reason){
+  if(ledgerKey==='todos'&&newState===STATE.DONE){
+    const todo=DB.get('todos').find(t=>String(t.id)===String(id)); const pending=workSubtasks(todo).filter(s=>!s.completed).length;
+    if(pending){toast('当前仍有 '+pending+' 个子任务未完成，请先完成或删除相关子任务。');return false;}
+  }
+  return _v16SetState(ledgerKey,id,newState,reason);
+};
+
+function renderTodosV16(){
+  const visible=getVisibleTodoItems(); const box=document.getElementById('todoActiveList'); if(!box)return;
+  renderReminders();updateTodoBadge(); const sum=document.getElementById('todoActiveSummary');if(sum)sum.textContent='共 '+visible.length+' 项进行中';
+  if(!visible.length){box.innerHTML='<div class="empty-state"><p>🎉 没有进行中的事项。有念头？去「智能录入」添加一笔吧。</p></div>';return;}
+  const groups={}; visible.forEach(r=>{const label=({todos:'工作',contracts:'合同',purchases:'采购',expenses:'报销',meetings:'会议',trainings:'培训',agencys:'委托',handovers:'交接',funds:'经费'})[r._ledger]||r._ledgerLabel;(groups[label]??=[]).push(r);});
+  box.innerHTML=Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([label,items])=>'<div class="todo-group"><div class="todo-group-title">'+esc(label)+'（'+items.length+'）</div>'+items.sort((a,b)=>(getDueDate(a,a._ledger)||'9999').localeCompare(getDueDate(b,b._ledger)||'9999')).map(r=>{
+    const overdue=isOverdue(r,r._ledger), sub=r._ledger==='todos'?subtaskSummary(r):null, due=getDueDate(r,r._ledger);
+    return `<div class="todo-card" ${overdue?'style="border-left:3px solid var(--color-danger)"':''} data-bulk-key="${r._ledger}" data-bulk-id="${esc(r.id)}"><div class="todo-card-header"><div class="todo-card-title">${esc(recordDisplayName(r))}</div><div>${stateBadge(r)} <button class="btn btn-ghost btn-sm" onclick="openStateModal('${r._ledger}',${r.id})">状态</button><button class="btn btn-ghost btn-sm" onclick="openOrganizeModal('${r._ledger}',${r.id})">整理</button></div></div><div class="todo-card-meta">${due?'<span>截止 '+esc(due)+'</span>':''}${r.assignee?'<span>经办人 '+esc(r.assignee)+'</span>':''}${overdue?'<span class="badge badge-red">逾期</span>':''}</div>${sub&&sub.total?`<div class="todo-subtask-bar" onclick="toggleSubtasks(${r.id})"><span class="subtask-progress"><span class="subtask-done-bar" style="width:${sub.pct}%"></span></span><span>子任务 ${sub.done}/${sub.total}</span>${sub.next?'<span>下一步：'+esc(sub.next.name)+'</span>':''}<span class="expand-icon" id="expandIcon-${r.id}">▸</span></div><div class="todo-subtask-list" id="subtaskList-${r.id}" style="display:none">${renderSubtasks(r)}<div class="subtask-add"><input class="subtask-input" id="subtaskInput-${r.id}" placeholder="新增子任务" onkeydown="if(event.key==='Enter')addSubtask(${r.id})"><button class="btn btn-ghost btn-sm" onclick="addSubtask(${r.id})">添加</button></div></div>`:''}</div>`;
+  }).join('')+'</div>').join('');
+}
+renderTodos=renderTodosV16;
+function toggleSubtasks(id){const list=document.getElementById('subtaskList-'+id),icon=document.getElementById('expandIcon-'+id);if(!list)return;const open=list.style.display==='none';list.style.display=open?'block':'none';if(icon)icon.textContent=open?'▾':'▸';}
+
+function v16ReplaceSurfaces(){
+  const dashboard=document.getElementById('page-dashboard'); if(dashboard)dashboard.innerHTML=`<div class="v16-page-heading"><div><h1>驾驶舱</h1><p>从当前业务数据中识别今天最需要处理的事项。</p></div><button class="btn btn-outline" onclick="navigate('待办')">查看全部待办</button></div><section class="v16-section"><div class="card-header"><span class="card-title">今日待办</span><span class="section-note">发现后跳转原记录处理</span></div><div id="v16TodayTasks" class="v16-list"></div></section><div class="grid-2"><section class="card"><div class="card-header"><span class="card-title">预警</span></div><div id="v16Alerts"></div></section><section class="card"><div class="card-header"><span class="card-title">数据概况</span></div><div id="v16Overview"></div></section></div><div class="grid-2"><section class="card"><div class="card-header"><span class="card-title">本周重点跟进</span></div><div id="v16KeyWork"></div></section><section class="card"><div class="card-header"><span class="card-title">我交办的事项</span></div><div id="v16Delegated"></div><div id="v16Workload" class="v16-workload"></div></section></div><div class="grid-3"><section class="card"><div class="card-header"><span class="card-title">经费使用进度</span><button class="btn btn-sm btn-outline" onclick="navigate('fund')">经费详情</button></div><div id="v16Funds"></div></section><section class="card"><div class="card-header"><span class="card-title">近期会议 / 培训</span></div><div id="v16Schedule"></div></section><section class="card"><div class="card-header"><span class="card-title">采购进度</span></div><div id="v16Purchases"></div></section></div>`;
+  const summary=document.getElementById('page-monthly-summary'); if(summary)summary.innerHTML=`<div class="v16-page-heading"><div><h1>本月摘要</h1><p id="v16MonthLabel"></p></div><div class="v16-month-switch"><button class="btn btn-outline" onclick="shiftSummaryMonth(-1)">‹ 上月</button><button class="btn btn-outline" onclick="shiftSummaryMonth(1)">下月 ›</button><button class="btn btn-primary" onclick="copyMonthlySummary()">复制月度摘要</button></div></div><div id="v16SummaryMetrics" class="grid-5"></div><div class="grid-2"><section class="card"><div class="card-header"><span class="card-title">本月完成了什么</span></div><div id="v16CompletedWorks"></div><div class="card-header" style="margin-top:14px"><span class="card-title">长期工作本月推进成果</span></div><div id="v16CompletedSubtasks"></div></section><section class="card"><div class="card-header"><span class="card-title">重点工作完成情况</span></div><div id="v16MonthlyKeyWork"></div></section></div><div class="grid-2"><section class="card"><div class="card-header"><span class="card-title">未完成 / 跨月</span></div><div id="v16CrossMonth"></div></section><section class="card"><div class="card-header"><span class="card-title">逾期事项</span></div><div id="v16MonthlyOverdue"></div></section></div><section class="card"><div class="card-header"><span class="card-title">项目经费使用进度</span></div><div id="v16MonthlyFunds"></div></section>`;
+}
+function v16Empty(text){return '<div class="empty-state v16-empty"><p>'+esc(text)+'</p></div>';}
+function v16List(items,render,empty){return items.length?items.map(render).join(''):v16Empty(empty);}
+function v16AlertData(){
+  const active=getActiveItems(); const today=todayStr(); const soon=fmtLocalDate(new Date(new Date(today+'T00:00:00').getTime()+3*86400000));
+  const alerts=[]; active.forEach(r=>{const due=getDueDate(r,r._ledger);if(due&&due<today)alerts.push({kind:'overdue',rec:r,due,label:'事项逾期'});else if(due===today)alerts.push({kind:'today',rec:r,due,label:'今日到期'});else if(due&&due<=soon)alerts.push({kind:'soon',rec:r,due,label:'即将到期'});if(r._ledger==='todos')workSubtasks(r).filter(s=>!s.completed&&s.due_date&&s.due_date<today).forEach(s=>alerts.push({kind:'overdue',rec:r,due:s.due_date,label:'子任务逾期：'+s.name,subtask:s}));});
+  return {alerts,today,soon};
+}
+function v16OpenRecord(rec){return `onclick="navigate('${rec._ledger==='todos'?'待办':LEDGER_META[rec._ledger]?.page||'待办'}')"`;}
+function renderDashboard(){
+  const {alerts,today,soon}=v16AlertData(), active=getActiveItems(), parentOverdue=new Set(alerts.filter(a=>a.kind==='overdue').map(a=>a.rec._ledger+':'+a.rec.id));
+  const todayItems=[]; active.forEach(r=>{const due=getDueDate(r,r._ledger);const hasTodaySub=r._ledger==='todos'&&workSubtasks(r).some(s=>!s.completed&&s.due_date===today);if(due&&due<today||due===today||r.issueDate===today||hasTodaySub||(r.type==='key'&&r.priority==='重要且紧急'))todayItems.push(r);});
+  const uniq=[...new Map(todayItems.map(r=>[r._ledger+':'+r.id,r])).values()].sort((a,b)=>Number(isOverdue(b,b._ledger))-Number(isOverdue(a,a._ledger))).slice(0,8);
+  document.getElementById('v16TodayTasks').innerHTML=v16List(uniq,r=>{const sub=r._ledger==='todos'?subtaskSummary(r):null;return `<button class="v16-row" ${v16OpenRecord(r)}><span>${esc(recordDisplayName(r))}</span><small>${isOverdue(r,r._ledger)?'已逾期':(getDueDate(r,r._ledger)===today?'今日到期':sub?.next?'下一步：'+esc(sub.next.name):'待处理')}</small></button>`;},'今天没有需要特别关注的事项。');
+  document.getElementById('v16Alerts').innerHTML=['overdue','today','soon'].map(kind=>{const list=alerts.filter(a=>a.kind===kind);const label={overdue:'已逾期',today:'今日到期',soon:'即将到期（未来 3 天）'}[kind];return `<div class="v16-alert ${kind}"><strong>${label} ${list.length}</strong>${list.slice(0,4).map(a=>`<button ${v16OpenRecord(a.rec)}>${esc(recordDisplayName(a.rec))} · ${esc(a.label)}</button>`).join('')||'<span>无</span>'}</div>`;}).join('');
+  const countState=s=>active.filter(r=>recordState(r._ledger,r)===s).length, typeCounts={};active.forEach(r=>{typeCounts[r._ledger]=(typeCounts[r._ledger]||0)+1;});
+  document.getElementById('v16Overview').innerHTML=`<div class="v16-metrics"><div><b>${active.length}</b><span>未结事项</span></div><div><b>${countState(STATE.DOING)}</b><span>进行中</span></div><div><b>${alerts.filter(a=>a.kind==='today').length}</b><span>今日到期</span></div><div><b>${alerts.filter(a=>a.kind==='soon').length}</b><span>即将到期</span></div><div><b>${parentOverdue.size}</b><span>已逾期</span></div></div><div class="v16-distribution">${Object.entries(typeCounts).map(([k,n])=>`<span>${esc(LEDGER_META[k]?.label||k)} <b>${n}</b></span>`).join('')}</div>`;
+  const keys=active.filter(r=>r._ledger==='todos'&&r.type==='key'); document.getElementById('v16KeyWork').innerHTML=v16List(keys,r=>{const s=subtaskSummary(r);return `<button class="v16-row" ${v16OpenRecord(r)}><span>${esc(r.name)}<small>${esc(r.assignee||'未指定经办人')} · ${esc(recordState('todos',r))}${r.deadline?' · 截止 '+esc(r.deadline):''}</small></span><small>${s.total?'子任务 '+s.done+'/'+s.total+(s.next?' · 下一步 '+esc(s.next.name):''):''}${s.overdue.length?' · '+s.overdue.length+' 个子任务逾期':''}</small></button>`;},'暂无进行中的重点工作。');
+  const delegated=active.filter(r=>r.assignee&&r.assignee!=='本人').sort((a,b)=>{const rank=r=>isOverdue(r,r._ledger)?0:getDueDate(r,r._ledger)===today?1:(getDueDate(r,r._ledger)||'9999')<=soon?2:3;return rank(a)-rank(b);});document.getElementById('v16Delegated').innerHTML=v16List(delegated,r=>{const s=r._ledger==='todos'?subtaskSummary(r):null;return `<button class="v16-row" ${v16OpenRecord(r)}><span>${esc(r.assignee)} · ${esc(recordDisplayName(r))}</span><small>${esc(recordState(r._ledger,r))}${getDueDate(r,r._ledger)?' · '+esc(getDueDate(r,r._ledger)):''}${s?.total?' · '+s.done+'/'+s.total:''}${isOverdue(r,r._ledger)?' · 逾期':''}</small></button>`;},'暂无由其他经办人负责的未结束事项。');
+  const loads={};delegated.forEach(r=>{const x=loads[r.assignee]??={total:0,overdue:0};x.total++;if(isOverdue(r,r._ledger))x.overdue++;loads[r.assignee]=x;});document.getElementById('v16Workload').innerHTML=Object.entries(loads).map(([name,x])=>`<span>${esc(name)} ${x.total} 项${x.overdue?'，其中 '+x.overdue+' 项逾期':''}</span>`).join('');
+  const funds=DB.get('funds').filter(f=>belongsToLedger('funds',f));document.getElementById('v16Funds').innerHTML=v16List(funds,f=>{const usage=v16FundUsage(f.id),budget=Number(f.budget)||0,pct=budget?Math.min(100,Math.round(usage.used/budget*100)):0;return `<button class="v16-fund" onclick="navigate('fund')"><span>${esc(f.name)}</span><small>${fmtCNY(budget)} · 已用 ${fmtCNY(usage.used)} · 剩余 ${fmtCNY(budget-usage.used)}</small><i><b style="width:${pct}%"></b></i></button>`;},'暂无经费项目。');
+  const datePlus=n=>fmtLocalDate(new Date(new Date(today+'T00:00:00').getTime()+n*86400000));const meetings=DB.get('meetings').filter(m=>m.date&&m.date>=today&&m.date<=datePlus(7)),trainings=DB.get('trainings').filter(t=>t.startDate&&t.startDate>=today&&t.startDate<=datePlus(14));document.getElementById('v16Schedule').innerHTML=v16List([...meetings.map(m=>({x:m,kind:'会议',date:m.date,place:m.location||m.type||''})),...trainings.map(t=>({x:t,kind:'培训',date:t.startDate,place:t.location||t.type||''}))].sort((a,b)=>a.date.localeCompare(b.date)),e=>`<button class="v16-row" onclick="navigate('${e.kind==='会议'?'meeting':'training'}')"><span>${esc(e.kind)} · ${esc(e.x.name)}</span><small>${esc(e.date)} ${esc(e.place)}</small></button>`,'未来 7/14 天暂无会议或培训。');
+  const purchases=active.filter(r=>r._ledger==='purchases');document.getElementById('v16Purchases').innerHTML=v16List(purchases,r=>`<button class="v16-row" onclick="navigate('purchase')"><span>${esc(r.name)}</span><small>${esc(r.assignee||'未指定经办人')} · ${esc(recordState('purchases',r))}${getDueDate(r,'purchases')?' · '+esc(getDueDate(r,'purchases')):''}${isOverdue(r,'purchases')?' · 逾期':''}</small></button>`,'暂无未完成采购事项。');
+}
+function v16FundUsage(fundId){const records=DB.get('fundRecords').filter(r=>String(r.fundId)===String(fundId));const expenses=DB.get('expenses').filter(e=>String(expenseFundId(e))===String(fundId)&&!records.some(r=>String(r.expenseRef)===String(e.id)));return {records:[...records,...expenses.map(e=>({amount:e.amount,date:e.appDate,content:e.content}))],used:[...records,...expenses].reduce((n,r)=>n+(Number(r.amount)||0),0)};}
+function shiftSummaryMonth(delta){const start=summaryDateRange?.start||todayStr();const d=new Date(start+'T00:00:00');d.setMonth(d.getMonth()+delta,1);const y=d.getFullYear(),m=d.getMonth();summaryDateRange={preset:'v16-month',start:fmtLocalDate(new Date(y,m,1)),end:fmtLocalDate(new Date(y,m+1,0))};renderSummary();}
+function v16MonthData(){const start=summaryDateRange?.start||todayStr().slice(0,7)+'-01',end=summaryDateRange?.end||todayStr(),todos=DB.get('todos').filter(t=>belongsToLedger('todos',t));const inMonth=d=>Boolean(d)&&d.slice(0,10)>=start&&d.slice(0,10)<=end;const active=todos.filter(t=>[STATE.TODO,STATE.DOING].includes(recordState('todos',t)));const completed=todos.filter(t=>recordState('todos',t)===STATE.DONE&&inMonth(t.completeDate));const subs=todos.flatMap(t=>workSubtasks(t).filter(s=>s.completed&&inMonth(s.completed_date)).map(s=>({todo:t,sub:s})));const keyRelevant=todos.filter(t=>t.type==='key'&&(inMonth(t.completeDate)||workSubtasks(t).some(s=>inMonth(s.completed_date))||[STATE.TODO,STATE.DOING].includes(recordState('todos',t))));const overdue=active.filter(t=>isOverdue(t,'todos'));const cross=active.filter(t=>!isOverdue(t,'todos')&&((t.issueDate&&t.issueDate<start)||workSubtasks(t).some(s=>s.start_date&&s.start_date<start)));return {start,end,todos,active,completed,subs,keyRelevant,overdue,cross};}
+function renderSummary(){const d=v16MonthData(),month=d.start.slice(0,7),[y,m]=month.split('-');document.getElementById('v16MonthLabel').textContent=y+'年'+Number(m)+'月 · 个人复盘与科室例会';const keyDone=d.completed.filter(t=>t.type==='key').length;document.getElementById('v16SummaryMetrics').innerHTML=`<div class="metric"><span>完成工作数</span><b>${d.completed.length}</b></div><div class="metric"><span>完成子任务数</span><b>${d.subs.length}</b></div><div class="metric"><span>完成重点工作数</span><b>${keyDone}</b></div><div class="metric"><span>跨月推进数</span><b>${d.cross.length}</b></div><div class="metric"><span>逾期事项数</span><b>${d.overdue.length}</b></div>`;document.getElementById('v16CompletedWorks').innerHTML=v16List(d.completed,t=>`<div class="v16-row"><span>${esc(t.name)}</span><small>完成于 ${esc(t.completeDate)}</small></div>`,'本月暂无完成工作。');document.getElementById('v16CompletedSubtasks').innerHTML=v16List(d.subs,x=>`<div class="v16-row"><span>${esc(x.todo.name)} · ✓ ${esc(x.sub.name)}</span><small>完成于 ${esc(x.sub.completed_date)}</small></div>`,'本月暂无子任务成果。');document.getElementById('v16MonthlyKeyWork').innerHTML=v16List(d.keyRelevant,t=>{const s=subtaskSummary(t),n=workSubtasks(t).filter(x=>x.completed&&x.completed_date>=d.start&&x.completed_date<=d.end).length;return `<div class="v16-row"><span>${esc(t.name)}</span><small>${esc(recordState('todos',t))} · 子任务 ${s.done}/${s.total} · 本月完成 ${n} 个</small></div>`;},'本月暂无相关重点工作。');document.getElementById('v16CrossMonth').innerHTML=v16List(d.cross,t=>`<div class="v16-row"><span>${esc(t.name)}</span><small>正常跨月推进${t.deadline?' · 截止 '+esc(t.deadline):''}</small></div>`,'暂无正常跨月推进事项。');document.getElementById('v16MonthlyOverdue').innerHTML=v16List(d.overdue,t=>`<div class="v16-row"><span>${esc(t.name)}</span><small>截止 ${esc(t.deadline||getDueDate(t,'todos'))}，尚未结束</small></div>`,'暂无逾期事项。');const funds=DB.get('funds').filter(f=>belongsToLedger('funds',f));document.getElementById('v16MonthlyFunds').innerHTML=v16List(funds,f=>{const u=v16FundUsage(f.id),monthly=u.records.filter(r=>r.date&&r.date>=d.start&&r.date<=d.end).reduce((n,r)=>n+(Number(r.amount)||0),0),budget=Number(f.budget)||0,pct=budget?Math.round(u.used/budget*100):0;return `<div class="v16-fund"><span>${esc(f.name)}</span><small>本月 ${fmtCNY(monthly)} · 累计 ${fmtCNY(u.used)} · 总额 ${fmtCNY(budget)} · 剩余 ${fmtCNY(budget-u.used)} · ${pct}%</small><i><b style="width:${Math.min(100,pct)}%"></b></i></div>`;},'暂无经费项目。');}
+function monthlySummaryText(){const d=v16MonthData(),funds=DB.get('funds').filter(f=>belongsToLedger('funds',f)),monthly=funds.reduce((total,f)=>total+v16FundUsage(f.id).records.filter(r=>r.date&&r.date>=d.start&&r.date<=d.end).reduce((n,r)=>n+(Number(r.amount)||0),0),0),[y,m]=d.start.slice(0,7).split('-');return `${y}年${Number(m)}月共完成工作${d.completed.length}项，完成子任务${d.subs.length}项，其中完成重点工作${d.completed.filter(t=>t.type==='key').length}项；目前${d.cross.length}项工作正常跨月推进，${d.overdue.length}项存在逾期。本月项目经费支出${fmtCNY(monthly)}。`;}
+function copyMonthlySummary(){const text=monthlySummaryText();if(navigator.clipboard?.writeText){navigator.clipboard.writeText(text).then(()=>toast('月度摘要已复制')).catch(()=>{prompt('请复制以下月度摘要：',text);});}else prompt('请复制以下月度摘要：',text);}
+
+const _v16SaveTodo=saveTodo;
+saveTodo=function(){
+  const parent={deadline:document.getElementById('todoDeadline')?.value||''};
+  const normalized=normalizeSubtasks(todoFormSubtasks);
+  if(normalized.length!==todoFormSubtasks.length){toast('请填写子任务名称或删除空白子任务');return;}
+  if(!normalized.every(s=>validateSubtask(s,parent)))return;
+  todoFormSubtasks=normalized.map(s=>Object.assign(s,{updated_at:todayStr()}));
+  return _v16SaveTodo();
+};
+
+function modalFingerprint(modal){return JSON.stringify([...modal.querySelectorAll('input,textarea,select')].map(el=>[el.id,el.type==='checkbox'?el.checked:el.value]).concat(modal.id==='todoModal'?[todoFormSubtasks]:[]));}
+const _v16OpenModal=openModal;openModal=function(id){_v16OpenModal(id);const modal=document.getElementById(id);if(modal)V16_MODAL_BASELINES[id]=modalFingerprint(modal);};
+const _v16CloseModal=closeModal;closeModal=function(id,force=false){const modal=document.getElementById(id);if(!modal)return;if(force||modalFingerprint(modal)===V16_MODAL_BASELINES[id]){_v16CloseModal(id);return;}showUnsavedConfirm(id);};
+function showUnsavedConfirm(id){let dialog=document.getElementById('v16UnsavedConfirm');if(!dialog){dialog=document.createElement('div');dialog.id='v16UnsavedConfirm';dialog.className='modal-overlay open';dialog.innerHTML='<div class="modal v16-confirm"><div class="modal-header"><span class="modal-title">未保存的内容</span></div><div class="modal-body">当前内容尚未保存，确定要退出吗？</div><div class="modal-footer"><button class="btn btn-outline" id="v16ContinueEdit">继续编辑</button><button class="btn btn-danger" id="v16DiscardEdit">放弃修改</button></div></div>';document.body.appendChild(dialog);}else dialog.classList.add('open');document.getElementById('v16ContinueEdit').onclick=()=>dialog.classList.remove('open');document.getElementById('v16DiscardEdit').onclick=()=>{dialog.classList.remove('open');_v16CloseModal(id);};}
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const modal=[...document.querySelectorAll('.modal-overlay.open')].find(x=>x.id!=='v16UnsavedConfirm');if(modal){e.preventDefault();closeModal(modal.id);}});
+
+// ============================================================
 //  INIT
 // ============================================================
 function removeObsoleteInvoiceCredentials(){
@@ -7769,18 +7958,18 @@ function removeObsoleteInvoiceCredentials(){
 removeObsoleteInvoiceCredentials();
 loadSettings();
 checkBackup();
-const testDataCleared=clearTestBusinessDataOnce();
 snapshotBeforeV14();
 GITEE._applyingSnapshot=true;
 try{
   repairData(); // 本机历史数据修复不应触发云端推送
   retireVerifiedLegacyMirrors();
+  ensureV16Data();
 }finally{GITEE._applyingSnapshot=false;}
-if(testDataCleared)toast('已完成一次性测试数据清理；Gitee 与本机设置已保留');
 refreshDataBadges(); // 启动即按统一数据源刷新待办、提醒、速记和目标角标
 checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/逾期项
 // 拉取会覆盖本机业务快照，因此仅由用户点击“拉取数据”触发。
 (function(){
+  v16ReplaceSurfaces();
   renderDashboard();
   // 每小时检查一次截止提醒
   setInterval(()=>{
