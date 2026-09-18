@@ -4,7 +4,7 @@ const vm=require('node:vm');
 
 const html=fs.readFileSync('index.html','utf8');
 function section(start,end){const a=html.indexOf(start),b=html.indexOf(end,a+start.length);assert(a>=0&&b>a,`找不到区段：${start}`);return html.slice(a,b);}
-const source=section('let todoFormSubtasks=[];','//  INIT');
+const source=section("let v16DraggedSubtaskId='';",'//  INIT');
 const rows={todos:[],funds:[],fundRecords:[],expenses:[]};
 const DB={raw:k=>structuredClone(rows[k]||[]),get:k=>structuredClone((rows[k]||[]).filter(r=>!r.deleted)),set:(k,v)=>rows[k]=structuredClone(v)};
 const today='2026-09-18';
@@ -31,7 +31,7 @@ function fmtCNY(n){return '¥'+Number(n).toFixed(2);} function navigate(){} func
 function setState(key,id,state){statusWrites++;return {key,id,state};} function openModal(){} function closeModal(){} function saveTodo(){}
 const document=doc; const navigator={}; const confirm=()=>true; const prompt=()=>null;
 ${source}
-({normalizeSubtasks,workSubtasks,subtaskSummary,ensureV16Data,toggleSubtask,writeWorkSubtasks,setState,v16AlertData,v16MonthData,monthlySummaryText,modalFingerprint,messages})`,sandbox);
+({normalizeSubtasks,workSubtasks,subtaskSummary,ensureV16Data,toggleSubtask,writeWorkSubtasks,moveSubtaskTo,setState,v16AlertData,v16MonthData,monthlySummaryText,modalFingerprint,v16ExpandedSubtasks,messages})`,sandbox);
 
 // 历史数据无 subtasks 与旧 text/done 格式均应兼容，不改父记录 ID。
 rows.todos=[
@@ -46,18 +46,27 @@ assert.equal(rows.todos[1].subtasks[0].completed,false);
 assert.ok(rows.todos[1].subtasks[0].id);
 
 // 新增的标准字段、完成日期、取消完成、排序与父任务完成限制。
-api.writeWorkSubtasks(11,[
+rows.todos[0].subtasks=[
   {id:'a',name:'先办',start_date:'2026-09-17',due_date:'2026-09-18',completed:false,sort_order:1,created_at:'2026-09-17',updated_at:'2026-09-17'},
   {id:'b',name:'后办',start_date:'2026-09-18',due_date:'2026-09-20',completed:false,sort_order:0,created_at:'2026-09-18',updated_at:'2026-09-18'}
-]);
+];
 let summary=api.subtaskSummary(rows.todos[0]);
 assert.deepEqual(summary.list.map(s=>s.id),['b','a'],'人工排序应保留');
-api.toggleSubtask(11,1);
+assert.equal(api.moveSubtaskTo(11,0,1),true,'上移/下移与拖拽共享同一持久化排序函数');
+assert.deepEqual(rows.todos[0].subtasks.map(s=>s.id),['a','b'],'排序立即写回真实记录数组');
+assert.deepEqual(rows.todos[0].subtasks.map(s=>s.sort_order),[0,1],'排序字段在刷新/Gitee snapshot 前已规范化保存');
+api.toggleSubtask(11,0);
 assert.equal(rows.todos[0].subtasks.find(s=>s.id==='a').completed_date,today,'完成默认写当天');
-api.toggleSubtask(11,1);
+api.toggleSubtask(11,0);
 assert.equal(rows.todos[0].subtasks.find(s=>s.id==='a').completed_date,'','取消完成清空日期');
 assert.equal(api.setState('todos',11,'DONE'),false,'未完成子任务阻止父工作完成');
 assert.equal(api.setState('todos',11,'CLOSED').state,'CLOSED','已关闭允许有未完成子任务');
+
+// 展开 state 是 UI state，不会被写回、切换完成或重新排序影响。
+api.v16ExpandedSubtasks.add('11');
+api.toggleSubtask(11,0);
+api.moveSubtaskTo(11,0,1);
+assert(api.v16ExpandedSubtasks.has('11'),'子任务任何数据操作后应保持已展开');
 
 // 子任务逾期纳入预警，但父工作统计按父工作去重。
 rows.todos[0].subtasks=[
@@ -84,10 +93,31 @@ assert.equal(monthApi.subs.length,1);
 assert.equal(monthApi.cross.length,2,'正常长期跨月不等于逾期');
 assert.equal(monthApi.overdue.length,1);
 assert(!monthApi.overdue.some(t=>t.name==='正常跨月'),'正常跨月事项不得混入逾期');
+rows.funds=[{id:1,name:'示例项目',budget:10000}];
+rows.fundRecords=[{fundId:1,date:'2026-09-15',amount:500}];
+const copied=api.monthlySummaryText();
+assert(copied.includes('跨月完成父工作')&&copied.includes('本月成果'),'月度摘要必须包含实际工作和子任务名称');
+assert(copied.includes('示例项目')&&copied.includes('一、本月完成工作')&&copied.includes('六、项目经费'),'月度摘要必须使用结构化固定模板并包含实际项目名称');
+
+// 旧首轮错误归属的长期目标在启动迁移后应与页面过滤口径一致。
+rows.todos=[{id:31,name:'长期目标 A',is_goal:true,owner_ledger:'goals',state:'DOING'}];
+api.ensureV16Data();
+assert.equal(rows.todos[0].owner_ledger,'todos','长期目标迁移不得遗留不存在的 goals owner_ledger');
+
+const expenseSource=section('function expenseStateTotals','function renderExpenses');
+const expenseApi=vm.runInNewContext(`const STATE={TODO:'TODO',DOING:'DOING',DONE:'DONE',CLOSED:'CLOSED'};function recordState(_k,r){return r.state;}${expenseSource};expenseStateTotals`,{});
+const totals=expenseApi([{amount:100,state:'DONE',status:'待报销'},{amount:50,state:'CLOSED',status:'待报销'},{amount:30,state:'DOING',status:'已报销'}]);
+assert.equal(totals.approvedAmount,150,'已完成/已关闭报销均计入已报销金额，不能看旧 status 文案');
+assert.equal(totals.pendingAmount,30,'未开始/进行中才计入待报销金额');
 
 // snapshot 的 todos 数组必须原样保留子任务字段；表单保护不得再绑定遮罩关闭。
-assert.deepEqual(JSON.parse(JSON.stringify(rows.todos))[1].subtasks[0].completed_date,'2026-09-12');
+assert.equal(monthApi.subs[0].sub.completed_date,'2026-09-12','snapshot 序列化前不得遗漏子任务完成日期');
 assert(!html.includes("if(e.target===this)closeModal(this.id)"),'遮罩点击不得关闭表单');
 assert(html.includes("e.key!=='Escape'"),'ESC 必须进入统一未保存检查');
 assert(html.includes('继续编辑')&&html.includes('放弃修改'),'未保存确认必须提供两种明确操作');
+assert(html.includes("e.stopImmediatePropagation();closeModal(modal.id);"),'× / 取消必须在捕获阶段进入统一 dirty guard');
+assert(html.includes('v16TodoCategory')&&html.includes('todoLedgerTabs'),'待办必须从统一待办源提供所属板块分类');
+assert(html.includes('deleteActiveItem')&&html.includes('todo-delete'),'每条待办必须保留删除入口');
+assert(html.includes('开始 ${esc(r.issueDate||r.date||')&&html.includes('经办人 ${esc(r.assignee||'), '待办卡必须渲染开始日期、截止日期、经办人和优先级');
+assert(html.indexOf('id="meetingList"')<html.indexOf('id="meetingCalendarGrid"'),'会议页面默认主视图必须是列表，日历作为可展开辅助视图');
 console.log('v1.6 子任务、驾驶舱口径、本月摘要、同步字段与表单保护测试通过');

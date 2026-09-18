@@ -8,7 +8,7 @@
   background: var(--color-surface);
   border: 1px solid rgba(0,0,0,.055);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: var(--space-card);
   box-shadow: var(--shadow);
 }
 
@@ -32,19 +32,19 @@
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: var(--space-grid);
 }
 
 .grid-3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: var(--space-grid);
 }
 
 .grid-4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: var(--space-grid);
 }
 
 /* ===== METRIC CARD ===== */
@@ -1807,6 +1807,23 @@ tr:hover td {
 .v14-ov-item:hover{color:var(--color-primary)}
 .v14-empty{font-size:12px;color:var(--color-text3)}
 .v14-pending{font-size:13px}
+
+/* v1.6 第二轮：统一内容页工具区、待办分段和紧凑日历。 */
+.v16-content-header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin:2px 0 18px}
+.v16-content-header h1{font-size:28px;letter-spacing:-.04em;line-height:1.15}
+.v16-content-header p{margin-top:6px;color:var(--color-text2);font-size:13px}
+.v16-tool-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.v16-subheader{margin-top:-4px;margin-bottom:14px}.section-note{font-size:12px;color:var(--color-text2)}
+.v16-segment{padding:6px 11px;border-radius:999px;background:transparent;color:var(--color-text2);font-size:13px;border:1px solid transparent;transition:.15s}
+.v16-segment:hover{background:var(--color-surface);border-color:var(--color-border)}
+.v16-segment.active{background:var(--color-text);color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.v16-segment span{font-size:11px;opacity:.78;margin-left:2px}
+.todo-card-actions{display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.todo-delete{color:var(--color-danger)!important}.v16-todo-meta{gap:10px 15px}.v16-todo-meta span{color:var(--color-text2);font-size:12px}.v16-todo-meta .tag{color:var(--color-text)}
+.v16-todo-meta .due-soon{color:#b76a00;font-weight:600}.v16-todo-meta .due-overdue{color:var(--color-danger);font-weight:650}
+.v16-list-title{font-size:15px;font-weight:650;margin-right:auto}.v16-calendar-details{margin-top:22px;border-top:1px solid var(--color-border);padding-top:14px}.v16-calendar-details summary{cursor:pointer;color:var(--color-text2);font-size:13px}.v16-calendar-controls{margin:12px 0}.v16-calendar-box{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+.grid-5{gap:var(--space-grid)!important}.v16-section{margin-bottom:var(--space-grid)}
+@media (max-width:700px){.v16-content-header{display:block}.v16-content-header>div:last-child{margin-top:12px}.v16-todo-meta{gap:8px}.todo-card-actions{justify-content:flex-start;margin-top:8px}}
 
 /* 悬浮按钮角标（速记收件箱计数） */
 .fab-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;background:#ef4444;color:#fff;border-radius:9px;font-size:11px;line-height:18px;text-align:center;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.25)}
