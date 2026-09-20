@@ -6155,11 +6155,12 @@ function expenseStateTotals(expenses){
   return {all,approved,pending,approvedAmount:sum(approved),pendingAmount:sum(pending)};
 }
 // 报销页本月支出只代表本月实际已报销金额；不与项目经费开支口径混用。
+// 同一条记录只取一个完成日期：实际报销日期优先，其次是显式完成日期，最后才回退统一状态完成时间。
+function getExpenseCompletedDate(record){
+  return String(record?.reimbDate||record?.completeDate||record?.completedDate||record?.closed_at||'').slice(0,10);
+}
 function expenseMonthlyReimbursed(expenses,month){
-  return (expenses||[]).filter(e=>{
-    if(recordState('expenses',e)!==STATE.DONE)return false;
-    return [e.reimbDate,e.completeDate,e.completedDate,e.closed_at].some(date=>String(date||'').slice(0,7)===month);
-  });
+  return (expenses||[]).filter(e=>recordState('expenses',e)===STATE.DONE&&getExpenseCompletedDate(e).slice(0,7)===month);
 }
 
 function renderExpenses(){
