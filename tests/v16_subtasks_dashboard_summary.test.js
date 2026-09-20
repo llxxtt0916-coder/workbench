@@ -15,7 +15,7 @@ const STATE={TODO:'TODO',DOING:'DOING',DONE:'DONE',CLOSED:'CLOSED'};
 let statusWrites=0;
 const LEDGER_META={todos:{label:'工作',page:'todo'},purchases:{label:'采购',page:'purchase'}};
 function todayStr(){return '${today}';}
-function fmtLocalDate(d){return d.toISOString().slice(0,10);}
+function fmtLocalDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function getDueDate(r){return r.due_date||r.deadline||'';}
 function recordState(_k,r){return r.state||STATE.TODO;}
 function isOverdue(r){const due=getDueDate(r);return !!due&&due<todayStr()&&![STATE.DONE,STATE.CLOSED].includes(recordState('',r));}
@@ -31,7 +31,7 @@ function fmtCNY(n){return '¥'+Number(n).toFixed(2);} function navigate(){} func
 function setState(key,id,state){statusWrites++;return {key,id,state};} function openModal(){} function closeModal(){} function saveTodo(){}
 const document=doc; const navigator={}; const confirm=()=>true; const prompt=()=>null;
 ${source}
-({normalizeSubtasks,workSubtasks,subtaskSummary,ensureV16Data,toggleSubtask,writeWorkSubtasks,moveSubtaskTo,setState,v16AlertData,v16MonthData,monthlySummaryText,modalFingerprint,v16ExpandedSubtasks,messages})`,sandbox);
+({normalizeSubtasks,workSubtasks,subtaskSummary,ensureV16Data,toggleSubtask,writeWorkSubtasks,moveSubtaskTo,setState,v16AlertData,v16MonthData,monthlySummaryText,dashboardCalendarEntries,modalFingerprint,v16ExpandedSubtasks,messages})`,sandbox);
 
 // 历史数据无 subtasks 与旧 text/done 格式均应兼容，不改父记录 ID。
 rows.todos=[
@@ -106,18 +106,26 @@ assert.equal(rows.todos[0].owner_ledger,'todos','长期目标迁移不得遗留�
 
 const expenseSource=section('function expenseStateTotals','function renderExpenses');
 const expenseApi=vm.runInNewContext(`const STATE={TODO:'TODO',DOING:'DOING',DONE:'DONE',CLOSED:'CLOSED'};function recordState(_k,r){return r.state;}${expenseSource};expenseStateTotals`,{});
-const totals=expenseApi([{amount:100,state:'DONE',status:'待报销'},{amount:50,state:'CLOSED',status:'待报销'},{amount:30,state:'DOING',status:'已报销'}]);
-assert.equal(totals.approvedAmount,150,'已完成/已关闭报销均计入已报销金额，不能看旧 status 文案');
-assert.equal(totals.pendingAmount,30,'未开始/进行中才计入待报销金额');
+const totals=expenseApi([{amount:100,state:'TODO'},{amount:200,state:'DOING'},{amount:300,state:'DONE'},{amount:400,state:'CLOSED'}]);
+assert.equal(totals.pendingAmount,300,'未开始/进行中才计入待报销金额');
+assert.equal(totals.approvedAmount,300,'只有已完成计入已报销金额，已关闭不得混入');
+assert.equal(totals.all.length,4,'已关闭记录仍属于报销台账总记录数');
+
+rows.meetings=[{id:1,name:'例会',date:'2026-09-21',startTime:'09:00'}];
+rows.trainings=[{id:2,name:'培训',startDate:'2026-09-21',endDate:'2026-09-22',organizer:'疾控'}];
+const calendar=api.dashboardCalendarEntries('2026-09');
+assert.equal(calendar.filter(x=>x.date==='2026-09-21').map(x=>x.kind).join(','),'会议,培训','驾驶舱月历须聚合当天会议和培训');
+assert(calendar.some(x=>x.date==='2026-09-22'&&x.kind==='培训'),'跨日培训应在每个培训日期显示');
 
 // snapshot 的 todos 数组必须原样保留子任务字段；表单保护不得再绑定遮罩关闭。
 assert.equal(monthApi.subs[0].sub.completed_date,'2026-09-12','snapshot 序列化前不得遗漏子任务完成日期');
 assert(!html.includes("if(e.target===this)closeModal(this.id)"),'遮罩点击不得关闭表单');
-assert(html.includes("e.key!=='Escape'"),'ESC 必须进入统一未保存检查');
+assert(html.includes("event.key!=='Escape'"),'ESC 必须进入统一未保存检查');
 assert(html.includes('继续编辑')&&html.includes('放弃修改'),'未保存确认必须提供两种明确操作');
-assert(html.includes("e.stopImmediatePropagation();closeModal(modal.id);"),'× / 取消必须在捕获阶段进入统一 dirty guard');
+assert(html.includes('function requestModalClose(id)')&&html.includes('wireModalCloseEntrypoints()'),'× / 取消必须进入统一真实关闭入口');
 assert(html.includes('v16TodoCategory')&&html.includes('todoLedgerTabs'),'待办必须从统一待办源提供所属板块分类');
 assert(html.includes('deleteActiveItem')&&html.includes('todo-delete'),'每条待办必须保留删除入口');
 assert(html.includes('开始 ${esc(r.issueDate||r.date||')&&html.includes('经办人 ${esc(r.assignee||'), '待办卡必须渲染开始日期、截止日期、经办人和优先级');
-assert(html.indexOf('id="meetingList"')<html.indexOf('id="meetingCalendarGrid"'),'会议页面默认主视图必须是列表，日历作为可展开辅助视图');
+assert(!html.includes('meetingCalendarGrid')&&!html.includes('renderMeetingCalendar'),'会议页面不得保留月历 DOM 或专属渲染逻辑');
+assert(html.includes('dashboardCalendarEntries')&&html.includes('v16DashboardCalendarGrid'),'驾驶舱月历必须直接汇总会议与培训数据');
 console.log('v1.6 子任务、驾驶舱口径、本月摘要、同步字段与表单保护测试通过');

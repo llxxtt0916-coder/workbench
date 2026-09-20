@@ -617,7 +617,7 @@
     <!-- ====== MEETING PAGE ====== -->
     <div class="page" id="page-meeting">
       <div class="v16-content-header">
-        <div><h1>会议日程</h1><p>以列表管理会议记录；日历视图保留作时间浏览。</p></div>
+        <div><h1>会议日程</h1><p>以列表方式浏览、搜索和管理会议记录。</p></div>
         <div style="display:flex;gap:6px">
           <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('meeting')">导出</button>
         </div>
@@ -636,21 +636,6 @@
         </div>
       </div>
       <div id="meetingList"></div>
-      <details class="v16-calendar-details">
-        <summary>查看月历</summary>
-        <div class="section-header v16-calendar-controls">
-          <span style="font-size:16px;font-weight:600" id="meetingMonthTitle">2026年6月</span>
-          <div style="display:flex;gap:6px;align-items:center">
-            <button class="btn btn-sm btn-outline" onclick="prevMeetingMonth()">◀ 上月</button>
-            <button class="btn btn-sm btn-outline" onclick="goMeetingToday()">今天</button>
-            <button class="btn btn-sm btn-outline" onclick="nextMeetingMonth()">下月 ▶</button>
-          </div>
-        </div>
-        <div class="v16-calendar-box">
-          <div class="cal-weekdays" style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--color-text3);padding:4px 0 8px 0;font-weight:500"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span style="color:var(--color-danger)">六</span><span style="color:var(--color-danger)">日</span></div>
-          <div id="meetingCalendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"></div>
-        </div>
-      </details>
     </div>
 
     <!-- ====== TRAINING PAGE ====== -->
@@ -2532,7 +2517,7 @@ function applyState(){
     recs[ri].recurrence=recurrence;
     DB.set(ledger, recs);
   }
-  closeModal('stateModal');
+  closeModal('stateModal',true);
   setState(ledger, id, ns, (ns===STATE.CLOSED||ns===STATE.DONE)?reason:undefined);
 }
 // 状态弹窗：周期 UI 联动（N 可见性 + 固定日期类动态输入）
@@ -3575,7 +3560,7 @@ function renderDashboard() {
   const fullExp = reimbSum+pendingSum||1;const reimbPct = Math.round(reimbSum/fullExp*100);
   const reimbArc = 125.7;const reimbLen = Math.min(reimbPct*reimbArc/100, reimbArc);
   document.getElementById('dashLgExpenseInner').innerHTML = `<div style="display:flex;flex-direction:column;align-items:center">
-    <div style="font-size:11px;color:var(--color-text2);margin-bottom:4px"><strong>🧾 报销</strong> ${expenseTotals.approved.length+expenseTotals.pending.length}笔</div>
+    <div style="font-size:11px;color:var(--color-text2);margin-bottom:4px"><strong>🧾 报销</strong> ${expenseTotals.all.length}笔</div>
     <div style="position:relative;width:56px;height:56px"><svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="20" fill="none" stroke="#f3f4f6" stroke-width="6"/><circle cx="28" cy="28" r="20" fill="none" stroke="#22c55e" stroke-width="6" stroke-linecap="round" stroke-dasharray="${reimbLen} ${reimbArc-reimbLen}" transform="rotate(-90,28,28)"/></svg><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:11px;font-weight:600;color:#22c55e">${reimbPct}%</div></div>
     <div style="display:flex;gap:4px;font-size:10px;color:var(--color-text3);margin-top:4px"><span>已报 ${fmtCNY(reimbSum)}</span><span>待报 ${fmtCNY(pendingSum)}</span></div>
   </div>`;
@@ -6161,10 +6146,11 @@ function clearFundRecordForm(){
 // ============================================================
 const expenseStatusBadge={待报销:'badge-yellow',已报销:'badge-green'};
 function expenseStateTotals(expenses){
-  const approved=(expenses||[]).filter(e=>[STATE.DONE,STATE.CLOSED].includes(recordState('expenses',e)));
-  const pending=(expenses||[]).filter(e=>[STATE.TODO,STATE.DOING].includes(recordState('expenses',e)));
+  const all=expenses||[];
+  const approved=all.filter(e=>recordState('expenses',e)===STATE.DONE);
+  const pending=all.filter(e=>[STATE.TODO,STATE.DOING].includes(recordState('expenses',e)));
   const sum=rows=>rows.reduce((n,e)=>n+(Number(e.amount)||0),0);
-  return {approved,pending,approvedAmount:sum(approved),pendingAmount:sum(pending)};
+  return {all,approved,pending,approvedAmount:sum(approved),pendingAmount:sum(pending)};
 }
 
 function renderExpenses(){
@@ -6364,114 +6350,9 @@ function deleteExpense(id){
 
 // ============================================================
 //  MEETING SCHEDULE  (P1-3)
+//  会议内容页只保留管理列表；月度日程概览由驾驶舱统一提供。
 // ============================================================
-
-let meetingCalendarYear, meetingCalendarMonth;
-
-function initMeetingCalendar(){
-  const now=new Date();
-  meetingCalendarYear=now.getFullYear();
-  meetingCalendarMonth=now.getMonth()+1;
-}
-
-function renderMeetings(){
-  if(!meetingCalendarYear)initMeetingCalendar();
-  renderMeetingCalendar(meetingCalendarYear,meetingCalendarMonth);
-  renderMeetingList();
-}
-
-function renderMeetingCalendar(year,month){
-  meetingCalendarYear=year;meetingCalendarMonth=month;
-  document.getElementById('meetingMonthTitle').textContent=year+'年'+month+'月';
-
-  const firstDay=new Date(year,month-1,1);
-  const lastDay=new Date(year,month,0);
-  const daysInMonth=lastDay.getDate();
-  // 周一=0
-  let startDayOfWeek=firstDay.getDay(); // 0=周日
-  startDayOfWeek=startDayOfWeek===0?6:startDayOfWeek-1; // 调整为周一=0
-
-  const today=new Date();
-  const todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
-
-  const meetings=formalLedgerItems('meetings');
-  // 本月有会议的日期
-  const meetingDates={};
-  meetings.forEach(m=>{
-    if(!m.deleted&&m.date){
-      const d=new Date(m.date);
-      if(d.getFullYear()===year&&(d.getMonth()+1)===month){
-        const day=d.getDate();
-        if(!meetingDates[day])meetingDates[day]=[];
-        meetingDates[day].push(m);
-      }
-    }
-  });
-
-  let html='';
-  // 上月填充
-  const prevLastDay=new Date(year,month-1,0).getDate();
-  for(let i=startDayOfWeek-1;i>=0;i--){
-    html+=`<div class="cal-day cal-other">${prevLastDay-i}</div>`;
-  }
-  // 本月
-  for(let d=1;d<=daysInMonth;d++){
-    const dateStr=year+'-'+String(month).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    const isToday=dateStr===todayStr;
-    const dayMeetings=meetingDates[d]||[];
-    const hasMeeting=dayMeetings.length>0;
-    html+=`<div class="cal-day${isToday?' cal-today':''}${hasMeeting?' cal-has-meeting':''}"
-      onclick="${hasMeeting?'showDayMeetings('+d+')':'openQuickMeeting(\''+dateStr+'\')'}"
-      title="${hasMeeting?dayMeetings.map(m=>m.name).join('\n'):'点击新增会议'}">
-      <span class="cal-day-num">${d}</span>
-      ${hasMeeting?dayMeetings.slice(0,3).map(m=>{
-      const typeColors={线上:'#3b82f6',线下:'#10b981',混合:'#8b5cf6'};
-      return `<span class="cal-meeting-name" style="border-left:2px solid ${typeColors[m.type]||'#6366f1'}">${esc(m.name)}</span>`;
-      }).join('')+ (dayMeetings.length>3?`<span class="cal-meeting-more">+${dayMeetings.length-3} 场</span>`:''):''}
-    </div>`;
-  }
-  // 下月填充
-  const totalCells=Math.ceil((startDayOfWeek+daysInMonth)/7)*7;
-  for(let i=startDayOfWeek+daysInMonth;i<totalCells;i++){
-    html+=`<div class="cal-day cal-other">${i-startDayOfWeek-daysInMonth+1}</div>`;
-  }
-  document.getElementById('meetingCalendarGrid').innerHTML=html;
-
-  // 存储当前月份会议日期供 showDayMeetings 使用
-  window._meetingMonthData=meetingDates;
-}
-
-function prevMeetingMonth(){
-  if(meetingCalendarMonth===1){meetingCalendarMonth=12;meetingCalendarYear--;}
-  else meetingCalendarMonth--;
-  renderMeetings();
-}
-function nextMeetingMonth(){
-  if(meetingCalendarMonth===12){meetingCalendarMonth=1;meetingCalendarYear++;}
-  else meetingCalendarMonth++;
-  renderMeetings();
-}
-function goMeetingToday(){
-  initMeetingCalendar();
-  renderMeetings();
-}
-
-function showDayMeetings(day){
-  const meetings=(window._meetingMonthData||{})[day]||[];
-  if(!meetings.length)return;
-
-  // 高亮并滚动到会议列表
-  renderMeetingList(day);
-  const listEl=document.getElementById('meetingList');
-  if(listEl)listEl.scrollIntoView({behavior:'smooth'});
-}
-
-function openQuickMeeting(dateStr){
-  openSmartModal();
-  document.getElementById('smartInput').value=dateStr+' ';
-  smartSetCat('meetings');
-  document.getElementById('smartInput').focus();
-}
+function renderMeetings(){renderMeetingList();}
 
 function renderMeetingList(highlightDay){
   const meetings=formalLedgerItems('meetings');
@@ -7226,7 +7107,7 @@ function saveSettings(){
   localStorage.setItem('wb_gitee_repo',repo);
   if(token)localStorage.setItem('wb_gitee_token',token);
   localStorage.setItem('wb_backup_interval',interval);
-  closeModal('settingsModal');
+  closeModal('settingsModal',true);
   loadSettings();
 
   toast('设置已保存');
@@ -7931,6 +7812,33 @@ function v16EnhanceContentHeaders(){
   const titles={todo:['工作台账','集中查看和维护工作记录。'],inspiration:['灵感','收集、筛选和归档日常灵感。'],quick:['速记箱','快速捕捉尚待整理的信息。'],提醒:['提醒','查看和管理当前有效提醒。'],contract:['合同','查询、筛选和维护合同记录。'],purchase:['采购','查询、筛选和维护采购事项。'],training:['培训记录','浏览和管理培训安排。'],expense:['报销','浏览和管理报销记录。'],agency:['委托','浏览和管理委托事项。'],handover:['交接','浏览和管理交接记录。'],fund:['经费','查看项目经费及开支。']};
   Object.entries(titles).forEach(([page,[title,subtitle]])=>{const root=document.getElementById('page-'+page);if(!root||root.querySelector(':scope > .v16-content-header'))return;const heading=document.createElement('div');heading.className='v16-content-header';heading.innerHTML='<div><h1>'+title+'</h1><p>'+subtitle+'</p></div>';root.insertBefore(heading,root.firstChild);});
 }
+let v16CalendarMonth='';
+let v16CalendarSelectedDate='';
+function v16DashboardCalendarMarkup(){return `<section class="card v16-dashboard-calendar"><div class="card-header"><span class="card-title">当月日程概览</span><div><button class="btn btn-sm btn-outline" onclick="shiftDashboardCalendar(-1)">‹ 上月</button><button class="btn btn-sm btn-outline" onclick="resetDashboardCalendar()">本月</button><button class="btn btn-sm btn-outline" onclick="shiftDashboardCalendar(1)">下月 ›</button></div></div><div id="v16CalendarLabel" class="v16-calendar-label"></div><div class="v16-calendar-weekdays"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div id="v16DashboardCalendarGrid" class="v16-dashboard-calendar-grid"></div><div id="v16CalendarDaySchedule" class="v16-calendar-day-schedule"></div></section>`;}
+function ensureDashboardCalendar(){const dashboard=document.getElementById('page-dashboard');if(dashboard&&!document.getElementById('v16DashboardCalendarGrid'))dashboard.insertAdjacentHTML('beforeend',v16DashboardCalendarMarkup());}
+function dashboardCalendarEntries(month){
+  const items=[];const add=(date,entry)=>{if(date&&date.startsWith(month))items.push(Object.assign({date},entry));};
+  DB.get('meetings').filter(m=>belongsToLedger('meetings',m)).forEach(m=>add(m.date,{kind:'会议',id:m.id,name:m.name||'未命名会议',time:m.startTime||'',place:m.location||m.type||''}));
+  DB.get('trainings').filter(t=>belongsToLedger('trainings',t)).forEach(t=>{
+    const start=t.startDate,end=t.endDate&&t.endDate>=start?t.endDate:start;if(!start)return;
+    for(let date=start,steps=0;date<=end&&steps<366;steps++,date=fmtLocalDate(new Date(new Date(date+'T00:00:00').getTime()+86400000)))add(date,{kind:'培训',id:t.id,name:t.name||'未命名培训',time:t.startTime||'',place:t.location||t.organizer||''});
+  });return items.sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+}
+function renderDashboardCalendar(){
+  const grid=document.getElementById('v16DashboardCalendarGrid');if(!grid)return;
+  const today=todayStr(),current=today.slice(0,7);if(!v16CalendarMonth)v16CalendarMonth=current;
+  const [year,month]=v16CalendarMonth.split('-').map(Number),entries=dashboardCalendarEntries(v16CalendarMonth),byDate={};entries.forEach(item=>(byDate[item.date]??=[]).push(item));
+  document.getElementById('v16CalendarLabel').textContent=year+'年'+month+'月 · 会议与培训';
+  const first=new Date(year,month-1,1),days=new Date(year,month,0).getDate(),lead=(first.getDay()+6)%7;let html='';
+  for(let i=0;i<lead;i++)html+='<span class="v16-calendar-empty"></span>';
+  for(let day=1;day<=days;day++){const date=v16CalendarMonth+'-'+String(day).padStart(2,'0'),count=(byDate[date]||[]).length;html+=`<button class="v16-calendar-day${date===today?' is-today':''}${date===v16CalendarSelectedDate?' is-selected':''}" onclick="selectDashboardCalendarDate('${date}')"><b>${day}</b>${count?'<small>'+count+' 项</small>':''}</button>`;}
+  grid.innerHTML=html;
+  const panel=document.getElementById('v16CalendarDaySchedule');if(!v16CalendarSelectedDate){panel.textContent='点击日期查看当天会议和培训。';return;}
+  const selected=byDate[v16CalendarSelectedDate]||[];panel.innerHTML=`<strong>${v16CalendarSelectedDate}</strong>`+(selected.length?selected.map(item=>`<button class="v16-calendar-entry" onclick="navigate('${item.kind==='会议'?'meeting':'training'}')">${esc(item.time||'全天')} · ${esc(item.kind)} · ${esc(item.name)}${item.place?' · '+esc(item.place):''}</button>`).join(''):'<span>当天暂无会议或培训。</span>');
+}
+function selectDashboardCalendarDate(date){v16CalendarSelectedDate=date;renderDashboardCalendar();}
+function shiftDashboardCalendar(delta){const d=new Date(v16CalendarMonth+'-01T00:00:00');d.setMonth(d.getMonth()+delta);v16CalendarMonth=fmtLocalDate(new Date(d.getFullYear(),d.getMonth(),1)).slice(0,7);v16CalendarSelectedDate='';renderDashboardCalendar();}
+function resetDashboardCalendar(){v16CalendarMonth=todayStr().slice(0,7);v16CalendarSelectedDate='';renderDashboardCalendar();}
 function v16Empty(text){return '<div class="empty-state v16-empty"><p>'+esc(text)+'</p></div>';}
 function v16List(items,render,empty){return items.length?items.map(render).join(''):v16Empty(empty);}
 function v16AlertData(){
@@ -7953,6 +7861,7 @@ function renderDashboard(){
   const funds=DB.get('funds').filter(f=>belongsToLedger('funds',f));document.getElementById('v16Funds').innerHTML=v16List(funds,f=>{const usage=v16FundUsage(f.id),budget=Number(f.budget)||0,pct=budget?Math.min(100,Math.round(usage.used/budget*100)):0;return `<button class="v16-fund" onclick="navigate('fund')"><span>${esc(f.name)}</span><small>${fmtCNY(budget)} · 已用 ${fmtCNY(usage.used)} · 剩余 ${fmtCNY(budget-usage.used)}</small><i><b style="width:${pct}%"></b></i></button>`;},'暂无经费项目。');
   const datePlus=n=>fmtLocalDate(new Date(new Date(today+'T00:00:00').getTime()+n*86400000));const meetings=DB.get('meetings').filter(m=>m.date&&m.date>=today&&m.date<=datePlus(7)),trainings=DB.get('trainings').filter(t=>t.startDate&&t.startDate>=today&&t.startDate<=datePlus(14));document.getElementById('v16Schedule').innerHTML=v16List([...meetings.map(m=>({x:m,kind:'会议',date:m.date,place:m.location||m.type||''})),...trainings.map(t=>({x:t,kind:'培训',date:t.startDate,place:t.location||t.type||''}))].sort((a,b)=>a.date.localeCompare(b.date)),e=>`<button class="v16-row" onclick="navigate('${e.kind==='会议'?'meeting':'training'}')"><span>${esc(e.kind)} · ${esc(e.x.name)}</span><small>${esc(e.date)} ${esc(e.place)}</small></button>`,'未来 7/14 天暂无会议或培训。');
   const purchases=active.filter(r=>r._ledger==='purchases');document.getElementById('v16Purchases').innerHTML=v16List(purchases,r=>`<button class="v16-row" onclick="navigate('purchase')"><span>${esc(r.name)}</span><small>${esc(r.assignee||'未指定经办人')} · ${esc(recordState('purchases',r))}${getDueDate(r,'purchases')?' · '+esc(getDueDate(r,'purchases')):''}${isOverdue(r,'purchases')?' · 逾期':''}</small></button>`,'暂无未完成采购事项。');
+  renderDashboardCalendar();
 }
 function v16FundUsage(fundId){const records=DB.get('fundRecords').filter(r=>String(r.fundId)===String(fundId));const expenses=DB.get('expenses').filter(e=>String(expenseFundId(e))===String(fundId)&&!records.some(r=>String(r.expenseRef)===String(e.id)));return {records:[...records,...expenses.map(e=>({amount:e.amount,date:e.appDate,content:e.content}))],used:[...records,...expenses].reduce((n,r)=>n+(Number(r.amount)||0),0)};}
 function shiftSummaryMonth(delta){const start=summaryDateRange?.start||todayStr();const d=new Date(start+'T00:00:00');d.setMonth(d.getMonth()+delta,1);const y=d.getFullYear(),m=d.getMonth();summaryDateRange={preset:'v16-month',start:fmtLocalDate(new Date(y,m,1)),end:fmtLocalDate(new Date(y,m+1,0))};renderSummary();}
@@ -7977,13 +7886,31 @@ saveTodo=function(){
   return _v16SaveTodo();
 };
 
-function modalFingerprint(modal){return JSON.stringify([...modal.querySelectorAll('input,textarea,select')].map(el=>[el.id,el.type==='checkbox'?el.checked:el.value]));}
-const _v16OpenModal=openModal;openModal=function(id){_v16OpenModal(id);const modal=document.getElementById(id);if(modal)V16_MODAL_BASELINES[id]=modalFingerprint(modal);};
-const _v16CloseModal=closeModal;closeModal=function(id,force=false){const modal=document.getElementById(id);if(!modal)return;if(force||modalFingerprint(modal)===V16_MODAL_BASELINES[id]){_v16CloseModal(id);return;}showUnsavedConfirm(id);};
-function showUnsavedConfirm(id){let dialog=document.getElementById('v16UnsavedConfirm');if(!dialog){dialog=document.createElement('div');dialog.id='v16UnsavedConfirm';dialog.className='modal-overlay';dialog.innerHTML='<div class="modal v16-confirm"><div class="modal-header"><span class="modal-title">当前内容尚未保存</span></div><div class="modal-body">确定要退出吗？</div><div class="modal-footer"><button class="btn btn-outline" id="v16ContinueEdit">继续编辑</button><button class="btn btn-danger" id="v16DiscardEdit">放弃修改</button></div></div>';document.body.appendChild(dialog);}dialog.classList.add('open');document.getElementById('v16ContinueEdit').onclick=()=>dialog.classList.remove('open');document.getElementById('v16DiscardEdit').onclick=()=>{dialog.classList.remove('open');delete V16_MODAL_BASELINES[id];_v16CloseModal(id);};}
-// 捕获阶段接管所有表单 × / 取消，避免内联 onclick 在 dirty 判断前直接关闭。
-document.addEventListener('click',e=>{const button=e.target.closest('.modal-overlay.open .close-btn, .modal-overlay.open .modal-footer button');if(!button||button.closest('#v16UnsavedConfirm'))return;const modal=button.closest('.modal-overlay');if(!modal)return;const text=(button.textContent||'').trim();if(button.classList.contains('close-btn')||text==='取消'||text==='关闭'){e.preventDefault();e.stopImmediatePropagation();closeModal(modal.id);}},true);
-document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const modal=[...document.querySelectorAll('.modal-overlay.open')].find(x=>x.id!=='v16UnsavedConfirm');if(modal){e.preventDefault();e.stopImmediatePropagation();closeModal(modal.id);}},true);
+function modalFingerprint(modal){return JSON.stringify([...modal.querySelectorAll('input,textarea,select')].map(el=>[el.id,el.type==='checkbox'||el.type==='radio'?el.checked:el.value]));}
+const _v16OpenModal=openModal;
+const _v16CloseModal=closeModal;
+function requestModalClose(id){
+  const modal=document.getElementById(id);if(!modal||!modal.classList.contains('open'))return;
+  const initial=V16_MODAL_BASELINES[id];
+  if(initial===undefined||modalFingerprint(modal)===initial){delete V16_MODAL_BASELINES[id];_v16CloseModal(id);return;}
+  showUnsavedConfirm(id);
+}
+openModal=function(id){_v16OpenModal(id);const modal=document.getElementById(id);if(modal)V16_MODAL_BASELINES[id]=modalFingerprint(modal);};
+closeModal=function(id,force=false){if(force){delete V16_MODAL_BASELINES[id];_v16CloseModal(id);return;}requestModalClose(id);};
+function showUnsavedConfirm(id){let dialog=document.getElementById('v16UnsavedConfirm');if(!dialog){dialog=document.createElement('div');dialog.id='v16UnsavedConfirm';dialog.className='modal-overlay';dialog.innerHTML='<div class="modal v16-confirm"><div class="modal-header"><span class="modal-title">当前内容尚未保存</span></div><div class="modal-body">放弃修改后，本次填写的内容将不会保存。</div><div class="modal-footer"><button class="btn btn-outline" id="v16ContinueEdit">继续编辑</button><button class="btn btn-danger" id="v16DiscardEdit">放弃修改</button></div></div>';document.body.appendChild(dialog);}dialog.classList.add('open');document.getElementById('v16ContinueEdit').onclick=()=>dialog.classList.remove('open');document.getElementById('v16DiscardEdit').onclick=()=>{dialog.classList.remove('open');delete V16_MODAL_BASELINES[id];_v16CloseModal(id);};}
+function wireModalCloseEntrypoints(){
+  document.querySelectorAll('.modal-overlay').forEach(modal=>{
+    if(modal.id==='v16UnsavedConfirm')return;
+    modal.addEventListener('click',event=>{if(event.target===modal){event.preventDefault();event.stopPropagation();}});
+    modal.querySelectorAll('.close-btn,.modal-footer button').forEach(button=>{
+      const text=(button.textContent||'').trim();
+      if(!button.classList.contains('close-btn')&&text!=='取消'&&text!=='关闭')return;
+      button.onclick=event=>{event.preventDefault();requestModalClose(modal.id);return false;};
+    });
+  });
+}
+wireModalCloseEntrypoints();
+document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;const modal=[...document.querySelectorAll('.modal-overlay.open')].find(item=>item.id!=='v16UnsavedConfirm');if(modal){event.preventDefault();requestModalClose(modal.id);}},true);
 
 // ============================================================
 //  INIT
@@ -8017,6 +7944,7 @@ checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/
 (function(){
   v16ReplaceSurfaces();
   v16EnhanceContentHeaders();
+  ensureDashboardCalendar();
   renderDashboard();
   // 每小时检查一次截止提醒
   setInterval(()=>{
