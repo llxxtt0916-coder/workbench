@@ -1825,8 +1825,11 @@ tr:hover td {
 .grid-5{gap:var(--space-grid)!important}.v16-section{margin-bottom:var(--space-grid)}
 @media (max-width:700px){.v16-content-header{display:block}.v16-content-header>div:last-child{margin-top:12px}.v16-todo-meta{gap:8px}.todo-card-actions{justify-content:flex-start;margin-top:8px}}
 
-/* v1.6 第三轮：仅供驾驶舱日程概览使用的轻量月历。 */
+/* v1.6 第四轮：仅供驾驶舱月度工作日历使用的最小布局。 */
 .v16-dashboard-calendar{margin-top:var(--space-grid)}
+.v16-calendar-controls{display:flex;gap:4px;align-items:center}
+.v16-calendar-month-picker{display:flex;gap:8px;align-items:center;margin:0 0 8px;font-size:12px;color:var(--color-text2)}
+.v16-calendar-month-picker label{display:flex;gap:4px;align-items:center}.v16-calendar-month-picker input,.v16-calendar-month-picker select{width:auto;min-width:72px}
 .v16-calendar-label{font-size:12px;color:var(--color-text2);margin-bottom:8px}
 .v16-calendar-weekdays,.v16-dashboard-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .v16-calendar-weekdays span{text-align:center;font-size:11px;color:var(--color-text3)}
@@ -1835,6 +1838,7 @@ tr:hover td {
 .v16-calendar-day.is-today{border-color:var(--color-primary)}.v16-calendar-day.is-selected{background:var(--color-primary-light)}
 .v16-calendar-empty{min-height:48px}.v16-calendar-day-schedule{margin-top:12px;font-size:12px;color:var(--color-text2)}
 .v16-calendar-day-schedule strong{display:block;color:var(--color-text);margin-bottom:5px}.v16-calendar-day-schedule span{display:block}
+.v16-calendar-day-group{margin-top:8px}.v16-calendar-day-group>strong{font-size:12px}
 .v16-calendar-entry{display:block;text-align:left;padding:4px 0;color:var(--color-text2);font-size:12px}
 
 /* 悬浮按钮角标（速记收件箱计数） */

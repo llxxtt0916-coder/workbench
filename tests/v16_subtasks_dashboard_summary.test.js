@@ -31,7 +31,7 @@ function fmtCNY(n){return '¥'+Number(n).toFixed(2);} function navigate(){} func
 function setState(key,id,state){statusWrites++;return {key,id,state};} function openModal(){} function closeModal(){} function saveTodo(){}
 const document=doc; const navigator={}; const confirm=()=>true; const prompt=()=>null;
 ${source}
-({normalizeSubtasks,workSubtasks,subtaskSummary,ensureV16Data,toggleSubtask,writeWorkSubtasks,moveSubtaskTo,setState,v16AlertData,v16MonthData,monthlySummaryText,dashboardCalendarEntries,modalFingerprint,v16ExpandedSubtasks,messages})`,sandbox);
+({normalizeSubtasks,workSubtasks,subtaskSummary,ensureV16Data,toggleSubtask,writeWorkSubtasks,moveSubtaskTo,setState,v16AlertData,v16MonthData,monthlySummaryText,dashboardCalendarEntries,completedCalendarDate,v16ExpandedSubtasks,messages})`,sandbox);
 
 // 历史数据无 subtasks 与旧 text/done 格式均应兼容，不改父记录 ID。
 rows.todos=[
@@ -105,27 +105,64 @@ api.ensureV16Data();
 assert.equal(rows.todos[0].owner_ledger,'todos','长期目标迁移不得遗留不存在的 goals owner_ledger');
 
 const expenseSource=section('function expenseStateTotals','function renderExpenses');
-const expenseApi=vm.runInNewContext(`const STATE={TODO:'TODO',DOING:'DOING',DONE:'DONE',CLOSED:'CLOSED'};function recordState(_k,r){return r.state;}${expenseSource};expenseStateTotals`,{});
-const totals=expenseApi([{amount:100,state:'TODO'},{amount:200,state:'DOING'},{amount:300,state:'DONE'},{amount:400,state:'CLOSED'}]);
+const expenseApi=vm.runInNewContext(`const STATE={TODO:'TODO',DOING:'DOING',DONE:'DONE',CLOSED:'CLOSED'};function recordState(_k,r){return r.state;}${expenseSource};({expenseStateTotals,expenseMonthlyReimbursed})`,{});
+const totals=expenseApi.expenseStateTotals([{amount:100,state:'TODO'},{amount:200,state:'DOING'},{amount:300,state:'DONE'},{amount:400,state:'CLOSED'}]);
 assert.equal(totals.pendingAmount,300,'未开始/进行中才计入待报销金额');
 assert.equal(totals.approvedAmount,300,'只有已完成计入已报销金额，已关闭不得混入');
 assert.equal(totals.all.length,4,'已关闭记录仍属于报销台账总记录数');
+const monthlyReimbursed=expenseApi.expenseMonthlyReimbursed([
+  {amount:100,state:'TODO',reimbDate:'2026-09-05'},
+  {amount:200,state:'DOING',reimbDate:'2026-09-06'},
+  {amount:100,state:'DONE',reimbDate:'2026-09-07'},
+  {amount:2000,state:'DONE',closed_at:'2026-09-08T10:00:00.000Z'},
+  {amount:200,state:'CLOSED',reimbDate:'2026-09-09'}
+],'2026-09');
+assert.equal(monthlyReimbursed.reduce((n,e)=>n+e.amount,0),2100,'本月支出只统计本月已完成报销，已关闭不得计入');
 
 rows.meetings=[{id:1,name:'例会',date:'2026-09-21',startTime:'09:00'}];
 rows.trainings=[{id:2,name:'培训',startDate:'2026-09-21',endDate:'2026-09-22',organizer:'疾控'}];
+rows.todos=[
+  {id:41,name:'完成工作',state:'DONE',completeDate:'2026-09-21',subtasks:[]},
+  {id:42,name:'长期工作',state:'DOING',subtasks:[{id:'c1',name:'完成步骤',completed:true,completed_date:'2026-09-21',sort_order:0}]},
+  {id:43,name:'已关闭工作',state:'CLOSED',completeDate:'2026-09-21',subtasks:[]}
+];
+rows.purchases=[{id:51,name:'完成采购',state:'DONE',closed_at:'2026-09-21T08:00:00.000Z'}];
+rows.contracts=[{id:52,name:'完成合同',state:'DONE',completeDate:'2026-09-21'}];
+rows.expenses=[{id:53,content:'完成报销',state:'DONE',reimbDate:'2026-09-21'},{id:54,content:'已关闭报销',state:'CLOSED',reimbDate:'2026-09-21'}];
+rows.agencys=[{id:55,name:'完成委托',state:'DONE',doneDate:'2026-09-21'}];
+rows.handovers=[{id:56,matter:'完成交接',state:'DONE',completedDate:'2026-09-21'}];
 const calendar=api.dashboardCalendarEntries('2026-09');
-assert.equal(calendar.filter(x=>x.date==='2026-09-21').map(x=>x.kind).join(','),'会议,培训','驾驶舱月历须聚合当天会议和培训');
+const day21=calendar.filter(x=>x.date==='2026-09-21');
+assert(day21.some(x=>x.kind==='会议'&&x.source==='schedule')&&day21.some(x=>x.kind==='培训'&&x.source==='schedule'),'驾驶舱月历须聚合当天会议和培训');
 assert(calendar.some(x=>x.date==='2026-09-22'&&x.kind==='培训'),'跨日培训应在每个培训日期显示');
+assert.equal(day21.filter(x=>x.source==='completed').map(x=>x.kind).sort().join(','),['合同','子任务','工作','交接','委托','报销','采购'].sort().join(','),'完成日历须聚合各业务完成事项与子任务');
+assert(!calendar.some(x=>x.name==='已关闭工作'||x.name==='已关闭报销'),'已关闭事项不得进入完成日历');
 
-// snapshot 的 todos 数组必须原样保留子任务字段；表单保护不得再绑定遮罩关闭。
+const pickerSource=section('function toggleDashboardCalendarPicker','function v16Empty');
+const pickerNodes={v16CalendarMonthPicker:{hidden:true},v16CalendarYearInput:{value:''},v16CalendarMonthInput:{value:''}};
+const pickerApi=vm.runInNewContext(`
+let v16CalendarMonth='2026-09';let v16CalendarSelectedDate='2026-09-21';let rendered=0;
+const document={getElementById:id=>pickerNodes[id]};function toast(){}function renderDashboardCalendar(){rendered++;}
+${pickerSource}
+({toggleDashboardCalendarPicker,applyDashboardCalendarMonth,state:()=>({month:v16CalendarMonth,selected:v16CalendarSelectedDate,rendered})})`,{pickerNodes});
+pickerApi.toggleDashboardCalendarPicker();
+assert.equal(pickerNodes.v16CalendarYearInput.value,2026,'点击当前年月应打开并预填年份');
+assert.equal(Number(pickerNodes.v16CalendarMonthInput.value),9,'点击当前年月应打开并预填月份');
+pickerNodes.v16CalendarYearInput.value='2032';pickerNodes.v16CalendarMonthInput.value='11';pickerApi.applyDashboardCalendarMonth();
+const pickerState=pickerApi.state();
+assert.equal(pickerState.month,'2032-11','年月选择器应支持直接跳转任意业务年份月份');
+assert.equal(pickerState.selected,'','年月跳转后应清空原日期选择');
+assert.equal(pickerState.rendered,1,'年月跳转后应重新渲染日历');
+
+// snapshot 的 todos 数组必须原样保留子任务字段；表单仅保留直接关闭和遮罩拦截。
 assert.equal(monthApi.subs[0].sub.completed_date,'2026-09-12','snapshot 序列化前不得遗漏子任务完成日期');
 assert(!html.includes("if(e.target===this)closeModal(this.id)"),'遮罩点击不得关闭表单');
-assert(html.includes("event.key!=='Escape'"),'ESC 必须进入统一未保存检查');
-assert(html.includes('继续编辑')&&html.includes('放弃修改'),'未保存确认必须提供两种明确操作');
-assert(html.includes('function requestModalClose(id)')&&html.includes('wireModalCloseEntrypoints()'),'× / 取消必须进入统一真实关闭入口');
+assert(html.includes("event.key!=='Escape'")&&html.includes('closeModal(modal.id);'),'ESC 必须直接关闭当前弹窗');
+assert(!html.includes('modalFingerprint')&&!html.includes('requestModalClose')&&!html.includes('继续编辑')&&!html.includes('放弃修改'),'未保存确认与 snapshot 逻辑必须清理');
+['todoModal','contractModal','purchaseModal','expenseModal','meetingModal','trainingModal','agencyModal','handoverModal','smartModal'].forEach(id=>assert(html.includes(`closeModal('${id}')`),`${id} 的 × / 取消必须直接调用统一关闭函数`));
 assert(html.includes('v16TodoCategory')&&html.includes('todoLedgerTabs'),'待办必须从统一待办源提供所属板块分类');
 assert(html.includes('deleteActiveItem')&&html.includes('todo-delete'),'每条待办必须保留删除入口');
 assert(html.includes('开始 ${esc(r.issueDate||r.date||')&&html.includes('经办人 ${esc(r.assignee||'), '待办卡必须渲染开始日期、截止日期、经办人和优先级');
 assert(!html.includes('meetingCalendarGrid')&&!html.includes('renderMeetingCalendar'),'会议页面不得保留月历 DOM 或专属渲染逻辑');
-assert(html.includes('dashboardCalendarEntries')&&html.includes('v16DashboardCalendarGrid'),'驾驶舱月历必须直接汇总会议与培训数据');
-console.log('v1.6 子任务、驾驶舱口径、本月摘要、同步字段与表单保护测试通过');
+assert(html.includes('dashboardCalendarEntries')&&html.includes('v16DashboardCalendarGrid')&&html.includes('toggleDashboardCalendarPicker')&&html.includes('applyDashboardCalendarMonth'),'驾驶舱月历必须支持日程/完成事项汇总与年月跳转');
+console.log('v1.6 子任务、驾驶舱口径、本月摘要、同步字段、报销与月度工作日历测试通过');
