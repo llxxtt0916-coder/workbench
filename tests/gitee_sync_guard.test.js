@@ -84,11 +84,13 @@ function names(rows){return rows.map(r=>r.name);}
 (async()=>{
   const old=[{id:1,name:'A'},{id:2,name:'B'},{id:3,name:'C'}];
   const server=createServer({todos:old,trainings:[{id:10,name:'旧培训'}],otherMetadata:{kept:true}});
-  const pc=createDevice(server,{todos:[{id:4,name:'D'}],trainings:[]});
+  const syncedSubtask={id:'sub-1',name:'同步子任务',start_date:'2026-09-01',due_date:'2026-09-10',completed_date:'2026-09-09',completed:true,sort_order:0,created_at:'2026-09-01',updated_at:'2026-09-09'};
+  const pc=createDevice(server,{todos:[{id:4,name:'D',subtasks:[syncedSubtask]}],trainings:[]});
   assert.equal(await pc.gitee.push(),'ok');
   const actualPut=server.writes[0];
   const decodedPut=JSON.parse(decodeURIComponent(escape(atob(actualPut.body.content))));
   assert.deepEqual(names(decodedPut.todos),['D'],'链路 Case 1：实际 PUT content 必须只有 D');
+  assert.deepEqual(decodedPut.todos[0].subtasks,[syncedSubtask],'v1.6：实际 Gitee snapshot 必须完整保留子任务 ID、排序、状态和日期');
   pc.keys.forEach(key=>assert.deepEqual(decodedPut[key],JSON.parse(JSON.stringify(pc.dumpData()[key])),
     `链路 Case 1：实际 PUT ${key} 必须等于当前本机快照`));
   assert.equal(actualPut.body.branch,'main');

@@ -454,9 +454,13 @@
 
     <!-- ====== 待办 PAGE (v1.4 跨七台账活跃态视图) ====== -->
     <div class="page" id="page-待办">
-      <div class="section-header">
+      <div class="v16-content-header">
+        <div><h1>待办</h1><p id="todoActiveSummary">当前需要继续推进的事项。</p></div>
+      </div>
+      <div class="v16-tool-row" id="todoLedgerTabs" aria-label="待办所属板块"></div>
+      <div class="section-header v16-subheader">
         <div class="section-header-right">
-          <span style="font-size:12px;color:var(--color-text3)" id="todoActiveSummary"></span>
+          <span class="section-note">按所属板块查看，状态、整理和删除仍使用原有业务数据。</span>
         </div>
       </div>
       <div id="reminderBanner" style="display:none"></div>
@@ -465,10 +469,8 @@
 
     <!-- ====== 长期目标 PAGE (v1.4：从待办独立出来) ====== -->
     <div class="page" id="page-长期目标">
-      <div class="section-header">
-        <div class="section-header-right">
-          <span style="font-size:12px;color:var(--color-text3)" id="goalSummary"></span>
-        </div>
+      <div class="v16-content-header">
+        <div><h1>长期目标</h1><p id="goalSummary">独立长期目标，不等同于跨月推进的普通工作。</p></div>
       </div>
       <div id="goalList" class="goal-list"></div>
     </div>
@@ -614,27 +616,15 @@
 
     <!-- ====== MEETING PAGE ====== -->
     <div class="page" id="page-meeting">
-      <div class="section-header">
-        <span style="font-size:16px;font-weight:600" id="meetingMonthTitle">2026年6月</span>
-        <div style="display:flex;gap:6px;align-items:center">
-          <button class="btn btn-sm btn-outline" onclick="prevMeetingMonth()">◀ 上月</button>
-          <button class="btn btn-sm btn-outline" onclick="goMeetingToday()">今天</button>
-          <button class="btn btn-sm btn-outline" onclick="nextMeetingMonth()">下月 ▶</button>
-        </div>
+      <div class="v16-content-header">
+        <div><h1>会议日程</h1><p>以列表方式浏览、搜索和管理会议记录。</p></div>
         <div style="display:flex;gap:6px">
           <button class="btn btn-sm btn-outline" onclick="exportModuleCSV('meeting')">导出</button>
         </div>
       </div>
-      <!-- 日历网格 -->
-      <div style="margin-bottom:16px;background:var(--color-bg-card);border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
-        <div class="cal-weekdays" style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--color-text3);padding:4px 0 8px 0;font-weight:500">
-          <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span style="color:var(--color-danger)">六</span><span style="color:var(--color-danger)">日</span>
-        </div>
-        <div id="meetingCalendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"></div>
-      </div>
       <!-- 会议列表 -->
-      <div class="section-header" style="margin-top:0">
-        <span style="font-size:16px;font-weight:600">会议列表</span>
+      <div class="v16-tool-row">
+        <span class="v16-list-title">会议列表</span>
         <div style="display:flex;gap:6px">
           <select id="meetingF_type" onchange="renderMeetings()" style="font-size:12px;padding:4px 8px;border:1px solid var(--color-border);border-radius:6px">
             <option value="">全部类型</option>
@@ -1013,6 +1003,10 @@
       <div class="form-group">
         <label class="form-label">堵点卡点</label>
         <textarea class="form-control" id="todoBlocker" rows="2" placeholder="当前遇到的困难、阻碍…"></textarea>
+      </div>
+      <div class="form-group" id="todoSubtasksGroup">
+        <label class="form-label">子任务</label>
+        <div id="todoSubtasksReadonly" class="form-hint">子任务请在「待办」中的工作卡片下直接维护。</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -2770,9 +2764,9 @@ function updateGoalBadge(n){
 function renderGoals(){
   const box=document.getElementById('goalList');
   if(!box) return;
-  const all=getAllLedgerItems().filter(r=>r.is_goal);
-  const active=all.filter(r=>r.state===STATE.TODO||r.state===STATE.DOING);
-  const done=all.filter(r=>r.state===STATE.DONE||r.state===STATE.CLOSED);
+  const all=getAllLedgerItems().filter(r=>r._ledger==='todos'&&r.is_goal);
+  const active=all.filter(r=>[STATE.TODO,STATE.DOING].includes(recordState('todos',r)));
+  const done=all.filter(r=>[STATE.DONE,STATE.CLOSED].includes(recordState('todos',r)));
   updateGoalBadge(active.length);
   const sumEl=document.getElementById('goalSummary');
   if(sumEl) sumEl.textContent='共 '+all.length+' 个目标（进行中 '+active.length+'）';
@@ -2828,7 +2822,8 @@ function refreshDataBadges(){
   updateTodoBadge();
   updateRemindBadge();
   updateQuickBadge();
-  updateGoalBadge(DB.get('todos').filter(r=>r.is_goal && [STATE.TODO,STATE.DOING].includes(recordState('todos',r))).length);
+  // 与长期目标页面使用同一来源，避免角标和实际列表口径漂移。
+  updateGoalBadge(getAllLedgerItems().filter(r=>r._ledger==='todos'&&r.is_goal&&[STATE.TODO,STATE.DOING].includes(recordState('todos',r))).length);
   const todos=formalLedgerItems('todos');
   TODO_TYPES.forEach(type=>{
     const n=todos.length;
@@ -3266,10 +3261,12 @@ function hideLifecycleStatusField(modalId){
     const group=el.closest('.form-group');if(group)group.style.display='none';
   });
 }
-function closeModal(id){document.getElementById(id).classList.remove('open')}
+function closeModal(id){const modal=document.getElementById(id);if(modal)modal.classList.remove('open')}
 document.querySelectorAll('.modal-overlay').forEach(m=>{
-  m.addEventListener('click',function(e){if(e.target===this)closeModal(this.id)});
+  m.addEventListener('click',function(e){if(e.target===this)e.stopPropagation();});
 });
+// 表单遮罩从不关闭；用户主动按 ESC 时直接关闭最上层业务弹窗。
+document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;const modal=[...document.querySelectorAll('.modal-overlay.open')].reverse()[0];if(modal){event.preventDefault();closeModal(modal.id);}},true);
 
 // ============================================================
 //  TOAST
@@ -3559,12 +3556,13 @@ function renderDashboard() {
     <div style="font-size:22px;font-weight:700;color:var(--color-teal)">${fmtCNY(totalPurchaseAmt)}</div>
     <div style="width:100%;height:5px;background:var(--color-bg2);border-radius:3px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${Math.round(totalPurchaseAmt/maxLedger*100)}%;background:var(--color-teal);border-radius:3px"></div></div>
   </div>`;
-  const reimbSum = expenses.filter(e=>e.status==='已报销').reduce((s,e)=>s+(+e.amount||0),0);
-  const pendingSum = expenses.filter(e=>e.status!=='已报销').reduce((s,e)=>s+(+e.amount||0),0);
+  const expenseTotals=expenseStateTotals(DB.get('expenses').filter(e=>belongsToLedger('expenses',e)));
+  const reimbSum=expenseTotals.approvedAmount;
+  const pendingSum=expenseTotals.pendingAmount;
   const fullExp = reimbSum+pendingSum||1;const reimbPct = Math.round(reimbSum/fullExp*100);
   const reimbArc = 125.7;const reimbLen = Math.min(reimbPct*reimbArc/100, reimbArc);
   document.getElementById('dashLgExpenseInner').innerHTML = `<div style="display:flex;flex-direction:column;align-items:center">
-    <div style="font-size:11px;color:var(--color-text2);margin-bottom:4px"><strong>🧾 报销</strong> ${expenses.length}笔</div>
+    <div style="font-size:11px;color:var(--color-text2);margin-bottom:4px"><strong>🧾 报销</strong> ${expenseTotals.all.length}笔</div>
     <div style="position:relative;width:56px;height:56px"><svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="20" fill="none" stroke="#f3f4f6" stroke-width="6"/><circle cx="28" cy="28" r="20" fill="none" stroke="#22c55e" stroke-width="6" stroke-linecap="round" stroke-dasharray="${reimbLen} ${reimbArc-reimbLen}" transform="rotate(-90,28,28)"/></svg><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:11px;font-weight:600;color:#22c55e">${reimbPct}%</div></div>
     <div style="display:flex;gap:4px;font-size:10px;color:var(--color-text3);margin-top:4px"><span>已报 ${fmtCNY(reimbSum)}</span><span>待报 ${fmtCNY(pendingSum)}</span></div>
   </div>`;
@@ -3946,7 +3944,7 @@ function renderTodo(){
 
   document.getElementById('todoTabContent').innerHTML=filtered.map(t=>{
     const isRecord=activeTodoTab==='record';
-    const sd=(t.subtasks||[]).filter(s=>s.done).length;
+    const sd=workSubtasks(t).filter(s=>s.completed).length;
     const st=(t.subtasks||[]).length;
     const cats=toArray(t.category).filter(Boolean);
     const srcs=toArray(t.source).filter(Boolean);
@@ -4169,7 +4167,8 @@ function saveTodo(){
     const i=todosRaw.findIndex(t=>t.id===id);
     if(i>-1){
       const old=todosRaw[i];
-      item.subtasks=old.subtasks||[];
+      // 子任务仅由待办工作卡片维护；整理父工作时必须完整保留其历史。
+      item.subtasks=normalizeSubtasks(old.subtasks||[],old.id);
       item.completeDate=old.completeDate||'';
       item.status=old.status||'未开始';
       item._prevType=old._prevType;
@@ -4223,6 +4222,13 @@ function editTodo(id){
   document.getElementById('todoDeadline').value=t.deadline||'';
   document.getElementById('todoBlocker').value=t.blocker||'';
   document.getElementById('todoAssignee').value=t.assignee||'';
+  const subtaskHint=document.getElementById('todoSubtasksReadonly');
+  if(subtaskHint){
+    const summary=subtaskSummary(t);
+    subtaskHint.textContent=summary.total
+      ? '当前共有 '+summary.total+' 个子任务，已完成 '+summary.done+' 个；请在「待办」工作卡片下维护。'
+      : '暂无子任务；请在「待办」工作卡片下新增和维护。';
+  }
   // 加载周期配置
   if((t.type==='record'?t._prevType:t.type)==='recurring'){
     document.getElementById('recurrenceConfig').style.display='block';
@@ -4244,6 +4250,8 @@ function clearTodoForm(){
   document.getElementById('todoPriority').value='不重要不紧急';
   document.getElementById('todoType').value='';
   document.getElementById('todoModalTitle').textContent='新建工作';
+  const subtaskHint=document.getElementById('todoSubtasksReadonly');
+  if(subtaskHint)subtaskHint.textContent='子任务请在「待办」中的工作卡片下直接维护。';
   setMultiSelected('todoCategory',[]);
   setMultiSelected('todoSource',[]);
   // 重置周期字段
@@ -4263,10 +4271,11 @@ function deleteTodo(id){
   if(t)t.deleted=true;
   DB.set('todos',todos);
   renderTodo();
+  if(currentPage==='待办')renderTodos();
   toast('已删除');
 }
 
-document.getElementById('todoModal').addEventListener('click',function(e){if(e.target===this)closeModal('todoModal')});
+document.getElementById('todoModal').addEventListener('click',function(e){if(e.target===this)e.stopPropagation();});
 // 类型切换时显示/隐藏周期配置
 document.getElementById('todoType').addEventListener('change',function(){
   document.getElementById('recurrenceConfig').style.display=this.value==='recurring'?'block':'none';
@@ -6138,14 +6147,32 @@ function clearFundRecordForm(){
 //  EXPENSE
 // ============================================================
 const expenseStatusBadge={待报销:'badge-yellow',已报销:'badge-green'};
+function expenseStateTotals(expenses){
+  const all=expenses||[];
+  const approved=all.filter(e=>recordState('expenses',e)===STATE.DONE);
+  const pending=all.filter(e=>[STATE.TODO,STATE.DOING].includes(recordState('expenses',e)));
+  const sum=rows=>rows.reduce((n,e)=>n+(Number(e.amount)||0),0);
+  return {all,approved,pending,approvedAmount:sum(approved),pendingAmount:sum(pending)};
+}
+// 报销页本月支出只代表本月实际已报销金额；不与项目经费开支口径混用。
+// 同一条记录只取一个完成日期：实际报销日期优先，其次是显式完成日期，最后才回退统一状态完成时间。
+function getExpenseCompletedDate(record){
+  return String(record?.reimbDate||record?.completeDate||record?.completedDate||record?.closed_at||'').slice(0,10);
+}
+function expenseMonthlyReimbursed(expenses,month){
+  return (expenses||[]).filter(e=>recordState('expenses',e)===STATE.DONE&&getExpenseCompletedDate(e).slice(0,7)===month);
+}
 
 function renderExpenses(){
   const expenses=formalLedgerItems('expenses');
+  const allExpenses=DB.get('expenses').filter(e=>belongsToLedger('expenses',e));
   const now=new Date().toISOString().slice(0,7);
-  const monthExp=expenses.filter(e=>e.appDate&&e.appDate.startsWith(now));
-  const monthSum=monthExp.reduce((s,e)=>s+(+e.amount||0),0);
-  const approvedSum=expenses.filter(e=>e.status==='已报销').reduce((s,e)=>s+(+e.amount||0),0);
-  const pendingSum=expenses.filter(e=>e.status==='待报销').reduce((s,e)=>s+(+e.amount||0),0);
+  const monthReimbursed=expenseMonthlyReimbursed(allExpenses,now);
+  const monthSum=monthReimbursed.reduce((s,e)=>s+(+e.amount||0),0);
+  // 统计以统一生命周期 state 为准，金额和数量可共享同一口径，不能依赖旧 status 文案。
+  const reimbursement=expenseStateTotals(allExpenses);
+  const approvedSum=reimbursement.approvedAmount;
+  const pendingSum=reimbursement.pendingAmount;
 
   document.getElementById('expMonth').textContent='¥'+fmt(monthSum);
   document.getElementById('expApproved').textContent='¥'+fmt(approvedSum);
@@ -6333,114 +6360,9 @@ function deleteExpense(id){
 
 // ============================================================
 //  MEETING SCHEDULE  (P1-3)
+//  会议内容页只保留管理列表；月度日程概览由驾驶舱统一提供。
 // ============================================================
-
-let meetingCalendarYear, meetingCalendarMonth;
-
-function initMeetingCalendar(){
-  const now=new Date();
-  meetingCalendarYear=now.getFullYear();
-  meetingCalendarMonth=now.getMonth()+1;
-}
-
-function renderMeetings(){
-  if(!meetingCalendarYear)initMeetingCalendar();
-  renderMeetingCalendar(meetingCalendarYear,meetingCalendarMonth);
-  renderMeetingList();
-}
-
-function renderMeetingCalendar(year,month){
-  meetingCalendarYear=year;meetingCalendarMonth=month;
-  document.getElementById('meetingMonthTitle').textContent=year+'年'+month+'月';
-
-  const firstDay=new Date(year,month-1,1);
-  const lastDay=new Date(year,month,0);
-  const daysInMonth=lastDay.getDate();
-  // 周一=0
-  let startDayOfWeek=firstDay.getDay(); // 0=周日
-  startDayOfWeek=startDayOfWeek===0?6:startDayOfWeek-1; // 调整为周一=0
-
-  const today=new Date();
-  const todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
-
-  const meetings=formalLedgerItems('meetings');
-  // 本月有会议的日期
-  const meetingDates={};
-  meetings.forEach(m=>{
-    if(!m.deleted&&m.date){
-      const d=new Date(m.date);
-      if(d.getFullYear()===year&&(d.getMonth()+1)===month){
-        const day=d.getDate();
-        if(!meetingDates[day])meetingDates[day]=[];
-        meetingDates[day].push(m);
-      }
-    }
-  });
-
-  let html='';
-  // 上月填充
-  const prevLastDay=new Date(year,month-1,0).getDate();
-  for(let i=startDayOfWeek-1;i>=0;i--){
-    html+=`<div class="cal-day cal-other">${prevLastDay-i}</div>`;
-  }
-  // 本月
-  for(let d=1;d<=daysInMonth;d++){
-    const dateStr=year+'-'+String(month).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    const isToday=dateStr===todayStr;
-    const dayMeetings=meetingDates[d]||[];
-    const hasMeeting=dayMeetings.length>0;
-    html+=`<div class="cal-day${isToday?' cal-today':''}${hasMeeting?' cal-has-meeting':''}"
-      onclick="${hasMeeting?'showDayMeetings('+d+')':'openQuickMeeting(\''+dateStr+'\')'}"
-      title="${hasMeeting?dayMeetings.map(m=>m.name).join('\n'):'点击新增会议'}">
-      <span class="cal-day-num">${d}</span>
-      ${hasMeeting?dayMeetings.slice(0,3).map(m=>{
-      const typeColors={线上:'#3b82f6',线下:'#10b981',混合:'#8b5cf6'};
-      return `<span class="cal-meeting-name" style="border-left:2px solid ${typeColors[m.type]||'#6366f1'}">${esc(m.name)}</span>`;
-      }).join('')+ (dayMeetings.length>3?`<span class="cal-meeting-more">+${dayMeetings.length-3} 场</span>`:''):''}
-    </div>`;
-  }
-  // 下月填充
-  const totalCells=Math.ceil((startDayOfWeek+daysInMonth)/7)*7;
-  for(let i=startDayOfWeek+daysInMonth;i<totalCells;i++){
-    html+=`<div class="cal-day cal-other">${i-startDayOfWeek-daysInMonth+1}</div>`;
-  }
-  document.getElementById('meetingCalendarGrid').innerHTML=html;
-
-  // 存储当前月份会议日期供 showDayMeetings 使用
-  window._meetingMonthData=meetingDates;
-}
-
-function prevMeetingMonth(){
-  if(meetingCalendarMonth===1){meetingCalendarMonth=12;meetingCalendarYear--;}
-  else meetingCalendarMonth--;
-  renderMeetings();
-}
-function nextMeetingMonth(){
-  if(meetingCalendarMonth===12){meetingCalendarMonth=1;meetingCalendarYear++;}
-  else meetingCalendarMonth++;
-  renderMeetings();
-}
-function goMeetingToday(){
-  initMeetingCalendar();
-  renderMeetings();
-}
-
-function showDayMeetings(day){
-  const meetings=(window._meetingMonthData||{})[day]||[];
-  if(!meetings.length)return;
-
-  // 高亮并滚动到会议列表
-  renderMeetingList(day);
-  const listEl=document.getElementById('meetingList');
-  if(listEl)listEl.scrollIntoView({behavior:'smooth'});
-}
-
-function openQuickMeeting(dateStr){
-  openSmartModal();
-  document.getElementById('smartInput').value=dateStr+' ';
-  smartSetCat('meetings');
-  document.getElementById('smartInput').focus();
-}
+function renderMeetings(){renderMeetingList();}
 
 function renderMeetingList(highlightDay){
   const meetings=formalLedgerItems('meetings');
@@ -6830,19 +6752,6 @@ function clearTrainingForm(){
 const SYNC_BUSINESS_KEYS=['todos','inspirations','contracts','purchases','expenses','meetings',
   'trainings','agencys','handovers','funds','fundRecords','quick_notes'];
 const SYNC_REMOTE_PATH='data.json';
-const TEST_DATA_CLEAR_MARKER='wb_v15_test_data_cleared_20260915';
-// 用户确认现有记录均为测试数据：只执行一次，清空业务数组及旧业务快照，保留设备配置。
-function clearTestBusinessDataOnce(){
-  if(localStorage.getItem(TEST_DATA_CLEAR_MARKER)==='1')return false;
-  SYNC_BUSINESS_KEYS.forEach(key=>localStorage.setItem(key,'[]'));
-  localStorage.removeItem('wb_v14_restore');
-  localStorage.removeItem('wb_v14_snapshot');
-  localStorage.removeItem('wb_v15_todos_before_mirror_cleanup');
-  localStorage.removeItem(REMINDER_IGNORED_KEY);
-  localStorage.setItem(TEST_DATA_CLEAR_MARKER,'1');
-  console.log('一次性测试业务数据清理完成',{keys:[...SYNC_BUSINESS_KEYS]});
-  return true;
-}
 function normalizedSyncRows(data,key){
   return (Array.isArray(data?.[key])?data[key]:[]).filter(row=>row&&!row.deleted);
 }
@@ -7537,7 +7446,8 @@ function smartSave(){
   } else if(cat==='reminder'){
     createLedgerItem('todos',{title:text,requirement:'',due_date:due,priority:'重要且紧急',state:initialState,extra:{assignee}, parentGoal: sGoalVal?+sGoalVal:undefined});
   } else if(cat==='goal'){
-    createLedgerItem('todos',{title:text,requirement:text,due_date:due,priority:prio,isGoal:true,state:initialState,extra:{assignee,owner_ledger:'goals'}});
+    // 长期目标是 todos 中 owner_ledger=todos 的独立目标记录，不能写入不存在的 goals 台账。
+    createLedgerItem('todos',{title:text,requirement:text,due_date:due,priority:prio,isGoal:true,state:initialState,extra:{assignee}});
   } else {
     if(!ENTRY_KEYS.includes(cat)||cat==='fundRecords'){toast('请选择所属板块');return;}
     const extra={assignee};
@@ -7751,6 +7661,252 @@ const _bulkRenderMeetingList=renderMeetingList;renderMeetingList=function(...arg
 const _bulkRenderTrainings=renderTrainings;renderTrainings=function(...args){_bulkRenderTrainings(...args);decorateBulk('trainings','trainingList','button[onclick^="deleteTraining("]','.training-card');};
 
 // ============================================================
+//  v1.6 — 工作子任务、总览与表单保护
+//  子任务只嵌入 todos 记录；所有总览均从现有业务数组即时计算。
+// ============================================================
+let v16DraggedSubtaskId='';
+let v16TodoCategory='all';
+const v16ExpandedSubtasks=new Set();
+function normalizeSubtasks(items,parentId=''){
+  return (Array.isArray(items)?items:[]).map((raw,index)=>{
+    const s=raw&&typeof raw==='object'?raw:{};
+    const completed=Boolean(s.completed??s.done);
+    const created=s.created_at||s.createdAt||s.addTime||s.date||todayStr();
+    return {
+      id:String(s.id||('sub_'+(parentId||'legacy')+'_'+index+'_'+created.replace(/[^0-9]/g,''))),
+      name:String(s.name??s.text??'').trim(),
+      start_date:s.start_date||s.startDate||'',
+      due_date:s.due_date||s.dueDate||'',
+      completed_date:completed?(s.completed_date||s.completedDate||s.completeTime||''): '',
+      completed,
+      sort_order:Number.isFinite(+s.sort_order)?+s.sort_order:index,
+      created_at:created,
+      updated_at:s.updated_at||s.updatedAt||created
+    };
+  }).filter(s=>s.name).sort((a,b)=>a.sort_order-b.sort_order).map((s,index)=>Object.assign(s,{sort_order:index}));
+}
+function workSubtasks(todo){return normalizeSubtasks(todo?.subtasks||[],todo?.id);}
+function subtaskSummary(todo){
+  const list=workSubtasks(todo), done=list.filter(s=>s.completed).length;
+  const overdue=list.filter(s=>!s.completed&&s.due_date&&s.due_date<todayStr());
+  const next=overdue.sort((a,b)=>a.due_date.localeCompare(b.due_date))[0]||list.find(s=>!s.completed);
+  return {list,done,total:list.length,overdue,next,pct:list.length?Math.round(done/list.length*100):0};
+}
+function ensureV16Data(){
+  const rows=DB.raw('todos'); let changed=false;
+  rows.forEach(todo=>{
+    if(todo.deleted)return;
+    // 修复 v1.6 首轮中被错误写入不存在 goals 台账的长期目标，不重建任何记录 ID。
+    if(todo.is_goal&&todo.owner_ledger==='goals'){todo.owner_ledger='todos';changed=true;}
+    const normalized=normalizeSubtasks(todo.subtasks||[],todo.id);
+    if(JSON.stringify(todo.subtasks||[])!==JSON.stringify(normalized)){
+      todo.subtasks=normalized; changed=true;
+    }
+  });
+  if(changed)DB.set('todos',rows);
+}
+function writeWorkSubtasks(todoId,items){
+  const rows=DB.raw('todos'); const i=rows.findIndex(t=>String(t.id)===String(todoId));
+  if(i<0)return false;
+  // 当前数组顺序就是人工排序的唯一事实来源；写回前重编号，避免旧 sort_order 把拖拽结果排回原位。
+  rows[i].subtasks=normalizeSubtasks((items||[]).map((item,index)=>Object.assign({},item,{sort_order:index})),rows[i].id);
+  DB.set('todos',rows); return true;
+}
+function validateSubtask(s,parent){
+  if(!s.name){toast('请填写子任务名称');return false;}
+  if(s.start_date&&s.due_date&&s.start_date>s.due_date){toast('子任务开始日期不能晚于截止日期');return false;}
+  if(s.completed_date&&s.start_date&&s.completed_date<s.start_date){toast('提示：完成日期早于开始日期，请确认真实日期');}
+  if(s.due_date&&parent?.deadline&&s.due_date>parent.deadline){toast('提示：子任务截止日期晚于父工作截止日期，仍可保存');}
+  return true;
+}
+function addSubtask(todoId){
+  const input=document.getElementById('subtaskInput-'+todoId); const name=(input?.value||'').trim();
+  if(!name)return;
+  const todo=DB.get('todos').find(t=>String(t.id)===String(todoId));
+  const list=workSubtasks(todo); const item={id:'sub_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),name,start_date:'',due_date:'',completed_date:'',completed:false,sort_order:list.length,created_at:todayStr(),updated_at:todayStr()};
+  if(!validateSubtask(item,todo))return;
+  writeWorkSubtasks(todoId,[...list,item]); if(input)input.value=''; rerenderV16WorkViews();
+}
+function toggleSubtask(todoId,idx){
+  const todo=DB.get('todos').find(t=>String(t.id)===String(todoId)); if(!todo)return;
+  const list=workSubtasks(todo); const item=list[idx]; if(!item)return;
+  item.completed=!item.completed; item.completed_date=item.completed?todayStr():''; item.updated_at=todayStr();
+  writeWorkSubtasks(todoId,list); rerenderV16WorkViews();
+}
+function deleteSubtask(todoId,idx){
+  const todo=DB.get('todos').find(t=>String(t.id)===String(todoId)); if(!todo)return;
+  const list=workSubtasks(todo); const item=list[idx]; if(!item)return;
+  const prompt=item.completed?'删除已完成子任务会影响历史月度成果统计，确定删除吗？':'确定删除此未完成子任务吗？';
+  if(!confirm(prompt))return;
+  list.splice(idx,1); writeWorkSubtasks(todoId,list); rerenderV16WorkViews();
+}
+function moveSubtask(todoId,idx,delta){
+  return moveSubtaskTo(todoId,idx,idx+delta);
+}
+function moveSubtaskTo(todoId,from,to){
+  const todo=DB.get('todos').find(t=>String(t.id)===String(todoId)); if(!todo)return false;
+  const list=workSubtasks(todo); if(from<0||to<0||from>=list.length||to>=list.length||from===to)return false;
+  const [item]=list.splice(from,1); list.splice(to,0,item);
+  writeWorkSubtasks(todoId,list); rerenderV16WorkViews(); return true;
+}
+function dropSubtask(todoId,targetId){
+  const todo=DB.get('todos').find(t=>String(t.id)===String(todoId)); const list=workSubtasks(todo);
+  const from=list.findIndex(s=>s.id===v16DraggedSubtaskId), to=list.findIndex(s=>s.id===targetId);
+  v16DraggedSubtaskId=''; return moveSubtaskTo(todoId,from,to);
+}
+function editCardSubtask(todoId,idx){
+  const todo=DB.get('todos').find(t=>String(t.id)===String(todoId)); if(!todo)return;
+  const list=workSubtasks(todo); const s=list[idx]; if(!s)return;
+  const name=prompt('子任务名称',s.name); if(name===null)return;
+  s.name=name.trim()||s.name; const start=prompt('开始日期（YYYY-MM-DD，可留空）',s.start_date); if(start===null)return;
+  const due=prompt('截止日期（YYYY-MM-DD，可留空）',s.due_date); if(due===null)return;
+  const completedDate=prompt('完成日期（YYYY-MM-DD，未完成请留空）',s.completed_date); if(completedDate===null)return;
+  s.start_date=start.trim(); s.due_date=due.trim(); s.completed_date=completedDate.trim(); s.completed=Boolean(s.completed_date)||s.completed; s.updated_at=todayStr();
+  if(!validateSubtask(s,todo))return; writeWorkSubtasks(todoId,list); rerenderV16WorkViews();
+}
+function renderSubtasks(todo){
+  const summary=subtaskSummary(todo);
+  if(!summary.total)return '<div class="empty-state" style="padding:8px"><p>暂无子任务</p></div>';
+  return summary.list.map((s,index)=>`<div class="subtask-row ${s.completed?'done':''}" draggable="true" ondragstart="v16DraggedSubtaskId='${esc(s.id)}'" ondragover="event.preventDefault()" ondrop="event.preventDefault();dropSubtask(${todo.id},'${esc(s.id)}')">
+    <button class="todo-check mini ${s.completed?'checked':''}" onclick="toggleSubtask(${todo.id},${index})" aria-label="切换完成">${s.completed?'✓':''}</button>
+    <span class="subtask-text">${esc(s.name)}</span><span class="subtask-date">${s.start_date?'开始 '+esc(s.start_date):''}${s.due_date?' · 截止 '+esc(s.due_date):''}${s.completed_date?' · 完成 '+esc(s.completed_date):''}</span>
+    <button class="btn btn-ghost btn-sm" onclick="moveSubtask(${todo.id},${index},-1)" aria-label="上移">↑</button><button class="btn btn-ghost btn-sm" onclick="moveSubtask(${todo.id},${index},1)" aria-label="下移">↓</button><button class="btn btn-ghost btn-sm" onclick="editCardSubtask(${todo.id},${index})">编辑</button><button class="btn btn-ghost btn-sm" onclick="deleteSubtask(${todo.id},${index})" style="color:var(--color-danger)">删除</button>
+  </div>`).join('');
+}
+function rerenderV16WorkViews(){renderTodo();renderTodos();renderDashboard();renderSummary();}
+
+// 父工作“已完成”约束写在统一状态根入口；“已关闭”不受限制。
+const _v16SetState=setState;
+setState=function(ledgerKey,id,newState,reason){
+  if(ledgerKey==='todos'&&newState===STATE.DONE){
+    const todo=DB.get('todos').find(t=>String(t.id)===String(id)); const pending=workSubtasks(todo).filter(s=>!s.completed).length;
+    if(pending){toast('当前仍有 '+pending+' 个子任务未完成，请先完成或删除相关子任务。');return false;}
+  }
+  return _v16SetState(ledgerKey,id,newState,reason);
+};
+
+function todoLedgerLabel(key){return ({todos:'工作',contracts:'合同',purchases:'采购',expenses:'报销',meetings:'会议',trainings:'培训',agencys:'委托',handovers:'交接',funds:'经费'})[key]||key;}
+function todoDueClass(record,due){if(!due)return '';if(due<todayStr())return 'due-overdue';const diff=Math.round((new Date(due+'T00:00:00')-new Date(todayStr()+'T00:00:00'))/86400000);return diff<=3?'due-soon':'';}
+function setTodoCategory(key){v16TodoCategory=key;renderTodos();}
+function deleteActiveItem(ledgerKey,id){
+  if(ledgerKey==='todos')return deleteTodo(id);
+  if(!confirm('确认删除此'+todoLedgerLabel(ledgerKey)+'记录？'))return;
+  const rows=DB.raw(ledgerKey),record=rows.find(r=>String(r.id)===String(id));
+  if(!record)return;
+  record.deleted=true;DB.set(ledgerKey,rows);rerenderCurrent();renderTodos();toast('已删除');
+}
+function renderTodosV16(){
+  const allVisible=getVisibleTodoItems(); const box=document.getElementById('todoActiveList'); if(!box)return;
+  const ledgerKeys=[...new Set(allVisible.map(r=>r._ledger))];
+  if(v16TodoCategory!=='all'&&!ledgerKeys.includes(v16TodoCategory))v16TodoCategory='all';
+  const tabs=document.getElementById('todoLedgerTabs'); if(tabs)tabs.innerHTML=[['all','全部',allVisible.length],...ledgerKeys.map(k=>[k,todoLedgerLabel(k),allVisible.filter(r=>r._ledger===k).length])].map(([k,label,n])=>`<button class="v16-segment ${v16TodoCategory===k?'active':''}" onclick="setTodoCategory('${k}')">${esc(label)} <span>${n}</span></button>`).join('');
+  const visible=v16TodoCategory==='all'?allVisible:allVisible.filter(r=>r._ledger===v16TodoCategory);
+  renderReminders();updateTodoBadge(); const sum=document.getElementById('todoActiveSummary');if(sum)sum.textContent='共 '+visible.length+' 项进行中';
+  if(!visible.length){box.innerHTML='<div class="empty-state"><p>🎉 没有进行中的事项。有念头？去「智能录入」添加一笔吧。</p></div>';return;}
+  const groups={}; visible.forEach(r=>{const label=todoLedgerLabel(r._ledger);(groups[label]??=[]).push(r);});
+  box.innerHTML=Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([label,items])=>'<div class="todo-group"><div class="todo-group-title">'+esc(label)+'（'+items.length+'）</div>'+items.sort((a,b)=>(getDueDate(a,a._ledger)||'9999').localeCompare(getDueDate(b,b._ledger)||'9999')).map(r=>{
+    const overdue=isOverdue(r,r._ledger), sub=r._ledger==='todos'?subtaskSummary(r):null, due=getDueDate(r,r._ledger);
+    const isWork=r._ledger==='todos', open=isWork&&v16ExpandedSubtasks.has(String(r.id)), priority=r.priority?`<span class="tag tag-cat">${esc(r.priority)}</span>`:'';
+    return `<div class="todo-card" ${overdue?'style="border-left:3px solid var(--color-danger)"':''} data-bulk-key="${r._ledger}" data-bulk-id="${esc(r.id)}"><div class="todo-card-header"><div class="todo-card-title">${esc(recordDisplayName(r))}</div><div class="todo-card-actions">${stateBadge(r)} <button class="btn btn-ghost btn-sm" onclick="openStateModal('${r._ledger}',${r.id})">状态</button><button class="btn btn-ghost btn-sm" onclick="openOrganizeModal('${r._ledger}',${r.id})">整理</button><button class="btn btn-ghost btn-sm todo-delete" onclick="deleteActiveItem('${r._ledger}',${r.id})">删除</button></div></div><div class="todo-card-meta v16-todo-meta">${priority}<span>开始 ${esc(r.issueDate||r.date||'—')}</span><span class="${todoDueClass(r,due)}">截止 ${esc(due||'—')}</span><span>经办人 ${esc(r.assignee||'未指定')}</span>${overdue?'<span class="badge badge-red">逾期</span>':''}</div>${isWork?`<div class="todo-subtask-bar" onclick="toggleSubtasks(${r.id})"><span class="subtask-progress"><span class="subtask-done-bar" style="width:${sub.pct}%"></span></span><span>子任务 ${sub.done}/${sub.total}</span>${sub.next?'<span>下一步：'+esc(sub.next.name)+'</span>':''}<span class="expand-icon" id="expandIcon-${r.id}">${open?'▾':'▸'}</span></div><div class="todo-subtask-list" id="subtaskList-${r.id}" style="display:${open?'block':'none'}">${renderSubtasks(r)}<div class="subtask-add"><input class="subtask-input" id="subtaskInput-${r.id}" placeholder="新增子任务" onkeydown="if(event.key==='Enter')addSubtask(${r.id})"><button class="btn btn-ghost btn-sm" onclick="addSubtask(${r.id})">添加</button></div></div>`:''}</div>`;
+  }).join('')+'</div>').join('');
+}
+renderTodos=renderTodosV16;
+function toggleSubtasks(id){const key=String(id);if(v16ExpandedSubtasks.has(key))v16ExpandedSubtasks.delete(key);else v16ExpandedSubtasks.add(key);renderTodos();}
+
+function v16ReplaceSurfaces(){
+  const dashboard=document.getElementById('page-dashboard'); if(dashboard)dashboard.innerHTML=`<div class="v16-page-heading"><div><h1>驾驶舱</h1><p>从当前业务数据中识别今天最需要处理的事项。</p></div><button class="btn btn-outline" onclick="navigate('待办')">查看全部待办</button></div><section class="v16-section"><div class="card-header"><span class="card-title">今日待办</span><span class="section-note">发现后跳转原记录处理</span></div><div id="v16TodayTasks" class="v16-list"></div></section><div class="grid-2"><section class="card"><div class="card-header"><span class="card-title">预警</span></div><div id="v16Alerts"></div></section><section class="card"><div class="card-header"><span class="card-title">数据概况</span></div><div id="v16Overview"></div></section></div><div class="grid-2"><section class="card"><div class="card-header"><span class="card-title">本周重点跟进</span></div><div id="v16KeyWork"></div></section><section class="card"><div class="card-header"><span class="card-title">我交办的事项</span></div><div id="v16Delegated"></div><div id="v16Workload" class="v16-workload"></div></section></div><div class="grid-3"><section class="card"><div class="card-header"><span class="card-title">经费使用进度</span><button class="btn btn-sm btn-outline" onclick="navigate('fund')">经费详情</button></div><div id="v16Funds"></div></section><section class="card"><div class="card-header"><span class="card-title">近期会议 / 培训</span></div><div id="v16Schedule"></div></section><section class="card"><div class="card-header"><span class="card-title">采购进度</span></div><div id="v16Purchases"></div></section></div>`;
+  const summary=document.getElementById('page-monthly-summary'); if(summary)summary.innerHTML=`<div class="v16-page-heading"><div><h1>本月摘要</h1><p id="v16MonthLabel"></p></div><div class="v16-month-switch"><button class="btn btn-outline" onclick="shiftSummaryMonth(-1)">‹ 上月</button><button class="btn btn-outline" onclick="shiftSummaryMonth(1)">下月 ›</button><button class="btn btn-primary" onclick="copyMonthlySummary()">复制月度摘要</button></div></div><div id="v16SummaryMetrics" class="grid-5"></div><div class="grid-2"><section class="card"><div class="card-header"><span class="card-title">本月完成了什么</span></div><div id="v16CompletedWorks"></div><div class="card-header" style="margin-top:14px"><span class="card-title">长期工作本月推进成果</span></div><div id="v16CompletedSubtasks"></div></section><section class="card"><div class="card-header"><span class="card-title">重点工作完成情况</span></div><div id="v16MonthlyKeyWork"></div></section></div><div class="grid-2"><section class="card"><div class="card-header"><span class="card-title">未完成 / 跨月</span></div><div id="v16CrossMonth"></div></section><section class="card"><div class="card-header"><span class="card-title">逾期事项</span></div><div id="v16MonthlyOverdue"></div></section></div><section class="card"><div class="card-header"><span class="card-title">项目经费使用进度</span></div><div id="v16MonthlyFunds"></div></section>`;
+}
+function v16EnhanceContentHeaders(){
+  const titles={todo:['工作台账','集中查看和维护工作记录。'],inspiration:['灵感','收集、筛选和归档日常灵感。'],quick:['速记箱','快速捕捉尚待整理的信息。'],提醒:['提醒','查看和管理当前有效提醒。'],contract:['合同','查询、筛选和维护合同记录。'],purchase:['采购','查询、筛选和维护采购事项。'],training:['培训记录','浏览和管理培训安排。'],expense:['报销','浏览和管理报销记录。'],agency:['委托','浏览和管理委托事项。'],handover:['交接','浏览和管理交接记录。'],fund:['经费','查看项目经费及开支。']};
+  Object.entries(titles).forEach(([page,[title,subtitle]])=>{const root=document.getElementById('page-'+page);if(!root||root.querySelector(':scope > .v16-content-header'))return;const heading=document.createElement('div');heading.className='v16-content-header';heading.innerHTML='<div><h1>'+title+'</h1><p>'+subtitle+'</p></div>';root.insertBefore(heading,root.firstChild);});
+}
+let v16CalendarMonth='';
+let v16CalendarSelectedDate='';
+function v16DashboardCalendarMarkup(){return `<section class="card v16-dashboard-calendar"><div class="card-header"><span class="card-title">月度工作日历</span><div class="v16-calendar-controls"><button class="btn btn-sm btn-outline" onclick="shiftDashboardCalendar(-1)" aria-label="上月">‹</button><button class="btn btn-sm btn-outline" id="v16CalendarPickerButton" onclick="toggleDashboardCalendarPicker()"></button><button class="btn btn-sm btn-outline" onclick="shiftDashboardCalendar(1)" aria-label="下月">›</button><button class="btn btn-sm btn-outline" onclick="resetDashboardCalendar()">本月</button></div></div><div id="v16CalendarMonthPicker" class="v16-calendar-month-picker" hidden><label>年份 <input id="v16CalendarYearInput" type="number" min="1900" max="9999" inputmode="numeric"></label><label>月份 <select id="v16CalendarMonthInput">${Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'月</option>').join('')}</select></label><button class="btn btn-sm btn-outline" onclick="applyDashboardCalendarMonth()">跳转</button></div><div id="v16CalendarLabel" class="v16-calendar-label"></div><div class="v16-calendar-weekdays"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div id="v16DashboardCalendarGrid" class="v16-dashboard-calendar-grid"></div><div id="v16CalendarDaySchedule" class="v16-calendar-day-schedule"></div></section>`;}
+function ensureDashboardCalendar(){const dashboard=document.getElementById('page-dashboard');if(dashboard&&!document.getElementById('v16DashboardCalendarGrid'))dashboard.insertAdjacentHTML('beforeend',v16DashboardCalendarMarkup());}
+function completedCalendarDate(ledgerKey,record){
+  if(recordState(ledgerKey,record)!==STATE.DONE)return '';
+  const dates=ledgerKey==='expenses'?[record.reimbDate,record.completeDate,record.completedDate,record.closed_at]:[record.completeDate,record.completedDate,record.doneDate,record.closed_at];
+  return String(dates.find(Boolean)||'').slice(0,10);
+}
+function dashboardCalendarEntries(month){
+  const items=[];const add=(date,entry)=>{if(date&&date.startsWith(month))items.push(Object.assign({date},entry));};
+  DB.get('meetings').filter(m=>belongsToLedger('meetings',m)).forEach(m=>add(m.date,{source:'schedule',kind:'会议',id:m.id,name:m.name||'未命名会议',time:m.startTime||'',place:m.location||m.type||'',page:'meeting'}));
+  DB.get('trainings').filter(t=>belongsToLedger('trainings',t)).forEach(t=>{
+    const start=t.startDate,end=t.endDate&&t.endDate>=start?t.endDate:start;if(!start)return;
+    for(let date=start,steps=0;date<=end&&steps<366;steps++,date=fmtLocalDate(new Date(new Date(date+'T00:00:00').getTime()+86400000)))add(date,{source:'schedule',kind:'培训',id:t.id,name:t.name||'未命名培训',time:t.startTime||'',place:t.location||t.organizer||'',page:'training'});
+  });
+  DB.get('todos').filter(t=>belongsToLedger('todos',t)&&!t.is_goal).forEach(t=>{
+    const date=completedCalendarDate('todos',t);add(date,{source:'completed',kind:'工作',id:t.id,name:t.name||'未命名工作',time:'完成 '+date,page:'todo'});
+    workSubtasks(t).filter(s=>s.completed&&s.completed_date).forEach(s=>add(s.completed_date,{source:'completed',kind:'子任务',id:s.id,name:s.name||'未命名子任务',time:'完成 '+s.completed_date,parentName:t.name||'未命名工作',page:'待办'}));
+  });
+  [['purchases','采购'],['contracts','合同'],['expenses','报销'],['agencys','委托'],['handovers','交接']].forEach(([ledgerKey,kind])=>{
+    DB.get(ledgerKey).filter(r=>belongsToLedger(ledgerKey,r)).forEach(r=>{const date=completedCalendarDate(ledgerKey,r);add(date,{source:'completed',kind,id:r.id,name:r.name||r.content||r.matter||'未命名事项',time:'完成 '+date,page:LEDGER_META[ledgerKey]?.page||'待办'});});
+  });
+  return items.sort((a,b)=>a.date.localeCompare(b.date)||(a.source==='schedule'?0:1)-(b.source==='schedule'?0:1)||(a.time||'99:99').localeCompare(b.time||'99:99'));
+}
+function renderDashboardCalendar(){
+  const grid=document.getElementById('v16DashboardCalendarGrid');if(!grid)return;
+  const today=todayStr(),current=today.slice(0,7);if(!v16CalendarMonth)v16CalendarMonth=current;
+  const [year,month]=v16CalendarMonth.split('-').map(Number),entries=dashboardCalendarEntries(v16CalendarMonth),byDate={};entries.forEach(item=>(byDate[item.date]??=[]).push(item));
+  document.getElementById('v16CalendarLabel').textContent=year+'年'+month+'月 · 日程与完成事项';
+  const pickerButton=document.getElementById('v16CalendarPickerButton');if(pickerButton)pickerButton.textContent=year+'年'+month+'月';
+  const first=new Date(year,month-1,1),days=new Date(year,month,0).getDate(),lead=(first.getDay()+6)%7;let html='';
+  for(let i=0;i<lead;i++)html+='<span class="v16-calendar-empty"></span>';
+  for(let day=1;day<=days;day++){const date=v16CalendarMonth+'-'+String(day).padStart(2,'0'),dayEntries=byDate[date]||[],scheduleCount=dayEntries.filter(x=>x.source==='schedule').length,completedCount=dayEntries.filter(x=>x.source==='completed').length,marks=[scheduleCount?'日程 '+scheduleCount:'',completedCount?'完成 '+completedCount:''].filter(Boolean).join(' · ');html+=`<button class="v16-calendar-day${date===today?' is-today':''}${date===v16CalendarSelectedDate?' is-selected':''}" onclick="selectDashboardCalendarDate('${date}')"><b>${day}</b>${marks?'<small>'+marks+'</small>':''}</button>`;}
+  grid.innerHTML=html;
+  const panel=document.getElementById('v16CalendarDaySchedule');if(!v16CalendarSelectedDate){panel.textContent='点击日期查看当天日程和完成事项。';return;}
+  const selected=byDate[v16CalendarSelectedDate]||[];const list=(source,title,empty)=>{const group=selected.filter(item=>item.source===source);return `<div class="v16-calendar-day-group"><strong>${title}</strong>`+(group.length?group.map(item=>`<button class="v16-calendar-entry" onclick="navigate('${item.page}')">${esc(item.time||'全天')} · ${esc(item.kind)} · ${esc(item.name)}${item.parentName?' · 所属 '+esc(item.parentName):''}${item.place?' · '+esc(item.place):''}</button>`).join(''):'<span>'+empty+'</span>')+'</div>';};panel.innerHTML=`<strong>${v16CalendarSelectedDate}</strong>`+list('schedule','日程','当天暂无会议或培训。')+list('completed','今日完成','当天暂无完成事项。');
+}
+function selectDashboardCalendarDate(date){v16CalendarSelectedDate=date;renderDashboardCalendar();}
+function shiftDashboardCalendar(delta){const d=new Date(v16CalendarMonth+'-01T00:00:00');d.setMonth(d.getMonth()+delta);v16CalendarMonth=fmtLocalDate(new Date(d.getFullYear(),d.getMonth(),1)).slice(0,7);v16CalendarSelectedDate='';renderDashboardCalendar();}
+function resetDashboardCalendar(){v16CalendarMonth=todayStr().slice(0,7);v16CalendarSelectedDate='';renderDashboardCalendar();}
+function toggleDashboardCalendarPicker(){const picker=document.getElementById('v16CalendarMonthPicker');if(!picker)return;picker.hidden=!picker.hidden;if(!picker.hidden){const [year,month]=v16CalendarMonth.split('-').map(Number);document.getElementById('v16CalendarYearInput').value=year;document.getElementById('v16CalendarMonthInput').value=month;}}
+function applyDashboardCalendarMonth(){const year=Number(document.getElementById('v16CalendarYearInput').value),month=Number(document.getElementById('v16CalendarMonthInput').value);if(!Number.isInteger(year)||year<1900||year>9999||!Number.isInteger(month)||month<1||month>12){toast('请输入 1900 至 9999 年之间的有效年月');return;}v16CalendarMonth=String(year).padStart(4,'0')+'-'+String(month).padStart(2,'0');v16CalendarSelectedDate='';document.getElementById('v16CalendarMonthPicker').hidden=true;renderDashboardCalendar();}
+function v16Empty(text){return '<div class="empty-state v16-empty"><p>'+esc(text)+'</p></div>';}
+function v16List(items,render,empty){return items.length?items.map(render).join(''):v16Empty(empty);}
+function v16AlertData(){
+  const active=getActiveItems(); const today=todayStr(); const soon=fmtLocalDate(new Date(new Date(today+'T00:00:00').getTime()+3*86400000));
+  const alerts=[]; active.forEach(r=>{const due=getDueDate(r,r._ledger);if(due&&due<today)alerts.push({kind:'overdue',rec:r,due,label:'事项逾期'});else if(due===today)alerts.push({kind:'today',rec:r,due,label:'今日到期'});else if(due&&due<=soon)alerts.push({kind:'soon',rec:r,due,label:'即将到期'});if(r._ledger==='todos')workSubtasks(r).filter(s=>!s.completed&&s.due_date&&s.due_date<today).forEach(s=>alerts.push({kind:'overdue',rec:r,due:s.due_date,label:'子任务逾期：'+s.name,subtask:s}));});
+  return {alerts,today,soon};
+}
+function v16OpenRecord(rec){return `onclick="navigate('${rec._ledger==='todos'?'待办':LEDGER_META[rec._ledger]?.page||'待办'}')"`;}
+function renderDashboard(){
+  const {alerts,today,soon}=v16AlertData(), active=getActiveItems(), parentOverdue=new Set(alerts.filter(a=>a.kind==='overdue').map(a=>a.rec._ledger+':'+a.rec.id));
+  const todayItems=[]; active.forEach(r=>{const due=getDueDate(r,r._ledger);const hasTodaySub=r._ledger==='todos'&&workSubtasks(r).some(s=>!s.completed&&s.due_date===today);if(due&&due<today||due===today||r.issueDate===today||hasTodaySub||(r.type==='key'&&r.priority==='重要且紧急'))todayItems.push(r);});
+  const uniq=[...new Map(todayItems.map(r=>[r._ledger+':'+r.id,r])).values()].sort((a,b)=>Number(isOverdue(b,b._ledger))-Number(isOverdue(a,a._ledger))).slice(0,8);
+  document.getElementById('v16TodayTasks').innerHTML=v16List(uniq,r=>{const sub=r._ledger==='todos'?subtaskSummary(r):null;return `<button class="v16-row" ${v16OpenRecord(r)}><span>${esc(recordDisplayName(r))}</span><small>${isOverdue(r,r._ledger)?'已逾期':(getDueDate(r,r._ledger)===today?'今日到期':sub?.next?'下一步：'+esc(sub.next.name):'待处理')}</small></button>`;},'今天没有需要特别关注的事项。');
+  document.getElementById('v16Alerts').innerHTML=['overdue','today','soon'].map(kind=>{const list=alerts.filter(a=>a.kind===kind);const label={overdue:'已逾期',today:'今日到期',soon:'即将到期（未来 3 天）'}[kind];return `<div class="v16-alert ${kind}"><strong>${label} ${list.length}</strong>${list.slice(0,4).map(a=>`<button ${v16OpenRecord(a.rec)}>${esc(recordDisplayName(a.rec))} · ${esc(a.label)}</button>`).join('')||'<span>无</span>'}</div>`;}).join('');
+  const countState=s=>active.filter(r=>recordState(r._ledger,r)===s).length, typeCounts={};active.forEach(r=>{typeCounts[r._ledger]=(typeCounts[r._ledger]||0)+1;});
+  document.getElementById('v16Overview').innerHTML=`<div class="v16-metrics"><div><b>${active.length}</b><span>未结事项</span></div><div><b>${countState(STATE.DOING)}</b><span>进行中</span></div><div><b>${alerts.filter(a=>a.kind==='today').length}</b><span>今日到期</span></div><div><b>${alerts.filter(a=>a.kind==='soon').length}</b><span>即将到期</span></div><div><b>${parentOverdue.size}</b><span>已逾期</span></div></div><div class="v16-distribution">${Object.entries(typeCounts).map(([k,n])=>`<span>${esc(LEDGER_META[k]?.label||k)} <b>${n}</b></span>`).join('')}</div>`;
+  const keys=active.filter(r=>r._ledger==='todos'&&r.type==='key'); document.getElementById('v16KeyWork').innerHTML=v16List(keys,r=>{const s=subtaskSummary(r);return `<button class="v16-row" ${v16OpenRecord(r)}><span>${esc(r.name)}<small>${esc(r.assignee||'未指定经办人')} · ${esc(recordState('todos',r))}${r.deadline?' · 截止 '+esc(r.deadline):''}</small></span><small>${s.total?'子任务 '+s.done+'/'+s.total+(s.next?' · 下一步 '+esc(s.next.name):''):''}${s.overdue.length?' · '+s.overdue.length+' 个子任务逾期':''}</small></button>`;},'暂无进行中的重点工作。');
+  const delegated=active.filter(r=>r.assignee&&r.assignee!=='本人').sort((a,b)=>{const rank=r=>isOverdue(r,r._ledger)?0:getDueDate(r,r._ledger)===today?1:(getDueDate(r,r._ledger)||'9999')<=soon?2:3;return rank(a)-rank(b);});document.getElementById('v16Delegated').innerHTML=v16List(delegated,r=>{const s=r._ledger==='todos'?subtaskSummary(r):null;return `<button class="v16-row" ${v16OpenRecord(r)}><span>${esc(r.assignee)} · ${esc(recordDisplayName(r))}</span><small>${esc(recordState(r._ledger,r))}${getDueDate(r,r._ledger)?' · '+esc(getDueDate(r,r._ledger)):''}${s?.total?' · '+s.done+'/'+s.total:''}${isOverdue(r,r._ledger)?' · 逾期':''}</small></button>`;},'暂无由其他经办人负责的未结束事项。');
+  const loads={};delegated.forEach(r=>{const x=loads[r.assignee]??={total:0,overdue:0};x.total++;if(isOverdue(r,r._ledger))x.overdue++;loads[r.assignee]=x;});document.getElementById('v16Workload').innerHTML=Object.entries(loads).map(([name,x])=>`<span>${esc(name)} ${x.total} 项${x.overdue?'，其中 '+x.overdue+' 项逾期':''}</span>`).join('');
+  const funds=DB.get('funds').filter(f=>belongsToLedger('funds',f));document.getElementById('v16Funds').innerHTML=v16List(funds,f=>{const usage=v16FundUsage(f.id),budget=Number(f.budget)||0,pct=budget?Math.min(100,Math.round(usage.used/budget*100)):0;return `<button class="v16-fund" onclick="navigate('fund')"><span>${esc(f.name)}</span><small>${fmtCNY(budget)} · 已用 ${fmtCNY(usage.used)} · 剩余 ${fmtCNY(budget-usage.used)}</small><i><b style="width:${pct}%"></b></i></button>`;},'暂无经费项目。');
+  const datePlus=n=>fmtLocalDate(new Date(new Date(today+'T00:00:00').getTime()+n*86400000));const meetings=DB.get('meetings').filter(m=>m.date&&m.date>=today&&m.date<=datePlus(7)),trainings=DB.get('trainings').filter(t=>t.startDate&&t.startDate>=today&&t.startDate<=datePlus(14));document.getElementById('v16Schedule').innerHTML=v16List([...meetings.map(m=>({x:m,kind:'会议',date:m.date,place:m.location||m.type||''})),...trainings.map(t=>({x:t,kind:'培训',date:t.startDate,place:t.location||t.type||''}))].sort((a,b)=>a.date.localeCompare(b.date)),e=>`<button class="v16-row" onclick="navigate('${e.kind==='会议'?'meeting':'training'}')"><span>${esc(e.kind)} · ${esc(e.x.name)}</span><small>${esc(e.date)} ${esc(e.place)}</small></button>`,'未来 7/14 天暂无会议或培训。');
+  const purchases=active.filter(r=>r._ledger==='purchases');document.getElementById('v16Purchases').innerHTML=v16List(purchases,r=>`<button class="v16-row" onclick="navigate('purchase')"><span>${esc(r.name)}</span><small>${esc(r.assignee||'未指定经办人')} · ${esc(recordState('purchases',r))}${getDueDate(r,'purchases')?' · '+esc(getDueDate(r,'purchases')):''}${isOverdue(r,'purchases')?' · 逾期':''}</small></button>`,'暂无未完成采购事项。');
+  renderDashboardCalendar();
+}
+function v16FundUsage(fundId){const records=DB.get('fundRecords').filter(r=>String(r.fundId)===String(fundId));const expenses=DB.get('expenses').filter(e=>String(expenseFundId(e))===String(fundId)&&!records.some(r=>String(r.expenseRef)===String(e.id)));return {records:[...records,...expenses.map(e=>({amount:e.amount,date:e.appDate,content:e.content}))],used:[...records,...expenses].reduce((n,r)=>n+(Number(r.amount)||0),0)};}
+function shiftSummaryMonth(delta){const start=summaryDateRange?.start||todayStr();const d=new Date(start+'T00:00:00');d.setMonth(d.getMonth()+delta,1);const y=d.getFullYear(),m=d.getMonth();summaryDateRange={preset:'v16-month',start:fmtLocalDate(new Date(y,m,1)),end:fmtLocalDate(new Date(y,m+1,0))};renderSummary();}
+function v16MonthData(){const start=summaryDateRange?.start||todayStr().slice(0,7)+'-01',end=summaryDateRange?.end||todayStr(),todos=DB.get('todos').filter(t=>belongsToLedger('todos',t));const inMonth=d=>Boolean(d)&&d.slice(0,10)>=start&&d.slice(0,10)<=end;const active=todos.filter(t=>[STATE.TODO,STATE.DOING].includes(recordState('todos',t)));const completed=todos.filter(t=>recordState('todos',t)===STATE.DONE&&inMonth(t.completeDate));const subs=todos.flatMap(t=>workSubtasks(t).filter(s=>s.completed&&inMonth(s.completed_date)).map(s=>({todo:t,sub:s})));const keyRelevant=todos.filter(t=>t.type==='key'&&(inMonth(t.completeDate)||workSubtasks(t).some(s=>inMonth(s.completed_date))||[STATE.TODO,STATE.DOING].includes(recordState('todos',t))));const overdue=active.filter(t=>isOverdue(t,'todos'));const cross=active.filter(t=>!isOverdue(t,'todos')&&((t.issueDate&&t.issueDate<start)||workSubtasks(t).some(s=>s.start_date&&s.start_date<start)));return {start,end,todos,active,completed,subs,keyRelevant,overdue,cross};}
+function renderSummary(){const d=v16MonthData(),month=d.start.slice(0,7),[y,m]=month.split('-');document.getElementById('v16MonthLabel').textContent=y+'年'+Number(m)+'月 · 个人复盘与科室例会';const keyDone=d.completed.filter(t=>t.type==='key').length;document.getElementById('v16SummaryMetrics').innerHTML=`<div class="metric"><span>完成工作数</span><b>${d.completed.length}</b></div><div class="metric"><span>完成子任务数</span><b>${d.subs.length}</b></div><div class="metric"><span>完成重点工作数</span><b>${keyDone}</b></div><div class="metric"><span>跨月推进数</span><b>${d.cross.length}</b></div><div class="metric"><span>逾期事项数</span><b>${d.overdue.length}</b></div>`;document.getElementById('v16CompletedWorks').innerHTML=v16List(d.completed,t=>`<div class="v16-row"><span>${esc(t.name)}</span><small>完成于 ${esc(t.completeDate)}</small></div>`,'本月暂无完成工作。');document.getElementById('v16CompletedSubtasks').innerHTML=v16List(d.subs,x=>`<div class="v16-row"><span>${esc(x.todo.name)} · ✓ ${esc(x.sub.name)}</span><small>完成于 ${esc(x.sub.completed_date)}</small></div>`,'本月暂无子任务成果。');document.getElementById('v16MonthlyKeyWork').innerHTML=v16List(d.keyRelevant,t=>{const s=subtaskSummary(t),n=workSubtasks(t).filter(x=>x.completed&&x.completed_date>=d.start&&x.completed_date<=d.end).length;return `<div class="v16-row"><span>${esc(t.name)}</span><small>${esc(recordState('todos',t))} · 子任务 ${s.done}/${s.total} · 本月完成 ${n} 个</small></div>`;},'本月暂无相关重点工作。');document.getElementById('v16CrossMonth').innerHTML=v16List(d.cross,t=>`<div class="v16-row"><span>${esc(t.name)}</span><small>正常跨月推进${t.deadline?' · 截止 '+esc(t.deadline):''}</small></div>`,'暂无正常跨月推进事项。');document.getElementById('v16MonthlyOverdue').innerHTML=v16List(d.overdue,t=>`<div class="v16-row"><span>${esc(t.name)}</span><small>截止 ${esc(t.deadline||getDueDate(t,'todos'))}，尚未结束</small></div>`,'暂无逾期事项。');const funds=DB.get('funds').filter(f=>belongsToLedger('funds',f));document.getElementById('v16MonthlyFunds').innerHTML=v16List(funds,f=>{const u=v16FundUsage(f.id),monthly=u.records.filter(r=>r.date&&r.date>=d.start&&r.date<=d.end).reduce((n,r)=>n+(Number(r.amount)||0),0),budget=Number(f.budget)||0,pct=budget?Math.round(u.used/budget*100):0;return `<div class="v16-fund"><span>${esc(f.name)}</span><small>本月 ${fmtCNY(monthly)} · 累计 ${fmtCNY(u.used)} · 总额 ${fmtCNY(budget)} · 剩余 ${fmtCNY(budget-u.used)} · ${pct}%</small><i><b style="width:${Math.min(100,pct)}%"></b></i></div>`;},'暂无经费项目。');}
+function monthlySummaryText(){
+  const d=v16MonthData(),funds=DB.get('funds').filter(f=>belongsToLedger('funds',f)),[y,m]=d.start.slice(0,7).split('-');
+  const lines=(items,empty)=>items.length?items: ['- '+empty];
+  const completed=lines(d.completed.map(t=>`- ${t.name}（完成于 ${t.completeDate||'—'}）`),'本月暂无完成工作。');
+  const groups=new Map(); d.subs.forEach(x=>{const list=groups.get(x.todo.id)||[];list.push(x);groups.set(x.todo.id,list);});
+  const progress=lines([...groups.values()].map(list=>`- ${list[0].todo.name}：${list.map(x=>x.sub.name+'（'+(x.sub.completed_date||'—')+'）').join('；')}`),'本月暂无长期工作子任务推进。');
+  const key=lines(d.keyRelevant.filter(t=>t.type==='key').map(t=>{const s=subtaskSummary(t),n=workSubtasks(t).filter(x=>x.completed&&x.completed_date>=d.start&&x.completed_date<=d.end).length;return `- ${t.name}：${recordState('todos',t)}；子任务 ${s.done}/${s.total}；本月完成子任务 ${n} 项`; }),'本月暂无相关重点工作。');
+  const cross=lines(d.cross.map(t=>`- ${t.name}${t.deadline?'（截止 '+t.deadline+'）':''}`),'暂无正常跨月推进事项。');
+  const overdue=lines(d.overdue.map(t=>`- ${t.name}：截止 ${t.deadline||getDueDate(t,'todos')||'—'}；当前 ${recordState('todos',t)}`),'暂无逾期事项。');
+  const fundLines=lines(funds.map(f=>{const u=v16FundUsage(f.id),monthly=u.records.filter(r=>r.date&&r.date>=d.start&&r.date<=d.end).reduce((n,r)=>n+(Number(r.amount)||0),0),budget=Number(f.budget)||0,pct=budget?Math.round(u.used/budget*100):0;return `- ${f.name}：本月支出 ${fmtCNY(monthly)}；累计支出 ${fmtCNY(u.used)}；总额 ${fmtCNY(budget)}；剩余 ${fmtCNY(budget-u.used)}；执行比例 ${pct}%`; }),'暂无经费项目。');
+  return `# ${y}年${Number(m)}月工作摘要\n\n一、本月完成工作\n\n${completed.join('\n')}\n\n二、长期工作本月推进\n\n${progress.join('\n')}\n\n三、重点工作\n\n${key.join('\n')}\n\n四、未完成 / 跨月事项\n\n${cross.join('\n')}\n\n五、逾期事项\n\n${overdue.join('\n')}\n\n六、项目经费\n\n${fundLines.join('\n')}`;
+}
+function copyMonthlySummary(){const text=monthlySummaryText();if(navigator.clipboard?.writeText){navigator.clipboard.writeText(text).then(()=>toast('月度摘要已复制')).catch(()=>{prompt('请复制以下月度摘要：',text);});}else prompt('请复制以下月度摘要：',text);}
+
+// ============================================================
 //  INIT
 // ============================================================
 function removeObsoleteInvoiceCredentials(){
@@ -7769,18 +7925,20 @@ function removeObsoleteInvoiceCredentials(){
 removeObsoleteInvoiceCredentials();
 loadSettings();
 checkBackup();
-const testDataCleared=clearTestBusinessDataOnce();
 snapshotBeforeV14();
 GITEE._applyingSnapshot=true;
 try{
   repairData(); // 本机历史数据修复不应触发云端推送
   retireVerifiedLegacyMirrors();
+  ensureV16Data();
 }finally{GITEE._applyingSnapshot=false;}
-if(testDataCleared)toast('已完成一次性测试数据清理；Gitee 与本机设置已保留');
 refreshDataBadges(); // 启动即按统一数据源刷新待办、提醒、速记和目标角标
 checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/逾期项
 // 拉取会覆盖本机业务快照，因此仅由用户点击“拉取数据”触发。
 (function(){
+  v16ReplaceSurfaces();
+  v16EnhanceContentHeaders();
+  ensureDashboardCalendar();
   renderDashboard();
   // 每小时检查一次截止提醒
   setInterval(()=>{
