@@ -7814,8 +7814,37 @@ renderTodos=renderTodosV16;
 function toggleSubtasks(id){const key=String(id);if(v16ExpandedSubtasks.has(key))v16ExpandedSubtasks.delete(key);else v16ExpandedSubtasks.add(key);renderTodos();}
 
 function v16ReplaceSurfaces(){
-  const dashboard=document.getElementById('page-dashboard'); if(dashboard)dashboard.innerHTML=`<div class="v16-page-heading"><div><h1>驾驶舱</h1><p>从当前业务数据中识别今天最需要处理的事项。</p></div><button class="btn btn-outline" onclick="navigate('待办')">查看全部待办</button></div><section class="v16-section"><div class="card-header"><span class="card-title">今日待办</span><span class="section-note">发现后跳转原记录处理</span></div><div id="v16TodayTasks" class="v16-list"></div></section><div class="grid-2"><section class="card"><div class="card-header"><span class="card-title">预警</span></div><div id="v16Alerts"></div></section><section class="card"><div class="card-header"><span class="card-title">数据概况</span></div><div id="v16Overview"></div></section></div><div class="grid-2"><section class="card"><div class="card-header"><span class="card-title">本周重点跟进</span></div><div id="v16KeyWork"></div></section><section class="card"><div class="card-header"><span class="card-title">我交办的事项</span></div><div id="v16Delegated"></div><div id="v16Workload" class="v16-workload"></div></section></div><div class="grid-3"><section class="card"><div class="card-header"><span class="card-title">经费使用进度</span><button class="btn btn-sm btn-outline" onclick="navigate('fund')">经费详情</button></div><div id="v16Funds"></div></section><section class="card"><div class="card-header"><span class="card-title">近期会议 / 培训</span></div><div id="v16Schedule"></div></section><section class="card"><div class="card-header"><span class="card-title">采购进度</span></div><div id="v16Purchases"></div></section></div>`;
-  const summary=document.getElementById('page-monthly-summary'); if(summary)summary.innerHTML=`<div class="v16-page-heading"><div><h1>本月摘要</h1><p id="v16MonthLabel"></p></div><div class="v16-month-switch"><button class="btn btn-outline" onclick="shiftSummaryMonth(-1)">‹ 上月</button><button class="btn btn-outline" onclick="shiftSummaryMonth(1)">下月 ›</button><button class="btn btn-primary" onclick="copyMonthlySummary()">复制月度摘要</button></div></div><div id="v16SummaryMetrics" class="grid-5"></div><div class="grid-2"><section class="card"><div class="card-header"><span class="card-title">本月完成了什么</span></div><div id="v16CompletedWorks"></div><div class="card-header" style="margin-top:14px"><span class="card-title">长期工作本月推进成果</span></div><div id="v16CompletedSubtasks"></div></section><section class="card"><div class="card-header"><span class="card-title">重点工作完成情况</span></div><div id="v16MonthlyKeyWork"></div></section></div><div class="grid-2"><section class="card"><div class="card-header"><span class="card-title">未完成 / 跨月</span></div><div id="v16CrossMonth"></div></section><section class="card"><div class="card-header"><span class="card-title">逾期事项</span></div><div id="v16MonthlyOverdue"></div></section></div><section class="card"><div class="card-header"><span class="card-title">项目经费使用进度</span></div><div id="v16MonthlyFunds"></div></section>`;
+  const dashboard=document.getElementById('page-dashboard');
+  if(dashboard)dashboard.innerHTML=`
+    <div class="v16-page-heading">
+      <div><h1>驾驶舱</h1><p>全局管理与今日行动，一屏掌握当前工作。</p></div>
+      <button class="btn btn-outline" onclick="navigate('待办')">查看全部待办</button>
+    </div>
+    <div class="v16-dashboard-grid">
+      <section class="v16-section v16-dashboard-today"><div class="card-header"><span class="card-title">今日待办</span><span class="section-note">最多显示 8 项</span></div><div id="v16TodayTasks" class="v16-list"></div></section>
+      <section class="card v16-dashboard-alerts"><div class="card-header"><span class="card-title">预警</span></div><div id="v16Alerts"></div></section>
+      <section class="card v16-dashboard-overview"><div class="card-header"><span class="card-title">数据概况</span></div><div id="v16Overview"></div></section>
+      <section class="card v16-dashboard-key"><div class="card-header"><span class="card-title">本周重点跟进</span></div><div id="v16KeyWork"></div></section>
+      <section class="card v16-dashboard-delegated"><div class="card-header"><span class="card-title">我交办的事项</span></div><div id="v16Delegated"></div><div id="v16Workload" class="v16-workload"></div></section>
+      <section class="card v16-dashboard-funds"><div class="card-header"><span class="card-title">经费使用进度</span><button class="btn btn-sm btn-outline" onclick="navigate('fund')">经费详情</button></div><div id="v16Funds"></div></section>
+      <section class="card v16-dashboard-schedule"><div class="card-header"><span class="card-title">近期会议 / 培训</span></div><div id="v16Schedule"></div></section>
+      <section class="card v16-dashboard-purchases"><div class="card-header"><span class="card-title">采购进度</span></div><div id="v16Purchases"></div></section>
+    </div>`;
+  const summary=document.getElementById('page-monthly-summary');
+  if(summary)summary.innerHTML=`
+    <div class="v16-page-heading">
+      <div><h1>本月摘要</h1><p id="v16MonthLabel"></p></div>
+      <div class="v16-month-switch"><button class="btn btn-outline" onclick="shiftSummaryMonth(-1)">‹ 上月</button><button class="btn btn-outline" onclick="shiftSummaryMonth(1)">下月 ›</button><button class="btn btn-primary" onclick="copyMonthlySummary()">复制月度摘要</button></div>
+    </div>
+    <div id="v16SummaryMetrics" class="grid-5 v16-summary-metrics"></div>
+    <div class="v16-report">
+      <section class="v16-report-section"><h2>本月完成</h2><div id="v16CompletedWorks"></div></section>
+      <section class="v16-report-section"><h2>长期工作本月推进</h2><div id="v16CompletedSubtasks"></div></section>
+      <section class="v16-report-section"><h2>重点工作</h2><div id="v16MonthlyKeyWork"></div></section>
+      <section class="v16-report-section"><h2>未完成 / 跨月</h2><div id="v16CrossMonth"></div></section>
+      <section class="v16-report-section"><h2>逾期事项</h2><div id="v16MonthlyOverdue"></div></section>
+      <section class="v16-report-section"><h2>项目经费</h2><div id="v16MonthlyFunds"></div></section>
+    </div>`;
 }
 function v16EnhanceContentHeaders(){
   const titles={todo:['工作台账','集中查看和维护工作记录。'],inspiration:['灵感','收集、筛选和归档日常灵感。'],quick:['速记箱','快速捕捉尚待整理的信息。'],提醒:['提醒','查看和管理当前有效提醒。'],contract:['合同','查询、筛选和维护合同记录。'],purchase:['采购','查询、筛选和维护采购事项。'],training:['培训记录','浏览和管理培训安排。'],expense:['报销','浏览和管理报销记录。'],agency:['委托','浏览和管理委托事项。'],handover:['交接','浏览和管理交接记录。'],fund:['经费','查看项目经费及开支。']};

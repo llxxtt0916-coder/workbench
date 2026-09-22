@@ -1834,20 +1834,66 @@ tr:hover td {
 @media (max-width:700px){.v16-content-header{display:block}.v16-content-header>div:last-child{margin-top:12px}.v16-todo-meta{gap:8px}.todo-card-actions{justify-content:flex-start;margin-top:8px}}
 
 /* v1.6 第四轮：仅供驾驶舱月度工作日历使用的最小布局。 */
+.v16-dashboard-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--space-grid)}
+.v16-dashboard-grid>.card,.v16-dashboard-grid>.v16-section{margin:0;min-width:0}
+.v16-dashboard-today{grid-column:span 8}
+.v16-dashboard-alerts{grid-column:span 4}
+.v16-dashboard-overview{grid-column:1/-1}
+.v16-dashboard-key,.v16-dashboard-delegated{grid-column:span 6}
+.v16-dashboard-funds,.v16-dashboard-schedule,.v16-dashboard-purchases{grid-column:span 4}
+.v16-dashboard-overview .v16-metrics{gap:24px}
+.v16-dashboard-overview .v16-metrics div+div{border-left:1px solid var(--color-border-soft);padding-left:24px}
 .v16-dashboard-calendar{margin-top:var(--space-grid)}
 .v16-calendar-controls{display:flex;gap:4px;align-items:center}
 .v16-calendar-month-picker{display:flex;gap:8px;align-items:center;margin:0 0 8px;font-size:12px;color:var(--color-text2)}
 .v16-calendar-month-picker label{display:flex;gap:4px;align-items:center}.v16-calendar-month-picker input,.v16-calendar-month-picker select{width:auto;min-width:72px}
 .v16-calendar-label{font-size:12px;color:var(--color-text2);margin-bottom:8px}
-.v16-calendar-weekdays,.v16-dashboard-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.v16-calendar-weekdays span{text-align:center;font-size:11px;color:var(--color-text3)}
-.v16-calendar-day{min-height:48px;padding:5px;border:1px solid var(--color-border);border-radius:8px;text-align:left;color:var(--color-text)}
-.v16-calendar-day b,.v16-calendar-day small{display:block}.v16-calendar-day small{font-size:10px;color:var(--color-text2);margin-top:3px}
-.v16-calendar-day.is-today{border-color:var(--color-primary)}.v16-calendar-day.is-selected{background:var(--color-primary-light)}
+.v16-calendar-weekdays,.v16-dashboard-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.v16-calendar-weekdays span{text-align:center;font-size:12px;color:var(--color-text3);padding:6px 0}
+.v16-calendar-day{min-height:68px;padding:8px;border:1px solid var(--color-border-soft);border-radius:var(--radius-xs);text-align:left;color:var(--color-text);background:var(--color-surface);transition:background-color var(--motion-fast),border-color var(--motion-fast)}
+.v16-calendar-day:hover{background:var(--color-surface-hover);border-color:var(--color-border)}
+.v16-calendar-day b,.v16-calendar-day small{display:block}.v16-calendar-day small{font-size:11px;color:var(--color-text2);margin-top:5px}
+.v16-calendar-day.is-today{border-color:var(--color-primary)}.v16-calendar-day.is-selected{background:var(--color-primary);border-color:var(--color-primary);color:#fff}.v16-calendar-day.is-selected small{color:rgba(255,255,255,.82)}
 .v16-calendar-empty{min-height:48px}.v16-calendar-day-schedule{margin-top:12px;font-size:12px;color:var(--color-text2)}
 .v16-calendar-day-schedule strong{display:block;color:var(--color-text);margin-bottom:5px}.v16-calendar-day-schedule span{display:block}
 .v16-calendar-day-group{margin-top:8px}.v16-calendar-day-group>strong{font-size:12px}
 .v16-calendar-entry{display:block;text-align:left;padding:4px 0;color:var(--color-text2);font-size:12px}
+
+/* v1.6 UI Polish Phase B: report surface and compact task list. */
+.v16-summary-metrics{padding:4px 0 20px;border-bottom:1px solid var(--color-border)}
+.v16-summary-metrics .metric{border:0;border-radius:0;box-shadow:none;padding:8px 16px;background:transparent}
+.v16-summary-metrics .metric+.metric{border-left:1px solid var(--color-border-soft)}
+.v16-report{background:var(--color-surface);border:1px solid var(--color-border-soft);border-radius:var(--radius);padding:8px 28px;box-shadow:var(--shadow)}
+.v16-report-section{padding:24px 0;border-bottom:1px solid var(--color-border-soft)}
+.v16-report-section:last-child{border-bottom:0}
+.v16-report-section h2{font-size:18px;line-height:1.3;font-weight:650;letter-spacing:-.015em;margin-bottom:8px}
+.todo-group{background:var(--color-surface);border:1px solid var(--color-border-soft);border-radius:var(--radius-md);padding:4px 18px;margin-bottom:16px}
+.todo-group-title{font-size:13px;font-weight:600;color:var(--color-text2);padding:12px 0 8px;border-bottom:1px solid var(--color-border-soft)}
+.todo-group .todo-card{border:0;border-radius:0;box-shadow:none;margin:0;padding:14px 0;border-bottom:1px solid var(--color-border-soft)}
+.todo-group .todo-card:last-child{border-bottom:0}
+.todo-group .todo-card:hover{box-shadow:none;background:var(--color-surface-hover)}
+.todo-group .todo-card[style*="border-left"]{padding-left:12px}
+.todo-group .todo-subtask-bar{min-height:36px;border-radius:var(--radius-xs);margin-top:10px;padding:7px 10px;background:var(--color-bg2)}
+.todo-group .todo-subtask-list{margin:0;padding:6px 10px 8px 38px;background:transparent;border-top:1px solid var(--color-border-soft);border-radius:0}
+.todo-group .subtask-row{min-height:40px;border-bottom:1px solid var(--color-border-soft)}
+.todo-group .subtask-row:last-child{border-bottom:0}
+
+@media(max-width:980px){
+  .v16-dashboard-today,.v16-dashboard-alerts,.v16-dashboard-key,.v16-dashboard-delegated{grid-column:1/-1}
+  .v16-dashboard-funds,.v16-dashboard-schedule,.v16-dashboard-purchases{grid-column:span 6}
+  .v16-dashboard-purchases{grid-column:1/-1}
+}
+@media(max-width:700px){
+  .v16-dashboard-grid{grid-template-columns:1fr}
+  .v16-dashboard-grid>*{grid-column:1!important}
+  .v16-dashboard-overview .v16-metrics{grid-template-columns:repeat(2,1fr)}
+  .v16-dashboard-overview .v16-metrics div+div{border-left:0;padding-left:0}
+  .v16-report{padding:4px 18px}
+  .v16-summary-metrics .metric+.metric{border-left:0}
+  .todo-group{padding:4px 12px}
+  .todo-group .todo-subtask-list{padding-left:8px}
+  .v16-calendar-day{min-height:54px;padding:5px}
+}
 
 /* 悬浮按钮角标（速记收件箱计数） */
 .fab-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;background:#ef4444;color:#fff;border-radius:9px;font-size:11px;line-height:18px;text-align:center;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.25)}
