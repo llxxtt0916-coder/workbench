@@ -1895,5 +1895,81 @@ tr:hover td {
   .v16-calendar-day{min-height:54px;padding:5px}
 }
 
+/* v1.6 UI Polish Phase C: lightweight list families. */
+.goal-list,
+#remindList,
+#inspList,
+#meetingList,
+#trainingList{
+  background:var(--color-surface);
+  border:1px solid var(--color-border-soft);
+  border-radius:var(--radius-md);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.goal-list:empty,#remindList:empty,#inspList:empty,#meetingList:empty,#trainingList:empty{display:none}
+.goal-list>.todo-group-title,
+.goal-list>details>summary{
+  margin:0!important;
+  padding:14px 18px!important;
+  background:#fafafc;
+  border-bottom:1px solid var(--color-border-soft);
+}
+.goal-list>.todo-card,
+.goal-list>details>.todo-card{
+  margin:0;
+  padding:16px 18px;
+  border:0;
+  border-bottom:1px solid var(--color-border-soft);
+  border-radius:0;
+  box-shadow:none;
+}
+.goal-list>.todo-card:hover,
+.goal-list>details>.todo-card:hover{background:var(--color-surface-hover);box-shadow:none}
+.goal-list>details>.todo-card:last-child{border-bottom:0}
+#remindList>.todo-group{margin:0;border:0;border-radius:0;box-shadow:none}
+#inspList.insp-grid{display:block}
+#inspList .insp-card{
+  position:relative;
+  margin:0;
+  padding:16px 132px 16px 18px;
+  min-height:84px;
+  border:0;
+  border-bottom:1px solid var(--color-border-soft);
+  border-radius:0;
+  box-shadow:none;
+}
+#inspList .insp-card:last-child{border-bottom:0}
+#inspList .insp-card:hover{transform:none;box-shadow:none;background:var(--color-surface-hover)}
+#inspList .insp-card-title{font-size:15px;margin-bottom:5px}
+#inspList .insp-card-body{font-size:13px;line-height:1.55;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+#inspList .insp-card-actions{position:absolute;right:14px;top:14px;margin:0!important}
+#inspList .insp-card>div:last-child{font-size:12px!important}
+#meetingList .meeting-card,
+#trainingList .training-card{
+  margin:0!important;
+  padding:16px 18px!important;
+  border:0!important;
+  border-bottom:1px solid var(--color-border-soft)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  background:var(--color-surface)!important;
+}
+#meetingList .meeting-card:last-child,
+#trainingList .training-card:last-child{border-bottom:0!important}
+#meetingList .meeting-card:hover,
+#trainingList .training-card:hover{transform:none;background:var(--color-surface-hover)!important;box-shadow:none!important}
+#meetingList .meeting-card[style*="border-left"],
+#trainingList .training-card[style*="border-left"]{box-shadow:inset 3px 0 0 var(--color-danger)!important}
+#meetingList .meeting-card strong,
+#trainingList .training-card strong{font-size:15px!important;font-weight:600}
+
+@media(max-width:640px){
+  #inspList .insp-card{padding-right:18px}
+  #inspList .insp-card-actions{position:static;margin-top:10px!important}
+  #meetingList .meeting-card>div,
+  #trainingList .training-card>div{gap:8px!important;flex-direction:column}
+}
+
 /* 悬浮按钮角标（速记收件箱计数） */
 .fab-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;background:#ef4444;color:#fff;border-radius:9px;font-size:11px;line-height:18px;text-align:center;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.25)}
