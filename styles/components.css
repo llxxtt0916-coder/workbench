@@ -1971,5 +1971,57 @@ tr:hover td {
   #trainingList .training-card>div{gap:8px!important;flex-direction:column}
 }
 
+/* v1.6 UI Polish Phase D: shared ledger shell and finance surfaces. */
+#page-todo>.section-header,
+#page-contract>.section-header,
+#page-purchase>.section-header,
+#page-expense>.section-header,
+#page-agency>.section-header,
+#page-handover>.section-header,
+#page-fund>.section-header{
+  justify-content:flex-end;
+  padding:10px 0;
+  margin-bottom:12px;
+}
+#page-contract>.card,
+#page-purchase>.card,
+#page-expense>.card,
+#page-agency>.card,
+#page-handover>.card{padding:0;border:0;box-shadow:none;background:transparent}
+#page-contract table,#page-purchase table,#page-expense table,#page-agency table,#page-handover table{min-width:920px}
+#page-agency table{min-width:1480px}
+#page-expense table{min-width:1180px}
+.table-wrap th:first-child,.table-wrap td:first-child{position:sticky;left:0;z-index:1;background:inherit}
+.table-wrap th:last-child,.table-wrap td:last-child{position:sticky;right:0;z-index:1;background:inherit}
+.table-wrap th:first-child,.table-wrap th:last-child{z-index:3;background:#fafafc}
+.table-wrap td:last-child{background:var(--color-surface)}
+.table-wrap tr:hover td:first-child,.table-wrap tr:hover td:last-child{background:var(--color-surface-hover)}
+.table-wrap th:nth-last-child(2),.table-wrap td:nth-last-child(2){white-space:nowrap}
+.table-wrap td[style*="font-weight:500"],.table-wrap td[style*="font-weight:600"]{font-variant-numeric:tabular-nums}
+.work-ledger-table table{min-width:980px}
+.work-ledger-table .todo-card{padding:0;margin:0;border:0;border-radius:0;box-shadow:none}
+.work-ledger-table .todo-card:hover{box-shadow:none}
+.ledger-primary{min-width:260px;max-width:360px}
+.ledger-primary .priority-dot{display:inline-block;margin-right:9px;vertical-align:1px}
+.ledger-primary strong{font-size:14px;font-weight:600}
+.ledger-primary small{display:block;margin:3px 0 0 18px;color:var(--color-text3);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ledger-primary .blocker-badge{margin:5px 0 0 18px}
+.ledger-expand{display:flex;align-items:center;gap:8px;min-width:116px;color:var(--color-text2);font-size:12px}
+.ledger-expand .subtask-progress{width:54px}
+.ledger-actions{white-space:nowrap}
+.ledger-detail-row td{padding:0!important;background:#fafafc!important}
+.ledger-detail-content{padding:12px 18px 14px 42px}
+.ledger-detail-content .subtask-row{min-height:40px;border-bottom:1px solid var(--color-border-soft)}
+#fundStats{padding:2px 0 10px}
+#fundList>.card{border-radius:var(--radius-md);padding:18px 20px;box-shadow:none}
+#fundList>.card:hover{border-color:var(--color-border)}
+#fundList .table-wrap{margin-top:8px}
+
+@media(max-width:768px){
+  #page-todo .table-wrap,#page-contract .table-wrap,#page-purchase .table-wrap,#page-expense .table-wrap,#page-agency .table-wrap,#page-handover .table-wrap{border-radius:var(--radius-sm)}
+  .ledger-detail-content{padding-left:14px}
+  #fundList>.card{padding:16px}
+}
+
 /* 悬浮按钮角标（速记收件箱计数） */
 .fab-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;background:#ef4444;color:#fff;border-radius:9px;font-size:11px;line-height:18px;text-align:center;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.25)}
