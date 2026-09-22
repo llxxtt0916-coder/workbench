@@ -1637,6 +1637,17 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="confirmDialog" role="dialog" aria-modal="true" aria-labelledby="confirmDialogTitle">
+  <div class="modal v16-confirm">
+    <div class="modal-header">
+      <span class="modal-title" id="confirmDialogTitle">确认操作</span>
+      <button class="close-btn" onclick="cancelConfirmAction()" aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body"><p id="confirmDialogMessage" class="confirm-message"></p></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="cancelConfirmAction()">取消</button><button class="btn btn-danger" onclick="runConfirmAction()">确认删除</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- Smart Input Modal -->
@@ -2669,7 +2680,9 @@ function openOrganizeModal(ledgerKey, id){
   hideLifecycleStatusField(modalIds[ledgerKey]);
 }
 function deleteQuickNote(id){
-  if(!confirm('确定删除这条速记？')) return;
+  confirmAction('确定删除这条速记？',()=>deleteQuickNoteConfirmed(id));
+}
+function deleteQuickNoteConfirmed(id){
   const notes=DB.raw('quick_notes');
   const i=notes.findIndex(n=>String(n.id)===String(id));
   if(i>=0){ notes[i]=Object.assign({},notes[i],{deleted:true}); DB.set('quick_notes',notes); }
@@ -3261,7 +3274,20 @@ function hideLifecycleStatusField(modalId){
     const group=el.closest('.form-group');if(group)group.style.display='none';
   });
 }
-function closeModal(id){const modal=document.getElementById(id);if(modal)modal.classList.remove('open')}
+function closeModal(id){const modal=document.getElementById(id);if(modal)modal.classList.remove('open');if(id==='confirmDialog')pendingConfirmAction=null}
+let pendingConfirmAction=null;
+function confirmAction(message,action){
+  pendingConfirmAction=action;
+  document.getElementById('confirmDialogMessage').textContent=message;
+  openModal('confirmDialog');
+}
+function cancelConfirmAction(){pendingConfirmAction=null;closeModal('confirmDialog');}
+function runConfirmAction(){
+  const action=pendingConfirmAction;
+  pendingConfirmAction=null;
+  closeModal('confirmDialog');
+  if(typeof action==='function')action();
+}
 document.querySelectorAll('.modal-overlay').forEach(m=>{
   m.addEventListener('click',function(e){if(e.target===this)e.stopPropagation();});
 });
@@ -4231,8 +4257,8 @@ function clearTodoForm(){
   document.getElementById('recDetailGroup').style.display='none';
 }
 
-function deleteTodo(id){
-  if(!confirm('确认删除此工作记录？'))return;
+function deleteTodo(id,confirmed=false){
+  if(!confirmed){confirmAction('确认删除此工作记录？',()=>deleteTodo(id,true));return;}
   const todos=DB.raw('todos');
   const t=todos.find(t=>t.id===id);
   if(t)t.deleted=true;
@@ -4877,8 +4903,8 @@ function editInsp(id){
   openModal('inspModal');
 }
 
-function deleteInsp(id){
-  if(!confirm('确认删除？'))return;
+function deleteInsp(id,confirmed=false){
+  if(!confirmed){confirmAction('确认删除这条灵感记录？',()=>deleteInsp(id,true));return;}
   const insps=DB.raw('inspirations');
   const x=insps.find(i=>i.id===id);
   if(x)x.deleted=true;
@@ -5013,8 +5039,8 @@ function clearContractForm(){
   document.getElementById('contractModalTitle').textContent='新增合同';
 }
 
-function deleteContract(id){
-  if(!confirm('确认删除？'))return;
+function deleteContract(id,confirmed=false){
+  if(!confirmed){confirmAction('确认删除这条合同记录？',()=>deleteContract(id,true));return;}
   const contracts=DB.raw('contracts');
   const c=contracts.find(c=>c.id===id);
   if(c){
@@ -5361,8 +5387,8 @@ function clearPurchaseItems(){
   window._purchaseItems=[];
 }
 
-function deletePurchase(id){
-  if(!confirm('确认删除？'))return;
+function deletePurchase(id,confirmed=false){
+  if(!confirmed){confirmAction('确认删除这条采购记录？',()=>deletePurchase(id,true));return;}
   const purchases=DB.raw('purchases');
   const p=purchases.find(p=>p.id===id);
   if(p){
@@ -5540,8 +5566,8 @@ function editAgency(id){
   hideLifecycleStatusField('agencyModal');
 }
 
-function deleteAgency(id){
-  if(!confirm('确认删除？'))return;
+function deleteAgency(id,confirmed=false){
+  if(!confirmed){confirmAction('确认删除这条委托记录？',()=>deleteAgency(id,true));return;}
   const agencys=DB.raw('agencys');
   const a=agencys.find(p=>p.id===id);
   if(a){a.deleted=true;DB.set('agencys',agencys);}
@@ -5748,8 +5774,8 @@ function editHandover(id){
   openModal('handoverModal');
 }
 
-function deleteHandover(id){
-  if(!confirm('确认删除？'))return;
+function deleteHandover(id,confirmed=false){
+  if(!confirmed){confirmAction('确认删除这条交接记录？',()=>deleteHandover(id,true));return;}
   const handovers=DB.raw('handovers');
   const h=handovers.find(p=>p.id===id);
   if(h){h.deleted=true;DB.set('handovers',handovers);}
@@ -5959,8 +5985,8 @@ function editFund(id){
   openModal('fundModal');
 }
 
-function deleteFund(id){
-  if(!confirm('确认删除该经费及其所有开支记录？'))return;
+function deleteFund(id,confirmed=false){
+  if(!confirmed){confirmAction('确认删除该经费及其所有开支记录？',()=>deleteFund(id,true));return;}
   const funds=DB.raw('funds');
   const f=funds.find(p=>p.id===id);
   if(f){f.deleted=true;DB.set('funds',funds);}
@@ -6096,8 +6122,8 @@ function editFundRecord(id){
   openModal('fundRecordModal');
 }
 
-function deleteFundRecord(id){
-  if(!confirm('确认删除该开支记录？'))return;
+function deleteFundRecord(id,confirmed=false){
+  if(!confirmed){confirmAction('确认删除该开支记录？',()=>deleteFundRecord(id,true));return;}
   const records=DB.raw('fundRecords');
   const r=records.find(p=>p.id===id);
   if(r){r.deleted=true;DB.set('fundRecords',records);}
@@ -6314,8 +6340,8 @@ function populateExpenseFundDropdown(){
   if(curVal)sel.value=curVal;
 }
 
-function deleteExpense(id){
-  if(!confirm('确认删除？'))return;
+function deleteExpense(id,confirmed=false){
+  if(!confirmed){confirmAction('确认删除这条报销记录？',()=>deleteExpense(id,true));return;}
   const expenses=DB.raw('expenses');
   const e=expenses.find(e=>e.id===id);
   if(e){
@@ -6473,8 +6499,8 @@ function editMeeting(id){
   openModal('meetingModal');
 }
 
-function deleteMeeting(id){
-  if(!confirm('确认删除此会议？'))return;
+function deleteMeeting(id,confirmed=false){
+  if(!confirmed){confirmAction('确认删除此会议？',()=>deleteMeeting(id,true));return;}
   const meetings=DB.raw('meetings');
   const m=meetings.find(m=>m.id===id);
   if(m){
@@ -6683,8 +6709,8 @@ function editTraining(id){
   openModal('trainingModal');
 }
 
-function deleteTraining(id){
-  if(!confirm('确认删除此培训记录？'))return;
+function deleteTraining(id,confirmed=false){
+  if(!confirmed){confirmAction('确认删除此培训记录？',()=>deleteTraining(id,true));return;}
   const trainings=DB.raw('trainings');
   const t=trainings.find(t=>t.id===id);
   if(t){
@@ -7585,10 +7611,10 @@ function decorateBulk(group,containerId,buttonSelector,cardSelector){
   toolbar.querySelector('input[type="checkbox"]').checked=false;
   updateBulkCount(group);
 }
-function deleteBulk(group){
+function deleteBulk(group,confirmed=false){
   const chosen=visibleBulkInputs(group).filter(input=>input.checked);
   if(!chosen.length)return;
-  if(!confirm('确认删除选中的 '+chosen.length+' 条记录？'))return;
+  if(!confirmed){confirmAction('确认删除选中的 '+chosen.length+' 条记录？',()=>deleteBulk(group,true));return;}
   const byKey={};
   chosen.forEach(input=>{(byKey[input.dataset.bulkKey]??=new Set()).add(input.dataset.bulkId);});
   Object.entries(byKey).forEach(([key,ids])=>{
@@ -7700,11 +7726,11 @@ function toggleSubtask(todoId,idx){
   item.completed=!item.completed; item.completed_date=item.completed?todayStr():''; item.updated_at=todayStr();
   writeWorkSubtasks(todoId,list); rerenderV16WorkViews();
 }
-function deleteSubtask(todoId,idx){
+function deleteSubtask(todoId,idx,confirmed=false){
   const todo=DB.get('todos').find(t=>String(t.id)===String(todoId)); if(!todo)return;
   const list=workSubtasks(todo); const item=list[idx]; if(!item)return;
   const prompt=item.completed?'删除已完成子任务会影响历史月度成果统计，确定删除吗？':'确定删除此未完成子任务吗？';
-  if(!confirm(prompt))return;
+  if(!confirmed){confirmAction(prompt,()=>deleteSubtask(todoId,idx,true));return;}
   list.splice(idx,1); writeWorkSubtasks(todoId,list); rerenderV16WorkViews();
 }
 function moveSubtask(todoId,idx,delta){
@@ -7755,9 +7781,9 @@ setState=function(ledgerKey,id,newState,reason){
 function todoLedgerLabel(key){return ({todos:'工作',contracts:'合同',purchases:'采购',expenses:'报销',meetings:'会议',trainings:'培训',agencys:'委托',handovers:'交接',funds:'经费'})[key]||key;}
 function todoDueClass(record,due){if(!due)return '';if(due<todayStr())return 'due-overdue';const diff=Math.round((new Date(due+'T00:00:00')-new Date(todayStr()+'T00:00:00'))/86400000);return diff<=3?'due-soon':'';}
 function setTodoCategory(key){v16TodoCategory=key;renderTodos();}
-function deleteActiveItem(ledgerKey,id){
+function deleteActiveItem(ledgerKey,id,confirmed=false){
   if(ledgerKey==='todos')return deleteTodo(id);
-  if(!confirm('确认删除此'+todoLedgerLabel(ledgerKey)+'记录？'))return;
+  if(!confirmed){confirmAction('确认删除此'+todoLedgerLabel(ledgerKey)+'记录？',()=>deleteActiveItem(ledgerKey,id,true));return;}
   const rows=DB.raw(ledgerKey),record=rows.find(r=>String(r.id)===String(id));
   if(!record)return;
   record.deleted=true;DB.set(ledgerKey,rows);rerenderCurrent();renderTodos();toast('已删除');

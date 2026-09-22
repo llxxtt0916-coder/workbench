@@ -2023,5 +2023,50 @@ tr:hover td {
   #fundList>.card{padding:16px}
 }
 
+/* v1.6 UI Polish Phase E: form hierarchy, confirmations and narrow screens. */
+#smartModal .modal{max-width:680px!important}
+#todoModal .modal,#meetingModal .modal,#trainingModal .modal,#agencyModal .modal,#handoverModal .modal,#settingsModal .modal{max-width:880px!important}
+#contractModal .modal,#purchaseModal .modal,#expenseModal .modal,#fundModal .modal,#fundRecordModal .modal{max-width:720px!important}
+#stateModal .modal,#detailModal .modal,#confirmDialog .modal{max-width:520px!important}
+.modal-body>.form-group:last-child{margin-bottom:0}
+.modal-body .form-row{gap:16px}
+.modal-body .form-row+.form-group,.modal-body .form-group+.form-row{margin-top:4px}
+.modal-footer .btn{min-width:78px}
+.confirm-message{font-size:14px;line-height:1.7;color:var(--color-text2)}
+#confirmDialog .btn-danger{background:var(--color-danger);border-color:var(--color-danger);color:#fff}
+#confirmDialog .btn-danger:hover{background:#e93228;border-color:#e93228}
+.smart-textarea{font-size:14px;line-height:1.65;border-radius:var(--radius-sm)}
+.preview-card{border-radius:var(--radius-md);border-color:var(--color-border-soft)}
+
+@media(max-width:768px){
+  .modal-overlay{align-items:flex-end;padding:12px}
+  .modal{max-width:none!important;max-height:calc(100vh - 24px);border-radius:18px}
+  .modal-header{padding:17px 18px 14px}
+  .modal-body{padding:18px}
+  .modal-footer{padding:14px 18px;position:sticky;bottom:0;background:var(--color-surface)}
+  .modal-body .form-row{grid-template-columns:1fr}
+  .table-wrap{max-width:calc(100vw - 32px);scrollbar-width:thin;scroll-snap-type:x proximity}
+  .table-wrap th:first-child,.table-wrap td:first-child{box-shadow:1px 0 0 var(--color-border-soft)}
+  .v16-page-heading h1,.v16-content-header h1{font-size:26px}
+  .v16-page-heading{margin-bottom:20px}
+  .v16-content-header{margin-bottom:20px}
+  .v16-month-switch{width:100%}
+  .v16-month-switch .btn{flex:1}
+  .topbar-right #syncLabel{display:none}
+}
+
+@media(max-width:480px){
+  .topbar{gap:6px}
+  .global-search-wrap{margin:0;min-width:0}
+  .global-search-wrap input{padding-left:10px;padding-right:10px}
+  .avatar{width:34px;height:34px}
+  .modal-overlay{padding:0}
+  .modal{max-height:96vh;border-radius:18px 18px 0 0}
+  .modal-footer{display:grid;grid-template-columns:1fr 1fr}
+  .modal-footer .btn{width:100%}
+  .v16-calendar-controls{flex-wrap:wrap;justify-content:flex-end}
+  .v16-calendar-day small{font-size:10px;line-height:1.25}
+}
+
 /* 悬浮按钮角标（速记收件箱计数） */
 .fab-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;background:#ef4444;color:#fff;border-radius:9px;font-size:11px;line-height:18px;text-align:center;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.25)}
