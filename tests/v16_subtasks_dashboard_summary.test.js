@@ -25,6 +25,7 @@ function belongsToLedger(){return true;}
 function stateBadge(){return '';}
 function recordDisplayName(r){return r.name||r.title||'未命名';}
 function esc(v){return String(v??'');}
+function priorityTag(p){return p?'<span>'+esc(p)+'</span>':'';}
 function openStateModal(){} function openOrganizeModal(){} function renderReminders(){} function updateTodoBadge(){}
 function renderTodo(){} function renderDashboard(){} function renderSummary(){} function expenseFundId(e){return e.fundItem||null;}
 function fmtCNY(n){return '¥'+Number(n).toFixed(2);} function navigate(){} function toast(m){messages.push(m);} const messages=[];
@@ -162,7 +163,7 @@ assert(!html.includes('modalFingerprint')&&!html.includes('requestModalClose')&&
 ['todoModal','contractModal','purchaseModal','expenseModal','meetingModal','trainingModal','agencyModal','handoverModal','smartModal'].forEach(id=>assert(html.includes(`closeModal('${id}')`),`${id} 的 × / 取消必须直接调用统一关闭函数`));
 assert(html.includes('v16TodoCategory')&&html.includes('todoLedgerTabs'),'待办必须从统一待办源提供所属板块分类');
 assert(html.includes('deleteActiveItem')&&html.includes('todo-delete'),'每条待办必须保留删除入口');
-assert(html.includes('开始 ${esc(r.issueDate||r.date||')&&html.includes('经办人 ${esc(r.assignee||'), '待办卡必须渲染开始日期、截止日期、经办人和优先级');
+assert(html.includes('todoCardMetadata(r,isWork,due,overdue)')&&html.includes('if(isWork){')&&html.includes("if(String(record.assignee||'').trim())fields.push"), '待办元数据必须按工作类型和实际字段值渲染');
 assert(!html.includes('meetingCalendarGrid')&&!html.includes('renderMeetingCalendar'),'会议页面不得保留月历 DOM 或专属渲染逻辑');
 assert(html.includes('dashboardCalendarEntries')&&html.includes('v16DashboardCalendarGrid')&&html.includes('toggleDashboardCalendarPicker')&&html.includes('applyDashboardCalendarMonth'),'驾驶舱月历必须支持日程/完成事项汇总与年月跳转');
 console.log('v1.6 子任务、驾驶舱口径、本月摘要、同步字段、报销与月度工作日历测试通过');

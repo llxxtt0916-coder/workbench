@@ -910,6 +910,10 @@
           </select>
         </div>
       </div>
+      <div class="form-group">
+        <label class="form-label" for="todoGoal">关联长期目标</label>
+        <select class="form-control" id="todoGoal"><option value="">不关联</option></select>
+      </div>
       <div class="form-row">
         <div class="form-group" style="position:relative">
           <label class="form-label">类别（可多选）</label>
@@ -2017,11 +2021,11 @@ function normPriority(p){
   if(PRIORITY_MIGRATE[p]!==undefined) return PRIORITY_MIGRATE[p]; // 旧值映射
   return '不重要不紧急';
 }
-// 优先级展示标签（不重要不紧急不显示，避免噪音）
+// 工作重要程度统一使用四象限语义色；未设置时不显示。
 function priorityTag(p){
+  if(p===undefined||p===null||String(p).trim()==='') return '';
   const v=normPriority(p);
-  if(v==='不重要不紧急') return '';
-  return '<span class="tag" style="background:'+PRIORITY_COLOR[v]+';color:#fff">'+v+'</span>';
+  return '<span class="tag" style="background:'+PRIORITY_COLOR[v]+';color:#fff">'+esc(v)+'</span>';
 }
 const PERIOD = { none:'none', weekly:'weekly', monthly:'monthly', quarterly:'quarterly', yearly:'yearly' };
 
@@ -2638,6 +2642,17 @@ function activeGoalOptions(){
   if(!goals.length) return '';
   return goals.map(g=>`<option value="${g.id}">${esc(g.name||g.title||'未命名目标')}${g.recurrence!=='none'?'（周期）':''}</option>`).join('');
 }
+function setTodoGoalOptions(parentGoal=''){
+  const select=document.getElementById('todoGoal');
+  const goalId=String(parentGoal).startsWith('todos:')?String(parentGoal).slice(6):'';
+  let options=activeGoalOptions();
+  const current=goalId&&DB.get('todos').find(g=>String(g.id)===goalId&&g.is_goal);
+  if(current&&!getAllLedgerItems().some(g=>g.is_goal&&String(g.id)===goalId&&(g.state===STATE.TODO||g.state===STATE.DOING))){
+    options+=`<option value="${esc(goalId)}">${esc(current.name||current.title||'未命名目标')}（已结束）</option>`;
+  }
+  select.innerHTML='<option value="">不关联</option>'+options;
+  select.value=current?goalId:'';
+}
 // 新建长期目标（T7）：建 todos 条目 is_goal=true，state=进行中
 function renderQuick(){
   const all=DB.get('quick_notes');
@@ -2945,7 +2960,7 @@ function renderRemindCenter(){
       <div class="todo-card-meta">
         <span>${overdue?'⚠ 已逾期':'⏰ 今天到期'} ${r._due}</span>
         <span class="tag">${esc(r._ledgerLabel||'')}</span>
-        ${priorityTag(r.priority)}
+        ${r._ledger==='todos'?priorityTag(r.priority):''}
         <button class="btn btn-ghost btn-sm" onclick="openStateModal('${r._ledger}',${r.id})">状态</button>
         <button class="btn btn-ghost btn-sm" onclick="openSearchHit('${r._ledger}','${r.id}')">查看原记录</button>
         <button class="btn btn-ghost btn-sm" data-reminder-key="${esc(reminderKey(r,r._due))}" onclick="ignoreReminder(this.dataset.reminderKey)">忽略提醒</button>
@@ -3932,7 +3947,7 @@ const TODO_TYPES=['record'];
 const TYPE_LABELS={pending:'待办工作',key:'重点工作',recurring:'周期工作',record:'工作记录'};
 const PRIORITY_MAP={'重要且紧急':0,'重要不紧急':1,'紧急不重要':2,'不重要不紧急':3};
 const PRIORITY_LABEL={'重要且紧急':'重要且紧急','重要不紧急':'重要不紧急','紧急不重要':'紧急不重要','不重要不紧急':'不重要不紧急'};
-const PRIORITY_COLOR={'重要且紧急':'#d93025','重要不紧急':'#e8920c','紧急不重要':'#d98300','不重要不紧急':'#9aa0a6'};
+const PRIORITY_COLOR={'重要且紧急':'#d93025','紧急不重要':'#e8920c','重要不紧急':'#2563eb','不重要不紧急':'#9aa0a6'};
 
 function switchTodoTab(tab){
   activeTodoTab='record';
@@ -4113,6 +4128,10 @@ function saveTodo(){
   if(!validDateOrder('todoIssueDate','todoDeadline','下发日期不能晚于截止日期'))return;
   const todos=DB.get('todos');
   const id=+document.getElementById('todoId').value;
+  const goalId=document.getElementById('todoGoal').value;
+  if(goalId&&!todos.some(g=>String(g.id)===goalId&&g.is_goal&&g.id!==id)){
+    toast('请选择有效的长期目标');return;
+  }
   const now=new Date().toISOString().slice(0,10);
   const item={
     id:id||DB.nextId(todos),
@@ -4136,6 +4155,7 @@ function saveTodo(){
     expenseRef:null,
     meetingRef:null,
     trainingRef:null,
+    parent_goal:goalId?'todos:'+goalId:'',
     deleted:false
   };
   // 如果是周期工作，保存周期配置
@@ -4181,7 +4201,6 @@ function saveTodo(){
       item.recurrence_group_id=old.recurrence_group_id||'';
       item.recurrence_index=old.recurrence_index||0;
       item.next_generated=old.next_generated||false;
-      item.parent_goal=old.parent_goal||'';
       item.is_goal=old.is_goal||false;
       item.due_date=item.deadline;
       if(old.type==='record'){
@@ -4208,6 +4227,7 @@ function editTodo(id){
   document.getElementById('todoName').value=t.name||'';
   document.getElementById('todoType').value=t.type==='record'?(t._prevType==='key'||t._prevType==='recurring'?t._prevType:''):(t.type==='key'||t.type==='recurring'?t.type:'');
   document.getElementById('todoPriority').value=normPriority(t.priority);
+  setTodoGoalOptions(t.parent_goal);
   setMultiSelected('todoCategory',toArray(t.category));
   setMultiSelected('todoSource',toArray(t.source));
   document.getElementById('todoContent').value=t.content||'';
@@ -4241,6 +4261,7 @@ function editTodo(id){
 function clearTodoForm(){
   ['todoId','todoName','todoContent','todoIssueDate','todoDeadline','todoBlocker','todoAssignee'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('todoPriority').value='不重要不紧急';
+  setTodoGoalOptions();
   document.getElementById('todoType').value='';
   document.getElementById('todoModalTitle').textContent='新建工作';
   const subtaskHint=document.getElementById('todoSubtasksReadonly');
@@ -7788,19 +7809,46 @@ function deleteActiveItem(ledgerKey,id,confirmed=false){
   if(!record)return;
   record.deleted=true;DB.set(ledgerKey,rows);rerenderCurrent();renderTodos();toast('已删除');
 }
+const TODO_WORK_PRIORITY_ORDER={'重要且紧急':0,'紧急不重要':1,'重要不紧急':2,'不重要不紧急':3};
+function todoWorkPriorityRank(record){
+  return record.priority===undefined||record.priority===null||String(record.priority).trim()===''
+    ?4:TODO_WORK_PRIORITY_ORDER[normPriority(record.priority)];
+}
+function todoCardMetadata(record,isWork,due,overdue){
+  const fields=[];
+  if(isWork){
+    const importance=priorityTag(record.priority);
+    if(importance)fields.push(importance);
+    if(String(record.issueDate||'').trim())fields.push(`<span>开始 ${esc(record.issueDate)}</span>`);
+    if(String(due||'').trim())fields.push(`<span class="${todoDueClass(record,due)}">截止 ${esc(due)}</span>`);
+  }
+  if(String(record.assignee||'').trim())fields.push(`<span>经办人 ${esc(record.assignee)}</span>`);
+  if(overdue)fields.push('<span class="badge badge-red">逾期</span>');
+  return fields.length?`<div class="todo-card-meta v16-todo-meta">${fields.join('')}</div>`:'';
+}
 function renderTodosV16(){
   const allVisible=getVisibleTodoItems(); const box=document.getElementById('todoActiveList'); if(!box)return;
   const ledgerKeys=[...new Set(allVisible.map(r=>r._ledger))];
+  if(ledgerKeys.includes('todos')){
+    ledgerKeys.splice(ledgerKeys.indexOf('todos'),1);
+    ledgerKeys.unshift('todos');
+  }
   if(v16TodoCategory!=='all'&&!ledgerKeys.includes(v16TodoCategory))v16TodoCategory='all';
   const tabs=document.getElementById('todoLedgerTabs'); if(tabs)tabs.innerHTML=[['all','全部',allVisible.length],...ledgerKeys.map(k=>[k,todoLedgerLabel(k),allVisible.filter(r=>r._ledger===k).length])].map(([k,label,n])=>`<button class="v16-segment ${v16TodoCategory===k?'active':''}" onclick="setTodoCategory('${k}')">${esc(label)} <span>${n}</span></button>`).join('');
   const visible=v16TodoCategory==='all'?allVisible:allVisible.filter(r=>r._ledger===v16TodoCategory);
   renderReminders();updateTodoBadge(); const sum=document.getElementById('todoActiveSummary');if(sum)sum.textContent='共 '+visible.length+' 项进行中';
   if(!visible.length){box.innerHTML='<div class="empty-state"><p>🎉 没有进行中的事项。有念头？去「智能录入」添加一笔吧。</p></div>';return;}
   const groups={}; visible.forEach(r=>{const label=todoLedgerLabel(r._ledger);(groups[label]??=[]).push(r);});
-  box.innerHTML=Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([label,items])=>'<div class="todo-group"><div class="todo-group-title">'+esc(label)+'（'+items.length+'）</div>'+items.sort((a,b)=>(getDueDate(a,a._ledger)||'9999').localeCompare(getDueDate(b,b._ledger)||'9999')).map(r=>{
+  box.innerHTML=Object.entries(groups).sort(([a],[b])=>a==='工作'?-1:b==='工作'?1:a.localeCompare(b)).map(([label,items])=>'<div class="todo-group"><div class="todo-group-title">'+esc(label)+'（'+items.length+'）</div>'+items.sort((a,b)=>{
+    if(a._ledger==='todos'){
+      const rank=todoWorkPriorityRank(a)-todoWorkPriorityRank(b);
+      if(rank)return rank;
+    }
+    return (getDueDate(a,a._ledger)||'9999').localeCompare(getDueDate(b,b._ledger)||'9999');
+  }).map(r=>{
     const overdue=isOverdue(r,r._ledger), sub=r._ledger==='todos'?subtaskSummary(r):null, due=getDueDate(r,r._ledger);
-    const isWork=r._ledger==='todos', open=isWork&&v16ExpandedSubtasks.has(String(r.id)), priority=r.priority?`<span class="tag tag-cat">${esc(r.priority)}</span>`:'';
-    return `<div class="todo-card" ${overdue?'style="border-left:3px solid var(--color-danger)"':''} data-bulk-key="${r._ledger}" data-bulk-id="${esc(r.id)}"><div class="todo-card-header"><div class="todo-card-title">${esc(recordDisplayName(r))}</div><div class="todo-card-actions">${stateBadge(r)} <button class="btn btn-ghost btn-sm" onclick="openStateModal('${r._ledger}',${r.id})">状态</button><button class="btn btn-ghost btn-sm" onclick="openOrganizeModal('${r._ledger}',${r.id})">整理</button><button class="btn btn-ghost btn-sm todo-delete" onclick="deleteActiveItem('${r._ledger}',${r.id})">删除</button></div></div><div class="todo-card-meta v16-todo-meta">${priority}<span>开始 ${esc(r.issueDate||r.date||'—')}</span><span class="${todoDueClass(r,due)}">截止 ${esc(due||'—')}</span><span>经办人 ${esc(r.assignee||'未指定')}</span>${overdue?'<span class="badge badge-red">逾期</span>':''}</div>${isWork?`<div class="todo-subtask-bar" onclick="toggleSubtasks(${r.id})"><span class="subtask-progress"><span class="subtask-done-bar" style="width:${sub.pct}%"></span></span><span>子任务 ${sub.done}/${sub.total}</span>${sub.next?'<span>下一步：'+esc(sub.next.name)+'</span>':''}<span class="expand-icon" id="expandIcon-${r.id}">${open?'▾':'▸'}</span></div><div class="todo-subtask-list" id="subtaskList-${r.id}" style="display:${open?'block':'none'}">${renderSubtasks(r)}<div class="subtask-add"><input class="subtask-input" id="subtaskInput-${r.id}" placeholder="新增子任务" onkeydown="if(event.key==='Enter')addSubtask(${r.id})"><button class="btn btn-ghost btn-sm" onclick="addSubtask(${r.id})">添加</button></div></div>`:''}</div>`;
+    const isWork=r._ledger==='todos', open=isWork&&v16ExpandedSubtasks.has(String(r.id));
+    return `<div class="todo-card" ${overdue?'style="border-left:3px solid var(--color-danger)"':''} data-bulk-key="${r._ledger}" data-bulk-id="${esc(r.id)}"><div class="todo-card-header"><div class="todo-card-title">${esc(recordDisplayName(r))}</div><div class="todo-card-actions">${stateBadge(r)} <button class="btn btn-ghost btn-sm" onclick="openStateModal('${r._ledger}',${r.id})">状态</button><button class="btn btn-ghost btn-sm" onclick="openOrganizeModal('${r._ledger}',${r.id})">整理</button><button class="btn btn-ghost btn-sm todo-delete" onclick="deleteActiveItem('${r._ledger}',${r.id})">删除</button></div></div>${todoCardMetadata(r,isWork,due,overdue)}${isWork?`<div class="todo-subtask-bar" onclick="toggleSubtasks(${r.id})"><span class="subtask-progress"><span class="subtask-done-bar" style="width:${sub.pct}%"></span></span><span>子任务 ${sub.done}/${sub.total}</span>${sub.next?'<span>下一步：'+esc(sub.next.name)+'</span>':''}<span class="expand-icon" id="expandIcon-${r.id}">${open?'▾':'▸'}</span></div><div class="todo-subtask-list" id="subtaskList-${r.id}" style="display:${open?'block':'none'}">${renderSubtasks(r)}<div class="subtask-add"><input class="subtask-input" id="subtaskInput-${r.id}" placeholder="新增子任务" onkeydown="if(event.key==='Enter')addSubtask(${r.id})"><button class="btn btn-ghost btn-sm" onclick="addSubtask(${r.id})">添加</button></div></div>`:''}</div>`;
   }).join('')+'</div>').join('');
 }
 renderTodos=renderTodosV16;
