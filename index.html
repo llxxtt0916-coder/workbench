@@ -881,7 +881,7 @@
       </div>
       <div class="config-tabs" id="configTabs" aria-label="配置类别"></div>
       <div class="table-wrap"><table class="ledger-table config-table"><thead id="configTableHead"></thead><tbody id="configTableBody"></tbody></table></div>
-      <p class="config-help">停用后，新建记录不再推荐；历史记录和历史筛选值保留。</p>
+      <p class="config-help">已使用的配置只能停用；未使用的配置可确认后删除。停用不改变历史记录和筛选值。</p>
     </div>
 
   </div><!-- page-content end -->
@@ -898,6 +898,7 @@
       <div class="form-group"><label class="form-label" for="configName">名称 *</label><input class="form-control" id="configName" maxlength="100"></div>
       <div class="form-group" id="configShortNameGroup"><label class="form-label" for="configShortName">简称</label><input class="form-control" id="configShortName" maxlength="60"></div>
       <div class="form-group" id="configTypeGroup"><label class="form-label" for="configType">类别</label><select class="form-control" id="configType"><option value="external">外部单位</option><option value="internal">内部组织</option><option value="supplier">供应商</option></select></div>
+      <div class="form-group" id="configSourceOrgGroup" hidden><label class="form-label" for="configSourceOrg">关联组织（可选）</label><select class="form-control" id="configSourceOrg"></select></div>
       <div class="form-group"><label class="form-label" for="configRemark">备注</label><textarea class="form-control" id="configRemark" rows="2"></textarea></div>
     </div>
     <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('configModal')">取消</button><button class="btn btn-primary" onclick="saveConfigEditor()">保存</button></div>
@@ -1140,8 +1141,8 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">对方单位</label>
-          <input class="form-control" id="contractParty" list="contractPartyOptions" data-org-scope="external" placeholder="输入或选择签约方" oninput="onOrgInput(this)">
-          <datalist id="contractPartyOptions"></datalist><button type="button" class="config-save-common" data-for="contractParty" onclick="saveCommonOrg(this.dataset.for)">+ 保存为常用单位</button>
+          <input class="form-control" id="contractParty" data-org-scope="external" role="combobox" aria-controls="contractPartyOptions" aria-expanded="false" placeholder="输入或选择签约方" onfocus="openOrgCombobox(this)" onclick="openOrgCombobox(this)" oninput="onOrgInput(this)" onblur="canonicalizeOrgInput(this);hideOrgCombobox(this)" onkeydown="orgComboboxKeydown(event,this)">
+          <div class="org-combobox-options" id="contractPartyOptions" role="listbox"></div><button type="button" class="config-save-common" data-for="contractParty" onclick="saveCommonOrg(this.dataset.for)">+ 保存为常用单位</button>
         </div>
         <div class="form-group">
           <label class="form-label">合同金额（元）</label>
@@ -1216,8 +1217,8 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">供应商</label>
-          <input class="form-control" id="purchaseSupplier" list="purchaseSupplierOptions" data-org-scope="external" placeholder="输入或选择采购对象" oninput="onOrgInput(this)">
-          <datalist id="purchaseSupplierOptions"></datalist><button type="button" class="config-save-common" data-for="purchaseSupplier" onclick="saveCommonOrg(this.dataset.for)">+ 保存为常用单位</button>
+          <input class="form-control" id="purchaseSupplier" data-org-scope="external" role="combobox" aria-controls="purchaseSupplierOptions" aria-expanded="false" placeholder="输入或选择采购对象" onfocus="openOrgCombobox(this)" onclick="openOrgCombobox(this)" oninput="onOrgInput(this)" onblur="canonicalizeOrgInput(this);hideOrgCombobox(this)" onkeydown="orgComboboxKeydown(event,this)">
+          <div class="org-combobox-options" id="purchaseSupplierOptions" role="listbox"></div><button type="button" class="config-save-common" data-for="purchaseSupplier" onclick="saveCommonOrg(this.dataset.for)">+ 保存为常用单位</button>
         </div>
         <div class="form-group">
           <label class="form-label">金额（元）</label>
@@ -1250,7 +1251,7 @@
         </div>
         <div class="form-group" id="purchaseContractDeptGroup" style="display:none">
           <label class="form-label">签订科室</label>
-          <input class="form-control" id="purchaseContractDept" list="purchaseContractDeptOptions" data-org-scope="internal" placeholder="选择签订科室" oninput="onOrgInput(this)"><datalist id="purchaseContractDeptOptions"></datalist>
+          <input class="form-control" id="purchaseContractDept" data-org-scope="internal" role="combobox" aria-controls="purchaseContractDeptOptions" aria-expanded="false" placeholder="选择签订科室" onfocus="openOrgCombobox(this)" onclick="openOrgCombobox(this)" oninput="onOrgInput(this)" onblur="canonicalizeOrgInput(this);hideOrgCombobox(this)" onkeydown="orgComboboxKeydown(event,this)"><div class="org-combobox-options" id="purchaseContractDeptOptions" role="listbox"></div>
         </div>
       </div>
       <div class="form-row">
@@ -1265,7 +1266,7 @@
         </div>
         <div class="form-group" id="purchaseExpenseDeptGroup" style="display:none">
           <label class="form-label">报账科室</label>
-          <input class="form-control" id="purchaseExpenseDept" list="purchaseExpenseDeptOptions" data-org-scope="internal" placeholder="选择报账科室" oninput="onOrgInput(this)"><datalist id="purchaseExpenseDeptOptions"></datalist>
+          <input class="form-control" id="purchaseExpenseDept" data-org-scope="internal" role="combobox" aria-controls="purchaseExpenseDeptOptions" aria-expanded="false" placeholder="选择报账科室" onfocus="openOrgCombobox(this)" onclick="openOrgCombobox(this)" oninput="onOrgInput(this)" onblur="canonicalizeOrgInput(this);hideOrgCombobox(this)" onkeydown="orgComboboxKeydown(event,this)"><div class="org-combobox-options" id="purchaseExpenseDeptOptions" role="listbox"></div>
         </div>
       </div>
       <div class="form-group">
@@ -1319,8 +1320,8 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">供应商名称</label>
-          <input class="form-control" id="expenseSupplier" list="expenseSupplierOptions" data-org-scope="external" placeholder="输入或选择单位" oninput="onOrgInput(this)">
-          <datalist id="expenseSupplierOptions"></datalist><button type="button" class="config-save-common" data-for="expenseSupplier" onclick="saveCommonOrg(this.dataset.for)">+ 保存为常用单位</button>
+          <input class="form-control" id="expenseSupplier" data-org-scope="external" role="combobox" aria-controls="expenseSupplierOptions" aria-expanded="false" placeholder="输入或选择单位" onfocus="openOrgCombobox(this)" onclick="openOrgCombobox(this)" oninput="onOrgInput(this)" onblur="canonicalizeOrgInput(this);hideOrgCombobox(this)" onkeydown="orgComboboxKeydown(event,this)">
+          <div class="org-combobox-options" id="expenseSupplierOptions" role="listbox"></div><button type="button" class="config-save-common" data-for="expenseSupplier" onclick="saveCommonOrg(this.dataset.for)">+ 保存为常用单位</button>
         </div>
         <div class="form-group">
           <label class="form-label">统一信用代码/纳税人识别号</label>
@@ -1774,12 +1775,12 @@
       <div class="form-row" id="agencyAgentRow" style="display:flex">
         <div class="form-group">
           <label class="form-label">代理机构</label>
-          <input class="form-control" id="agencyAgent" list="agencyAgentOptions" data-org-scope="external" placeholder="输入或选择代理机构" oninput="onOrgInput(this)"><datalist id="agencyAgentOptions"></datalist>
+          <input class="form-control" id="agencyAgent" data-org-scope="external" role="combobox" aria-controls="agencyAgentOptions" aria-expanded="false" placeholder="输入或选择代理机构" onfocus="openOrgCombobox(this)" onclick="openOrgCombobox(this)" oninput="onOrgInput(this)" onblur="canonicalizeOrgInput(this);hideOrgCombobox(this)" onkeydown="orgComboboxKeydown(event,this)"><div class="org-combobox-options" id="agencyAgentOptions" role="listbox"></div>
           <button type="button" class="config-save-common" data-for="agencyAgent" onclick="saveCommonOrg(this.dataset.for)">+ 保存为常用单位</button>
         </div>
         <div class="form-group">
           <label class="form-label">需求科室</label>
-          <input class="form-control" id="agencyDept" list="agencyDeptOptions" data-org-scope="internal" placeholder="选择需求科室" oninput="onOrgInput(this)"><datalist id="agencyDeptOptions"></datalist>
+          <input class="form-control" id="agencyDept" data-org-scope="internal" role="combobox" aria-controls="agencyDeptOptions" aria-expanded="false" placeholder="选择需求科室" onfocus="openOrgCombobox(this)" onclick="openOrgCombobox(this)" oninput="onOrgInput(this)" onblur="canonicalizeOrgInput(this);hideOrgCombobox(this)" onkeydown="orgComboboxKeydown(event,this)"><div class="org-combobox-options" id="agencyDeptOptions" role="listbox"></div>
         </div>
       </div>
       <div class="form-row">
@@ -1821,7 +1822,7 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">成交供应商</label>
-          <input class="form-control" id="agencySupplier" list="agencySupplierOptions" data-org-scope="external" placeholder="输入或选择成交供应商" oninput="onOrgInput(this)"><datalist id="agencySupplierOptions"></datalist>
+          <input class="form-control" id="agencySupplier" data-org-scope="external" role="combobox" aria-controls="agencySupplierOptions" aria-expanded="false" placeholder="输入或选择成交供应商" onfocus="openOrgCombobox(this)" onclick="openOrgCombobox(this)" oninput="onOrgInput(this)" onblur="canonicalizeOrgInput(this);hideOrgCombobox(this)" onkeydown="orgComboboxKeydown(event,this)"><div class="org-combobox-options" id="agencySupplierOptions" role="listbox"></div>
           <button type="button" class="config-save-common" data-for="agencySupplier" onclick="saveCommonOrg(this.dataset.for)">+ 保存为常用单位</button>
         </div>
         <div class="form-group">
@@ -1995,7 +1996,8 @@ function defaultConfig(){
     try{const saved=JSON.parse(localStorage.getItem('wb_opts_'+legacyKey)||'null');if(Array.isArray(saved))names=saved;}
     catch(e){}
     return [...new Set(names.filter(n=>typeof n==='string'&&n.trim()).map(n=>n.trim()))]
-      .map((name,i)=>({id:prefix+'_default_'+(i+1),name,status:'active',sort_order:(i+1)*10,remark:''}));
+      .map((name,i)=>({id:prefix+'_default_'+(i+1),name,status:'active',sort_order:(i+1)*10,remark:'',
+        ...(key==='work_sources'?{organization_id:''}:{})}));
   };
   return {organizations:[],dictionaries:{
     work_categories:entries('work_categories','wc','todoCategory'),
@@ -2008,17 +2010,58 @@ function normalizeConfig(input){
   const safeRows=(rows,types)=>Array.isArray(rows)?rows.filter(row=>row&&typeof row==='object'&&
     typeof row.id==='string'&&typeof row.name==='string'&&row.name.trim()&&(!types||types.includes(row.type)))
     .map(row=>({...row,status:row.status==='inactive'?'inactive':'active',sort_order:Number(row.sort_order)||0})):[];
+  const organizations=safeRows(input.organizations,['external','internal','supplier']);
+  const allowedOrgIds=new Set(organizations.filter(row=>row.type==='external'||row.type==='internal').map(row=>row.id));
   return {
-    organizations:safeRows(input.organizations,['external','internal','supplier']),
+    organizations,
     dictionaries:{
       work_categories:safeRows(input.dictionaries?.work_categories),
-      work_sources:safeRows(input.dictionaries?.work_sources)
+      work_sources:safeRows(input.dictionaries?.work_sources).map(row=>({...row,
+        organization_id:allowedOrgIds.has(row.organization_id)?row.organization_id:''}))
     }
   };
 }
+function businessRows(key){
+  if(typeof DB==='undefined')return [];
+  return typeof DB.raw==='function'?DB.raw(key):DB.get(key);
+}
+function workValues(records,field){
+  return records.flatMap(row=>Array.isArray(row[field])?row[field]:[row[field]])
+    .map(value=>typeof value==='string'?value.trim():'').filter(Boolean);
+}
+function matchingSourceOrganization(config,name){
+  const eligible=config.organizations.filter(row=>row.type==='external'||row.type==='internal');
+  const exact=eligible.filter(row=>row.name.toLocaleLowerCase()===name.toLocaleLowerCase());
+  if(exact.length===1)return exact[0].id;
+  const alias=eligible.filter(row=>row.short_name?.trim().toLocaleLowerCase()===name.toLocaleLowerCase());
+  return alias.length===1?alias[0].id:'';
+}
+function backfillWorkHistory(config,records){
+  let changed=false;
+  for(const [field,group,prefix] of [['category','work_categories','wc'],['source','work_sources','ws']]){
+    const rows=config.dictionaries[group];
+    for(const name of new Set(workValues(records,field))){
+      const existing=rows.find(row=>row.name.toLocaleLowerCase()===name.toLocaleLowerCase());
+      if(existing){
+        if(group==='work_sources'&&!existing.organization_id&&!existing.organization_link_manual){
+          const id=matchingSourceOrganization(config,name);
+          if(id){existing.organization_id=id;changed=true;}
+        }
+        continue;
+      }
+      const row={id:configId(prefix),name,status:'active',sort_order:Math.max(0,...rows.map(r=>Number(r.sort_order)||0))+10,remark:''};
+      if(group==='work_sources')row.organization_id=matchingSourceOrganization(config,name);
+      rows.push(row);changed=true;
+    }
+  }
+  return changed;
+}
 function getConfig(){
-  try{const raw=localStorage.getItem(CONFIG_STORAGE_KEY);return raw?normalizeConfig(JSON.parse(raw)):defaultConfig();}
-  catch(e){return defaultConfig();}
+  let config;
+  try{const raw=localStorage.getItem(CONFIG_STORAGE_KEY);config=raw?normalizeConfig(JSON.parse(raw)):defaultConfig();}
+  catch(e){config=defaultConfig();}
+  if(backfillWorkHistory(config,businessRows('todos')))localStorage.setItem(CONFIG_STORAGE_KEY,JSON.stringify(config));
+  return config;
 }
 function saveConfig(config){
   localStorage.setItem(CONFIG_STORAGE_KEY,JSON.stringify(normalizeConfig(config)));
@@ -2045,7 +2088,13 @@ function upsertConfig(group,entry){
     remark:String(entry.remark||'')};
   if(group==='organizations'){
     if(!['external','internal','supplier'].includes(row.type))throw new Error('请选择组织类别');
+    if(row.type==='supplier'&&config.dictionaries.work_sources.some(source=>source.organization_id===row.id))throw new Error('该组织已被工作来源关联，不能改为供应商');
     row.short_name=String(entry.short_name||'').trim();
+  }else if(group==='work_sources'){
+    row.organization_id=String(entry.organization_id||'');
+    if(row.organization_id&&!config.organizations.some(org=>org.id===row.organization_id&&
+      (org.type==='external'||org.type==='internal')))throw new Error('工作来源只能关联外部单位或内部组织');
+    row.organization_link_manual=true;
   }
   if(index<0)rows.push(row);else rows[index]=row;
   saveConfig(config);
@@ -2068,28 +2117,124 @@ function moveConfigRow(group,id,direction){
   ordered[index].sort_order=other.sort_order;other.sort_order=previous;
   saveConfig(config);return true;
 }
+function configEntryUsed(row,group){
+  const same=value=>String(value||'').trim()===row.name;
+  const has=(key,pairs)=>businessRows(key).some(record=>pairs.some(([name,id])=>same(record[name])||record[id]===row.id));
+  if(group==='organizations'){
+    return getConfig().dictionaries.work_sources.some(source=>source.organization_id===row.id)||
+      has('purchases',[['supplier','supplier_org_id'],['contractDept','contract_dept_org_id'],['expenseDept','expense_dept_org_id']])||
+      has('contracts',[['party','counterparty_org_id']])||
+      has('expenses',[['supplier','supplier_org_id'],['expenseDept','expense_dept_org_id']])||
+      has('agencys',[['agent','agent_org_id'],['winSupplier','win_supplier_org_id'],['dept','dept_org_id']]);
+  }
+  const field=group==='work_categories'?'category':'source';
+  const idField=group==='work_categories'?'work_category_ids':'work_source_ids';
+  return businessRows('todos').some(record=>workValues([record],field).some(same)||
+    (Array.isArray(record[idField])&&record[idField].includes(row.id)));
+}
+function deleteConfigRow(group,id){
+  const config=getConfig(),rows=group==='organizations'?config.organizations:config.dictionaries[group];
+  const row=rows?.find(item=>item.id===id);
+  if(!row)return false;
+  if(configEntryUsed(row,group))return false;
+  rows.splice(rows.indexOf(row),1);saveConfig(config);return true;
+}
 function activeOrganizations(scope){
   return configRows('organizations').filter(row=>row.status==='active'&&
     (scope==='internal'?row.type==='internal':row.type==='external'||row.type==='supplier'))
     .sort((a,b)=>a.sort_order-b.sort_order||a.name.localeCompare(b.name,'zh-CN'));
 }
+const ORGANIZATION_HISTORY_FIELDS={
+  external:[['purchases','supplier'],['contracts','party'],['expenses','supplier'],['agencys','agent'],['agencys','winSupplier']],
+  internal:[['purchases','contractDept'],['purchases','expenseDept'],['expenses','expenseDept'],['agencys','dept']]
+};
+function organizationCandidates(scope){
+  const seen=new Set(),candidates=[];
+  const add=(name,id='',short_name='')=>{
+    name=String(name||'').trim();const key=name.toLocaleLowerCase();
+    if(name&&!seen.has(key)){seen.add(key);candidates.push({name,id,short_name});}
+  };
+  activeOrganizations(scope).forEach(row=>add(row.name,row.id,row.short_name||''));
+  ORGANIZATION_HISTORY_FIELDS[scope==='internal'?'internal':'external'].forEach(([ledger,field])=>
+    businessRows(ledger).forEach(row=>add(row[field])));
+  return candidates;
+}
+function findOrgCandidate(scope,value){
+  const query=String(value||'').trim().toLocaleLowerCase();
+  const candidates=organizationCandidates(scope);
+  const exact=candidates.find(row=>row.name.toLocaleLowerCase()===query);
+  if(exact)return exact;
+  const aliases=candidates.filter(row=>row.short_name&&row.short_name.toLocaleLowerCase()===query);
+  return aliases.length===1?aliases[0]:null;
+}
+function renderOrgCombobox(input){
+  const list=document.getElementById(input.id+'Options');if(!list)return;
+  const query=(input.dataset.orgQuery||'').trim().toLocaleLowerCase();
+  const candidates=organizationCandidates(input.dataset.orgScope).filter(row=>!query||
+    row.name.toLocaleLowerCase().includes(query)||row.short_name.toLocaleLowerCase().includes(query));
+  list.innerHTML=candidates.length?candidates.map(row=>
+    `<button type="button" role="option" aria-selected="${input.value===row.name}" class="org-combobox-option" data-name="${esc(row.name)}" data-org-id="${esc(row.id)}" onmousedown="event.preventDefault()" onclick="selectOrgOption('${input.id}',this.dataset.name,this.dataset.orgId)">${esc(row.name)}</button>`).join(''):
+    '<div class="config-choice-help">无匹配单位，可直接输入名称</div>';
+}
+function openOrgCombobox(input){
+  input.dataset.orgQuery='';renderOrgCombobox(input);
+  document.getElementById(input.id+'Options')?.classList.add('open');
+  input.setAttribute('aria-expanded','true');
+}
+function hideOrgCombobox(input){
+  document.getElementById(input.id+'Options')?.classList.remove('open');
+  input.setAttribute('aria-expanded','false');
+}
+function selectOrgOption(inputId,name,id=''){
+  const input=document.getElementById(inputId),row=organizationCandidates(input.dataset.orgScope)
+    .find(candidate=>candidate.name===name&&candidate.id===id);
+  if(!row)return;
+  input.value=row.name;input.dataset.selectedId=row.id;input.dataset.touched='1';input.dataset.orgQuery='';
+  hideOrgCombobox(input);updateCommonOrgButton(inputId);
+}
+function canonicalizeOrgInput(input){
+  const match=findOrgCandidate(input.dataset.orgScope,input.value);
+  if(match){
+    const preserveHistoricalId=input.dataset.touched!=='1'&&input.dataset.selectedId&&input.value===match.name;
+    input.value=match.name;
+    if(!preserveHistoricalId)input.dataset.selectedId=match.id;
+  }
+  else if(input.dataset.touched==='1')input.dataset.selectedId='';
+  input.dataset.orgQuery='';updateCommonOrgButton(input.id);
+}
+function prepareOrgInputs(...ids){ids.forEach(id=>{
+  const input=document.getElementById(id);
+  if(input){canonicalizeOrgInput(input);hideOrgCombobox(input);}
+});}
+function orgComboboxKeydown(event,input){
+  if(event.key==='Escape'){hideOrgCombobox(input);return;}
+  if(event.key==='ArrowDown'){event.preventDefault();openOrgCombobox(input);return;}
+  if(event.key==='Enter'&&document.getElementById(input.id+'Options')?.classList.contains('open')){
+    const first=organizationCandidates(input.dataset.orgScope).find(row=>!input.dataset.orgQuery||
+      row.name.toLocaleLowerCase().includes(input.dataset.orgQuery.toLocaleLowerCase())||
+      row.short_name.toLocaleLowerCase().includes(input.dataset.orgQuery.toLocaleLowerCase()));
+    if(first){event.preventDefault();selectOrgOption(input.id,first.name,first.id);}
+  }
+}
 function refreshOrgChoices(){
   document.querySelectorAll('input[data-org-scope]').forEach(input=>{
-    const list=document.getElementById(input.getAttribute('list'));
-    if(list)list.innerHTML=activeOrganizations(input.dataset.orgScope).map(row=>
-      `<option value="${esc(row.name)}" label="${esc(row.short_name||row.type)}"></option>`).join('');
+    renderOrgCombobox(input);
     if(input.dataset.orgScope==='external')updateCommonOrgButton(input.id);
   });
 }
 function setOrgInput(id,name,orgId=''){
   const input=document.getElementById(id);if(!input)return;
-  input.value=name||'';input.dataset.selectedId=orgId||'';input.dataset.touched='0';
+  input.value=name||'';input.dataset.selectedId=orgId||'';input.dataset.touched='0';input.dataset.orgQuery='';
+  hideOrgCombobox(input);
   updateCommonOrgButton(id);
 }
 function onOrgInput(input){
-  input.dataset.touched='1';
-  const match=activeOrganizations(input.dataset.orgScope).find(row=>row.name===input.value.trim());
+  input.dataset.touched='1';input.dataset.orgQuery=input.value;
+  const match=organizationCandidates(input.dataset.orgScope).find(row=>row.name===input.value.trim());
   input.dataset.selectedId=match?.id||'';
+  renderOrgCombobox(input);
+  document.getElementById(input.id+'Options')?.classList.add('open');
+  input.setAttribute('aria-expanded','true');
   updateCommonOrgButton(input.id);
 }
 function updateCommonOrgButton(id){
@@ -2100,6 +2245,7 @@ function updateCommonOrgButton(id){
 }
 function orgIdForSave(inputId,previous,idField,textField){
   const input=document.getElementById(inputId);
+  canonicalizeOrgInput(input);
   if(input.dataset.touched!=='1'&&previous?.[textField]===input.value)return previous?.[idField]||'';
   return input.dataset.selectedId||'';
 }
@@ -3417,16 +3563,19 @@ function renderConfigPage(){
   document.querySelectorAll('.config-segment').forEach(button=>button.classList.toggle('active',button.dataset.group===configGroup));
   document.getElementById('configTabs').innerHTML=CONFIG_TABS[configGroup].map(([key,label])=>
     `<button type="button" class="config-tab${configTab===key?' active':''}" data-tab="${key}" onclick="selectConfigTab(this.dataset.tab)">${label}</button>`).join('');
-  const org=configGroup==='organizations';
-  document.getElementById('configTableHead').innerHTML=org?'<tr><th>名称</th><th>简称</th><th>类型</th><th>状态</th><th>排序</th><th>操作</th></tr>':'<tr><th>名称</th><th>状态</th><th>排序</th><th>备注</th><th>操作</th></tr>';
+  const org=configGroup==='organizations',source=configTab==='work_sources'&&!org;
+  document.getElementById('configTableHead').innerHTML=org?'<tr><th>名称</th><th>简称</th><th>类型</th><th>状态</th><th>排序</th><th>操作</th></tr>':
+    source?'<tr><th>名称</th><th>关联组织</th><th>状态</th><th>排序</th><th>备注</th><th>操作</th></tr>':'<tr><th>名称</th><th>状态</th><th>排序</th><th>备注</th><th>操作</th></tr>';
   const rows=visibleConfigRows();
   document.getElementById('configTableBody').innerHTML=rows.length?rows.map((row,index)=>{
     const controls=`<button class="btn btn-ghost btn-sm" data-id="${esc(row.id)}" onclick="moveConfigEntry(this.dataset.id,-1)" ${index===0?'disabled':''} aria-label="上移">↑</button><button class="btn btn-ghost btn-sm" data-id="${esc(row.id)}" onclick="moveConfigEntry(this.dataset.id,1)" ${index===rows.length-1?'disabled':''} aria-label="下移">↓</button>`;
-    const actions=`<button class="btn btn-ghost btn-sm" data-id="${esc(row.id)}" onclick="openConfigEditor(this.dataset.id)">编辑</button><button class="btn btn-ghost btn-sm" data-id="${esc(row.id)}" onclick="toggleConfigEntry(this.dataset.id)">${row.status==='inactive'?'启用':'停用'}</button>`;
+    const actions=`<button class="btn btn-ghost btn-sm" data-id="${esc(row.id)}" onclick="openConfigEditor(this.dataset.id)">编辑</button><button class="btn btn-ghost btn-sm" data-id="${esc(row.id)}" onclick="toggleConfigEntry(this.dataset.id)">${row.status==='inactive'?'启用':'停用'}</button><button class="btn btn-ghost btn-sm" data-id="${esc(row.id)}" onclick="deleteConfigEntry(this.dataset.id)">删除</button>`;
     const status=`<span class="badge ${row.status==='inactive'?'badge-gray':'badge-green'}">${row.status==='inactive'?'停用':'启用'}</span>`;
+    const linked=source?configRows('organizations').find(orgRow=>orgRow.id===row.organization_id)?.name||'—':'';
     return org?`<tr><td>${esc(row.name)}</td><td>${esc(row.short_name||'—')}</td><td>${CONFIG_TABS.organizations.find(([key])=>key===row.type)?.[1]||''}</td><td>${status}</td><td>${controls}</td><td>${actions}</td></tr>`:
+      source?`<tr><td>${esc(row.name)}</td><td>${esc(linked)}</td><td>${status}</td><td>${controls}</td><td>${esc(row.remark||'—')}</td><td>${actions}</td></tr>`:
       `<tr><td>${esc(row.name)}</td><td>${status}</td><td>${controls}</td><td>${esc(row.remark||'—')}</td><td>${actions}</td></tr>`;
-  }).join(''):`<tr><td colspan="${org?6:5}"><div class="empty-state">暂无配置，点击“新增”开始维护。</div></td></tr>`;
+  }).join(''):`<tr><td colspan="${org||source?6:5}"><div class="empty-state">暂无配置，点击“新增”开始维护。</div></td></tr>`;
 }
 function openConfigEditor(id=''){
   const group=configGroup==='organizations'?'organizations':configTab;
@@ -3438,6 +3587,12 @@ function openConfigEditor(id=''){
   document.getElementById('configRemark').value=row?.remark||'';
   document.getElementById('configShortNameGroup').style.display=group==='organizations'?'':'none';
   document.getElementById('configTypeGroup').style.display=group==='organizations'?'':'none';
+  const sourceOrg=document.getElementById('configSourceOrg');
+  document.getElementById('configSourceOrgGroup').hidden=group!=='work_sources';
+  sourceOrg.innerHTML='<option value="">不关联组织</option>'+configRows('organizations')
+    .filter(org=>org.type==='external'||org.type==='internal')
+    .map(org=>`<option value="${esc(org.id)}">${esc(org.name)}</option>`).join('');
+  sourceOrg.value=row?.organization_id||'';
   document.getElementById('configModalTitle').textContent=(row?'编辑':'新增')+(CONFIG_TABS[configGroup].find(([key])=>key===configTab)?.[1]||'配置');
   openModal('configModal');
 }
@@ -3449,6 +3604,7 @@ function saveConfigEditor(){
     const row=upsertConfig(group,{...old,id,name:document.getElementById('configName').value,
       short_name:document.getElementById('configShortName').value,
       type:document.getElementById('configType').value,
+      organization_id:document.getElementById('configSourceOrg').value,
       remark:document.getElementById('configRemark').value});
     if(pendingCommonOrgInput){
       setOrgInput(pendingCommonOrgInput,row.name,row.id);
@@ -3458,22 +3614,22 @@ function saveConfigEditor(){
     closeModal('configModal');renderConfigPage();toast('配置已保存');
   }catch(error){toast(error.message);}
 }
-function configEntryUsed(row,group){
-  const same=value=>String(value||'').trim()===row.name;
-  if(group==='organizations'){
-    return DB.get('purchases').some(r=>same(r.supplier)||same(r.contractDept)||same(r.expenseDept))||
-      DB.get('contracts').some(r=>same(r.party))||DB.get('expenses').some(r=>same(r.supplier))||
-      DB.get('agencys').some(r=>same(r.agent)||same(r.winSupplier)||same(r.dept));
-  }
-  return DB.get('todos').some(r=>(Array.isArray(r[group==='work_categories'?'category':'source'])?
-    r[group==='work_categories'?'category':'source']:[r[group==='work_categories'?'category':'source']]).some(same));
-}
 function toggleConfigEntry(id){
   const group=configGroup==='organizations'?'organizations':configTab;
   const row=configRows(group).find(item=>item.id===id);
   if(!row)return;
   if(row.status!=='inactive'&&configEntryUsed(row,group))toast('该配置项已被历史记录使用。停用不会修改历史数据，仅停止在新建表单中推荐。');
   setConfigStatus(group,id,row.status==='inactive'?'active':'inactive');renderConfigPage();
+}
+function deleteConfigEntry(id){
+  const group=configGroup==='organizations'?'organizations':configTab;
+  const row=configRows(group).find(item=>item.id===id);
+  if(!row)return;
+  if(configEntryUsed(row,group)){toast('该配置已被记录或工作来源引用，只能停用');return;}
+  confirmAction(`确定永久删除“${row.name}”？`,()=>{
+    if(deleteConfigRow(group,id)){renderConfigPage();toast('配置已删除');}
+    else toast('该配置已被引用，不能删除');
+  });
 }
 function moveConfigEntry(id,direction){
   const group=configGroup==='organizations'?'organizations':configTab;
@@ -5278,6 +5434,7 @@ function renderContracts(){
 function saveContract(){
   const name=document.getElementById('contractName').value.trim();
   if(!name){toast('请输入合同名称');return;}
+  prepareOrgInputs('contractParty');
   if(!validDateOrder('contractSignDate','contractExpiry','合同签署日期不能晚于到期日期'))return;
   const contracts=DB.raw('contracts');
   const id=+document.getElementById('contractId').value;
@@ -5413,6 +5570,7 @@ function renderPurchases(){
 function savePurchase(){
   const name=document.getElementById('purchaseName').value.trim();
   if(!name){toast('请输入采购名称');return;}
+  prepareOrgInputs('purchaseSupplier','purchaseContractDept','purchaseExpenseDept');
   const purchases=DB.raw('purchases');
   const id=+document.getElementById('purchaseId').value;
   const previousPurchase=existingRecord('purchases',id);
@@ -5801,6 +5959,7 @@ function toggleAgencyAgent(){
 function saveAgency(){
   const name=document.getElementById('agencyName').value.trim();
   if(!name){toast('请输入项目名称');return;}
+  prepareOrgInputs('agencyAgent','agencySupplier','agencyDept');
   const agencys=DB.raw('agencys');
   const id=+document.getElementById('agencyId').value;
   const previousAgency=existingRecord('agencys',id);
@@ -6546,6 +6705,7 @@ function saveExpense(){
   if(!invoice){toast('请输入发票号码');return;}
   if(!appDate){toast('请选择申请时间');return;}
   if(!content){toast('请输入发票内容');return;}
+  prepareOrgInputs('expenseSupplier');
   const amount=Number(document.getElementById('expenseAmount').value);
   if(!Number.isFinite(amount)||amount<=0){toast('报销金额必须大于 0');return;}
   if(!validDateOrder('expenseAppDate','expenseReimbDate','报销日期不能早于申请日期'))return;

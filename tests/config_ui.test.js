@@ -8,15 +8,16 @@ const slice=(a,b)=>{const start=html.indexOf(a),end=html.indexOf(b,start+a.lengt
 test('configuration page manages all five tabs and renders organization lifecycle',()=>{
   assert.match(html,/<div class="nav-section">管理<\/div>[\s\S]*?navigate\('config'/);
   assert.match(html,/id="page-config"/);
-  const values=new Map(),nodes=new Map(),messages=[];
+  const values=new Map(),nodes=new Map(),messages=[],confirmations=[];
   const element=id=>{if(!nodes.has(id))nodes.set(id,{value:'',innerHTML:'',textContent:'',style:{},classList:{toggle(){}}});return nodes.get(id);};
   const sandbox={localStorage:{getItem:key=>values.get(key)??null,setItem:(key,val)=>values.set(key,String(val))},
     document:{getElementById:element,querySelectorAll:()=>[]},DB:{get:()=>[]},Date,Math,
-    esc:value=>String(value??''),toast:message=>messages.push(message),openModal:()=>{},closeModal:()=>{}};
+    esc:value=>String(value??''),toast:message=>messages.push(message),openModal:()=>{},closeModal:()=>{},
+    confirmAction:(message,action)=>confirmations.push({message,action})};
   vm.createContext(sandbox);
   const model=slice('// Configuration is one snapshot object','//  DATA LAYER v1.5');
   const ui=slice('const CONFIG_TABS=','const pageTitles=');
-  const api=vm.runInContext(model+'\n'+ui+'\n({upsertConfig,selectConfigGroup,selectConfigTab,renderConfigPage,toggleConfigEntry,moveConfigEntry,visibleConfigRows})',sandbox);
+  const api=vm.runInContext(model+'\n'+ui+'\n({upsertConfig,selectConfigGroup,selectConfigTab,renderConfigPage,toggleConfigEntry,moveConfigEntry,visibleConfigRows,openConfigEditor,deleteConfigEntry,getConfig})',sandbox);
   api.renderConfigPage();
   assert.match(element('configTabs').innerHTML,/外部单位/);
   assert.match(element('configTabs').innerHTML,/供应商/);
@@ -35,4 +36,19 @@ test('configuration page manages all five tabs and renders organization lifecycl
   assert.match(element('configTabs').innerHTML,/工作来源/);
   assert.match(element('configTableBody').innerHTML,/报告/);
   assert.equal(messages.length,0);
+  const sourceOrg=api.upsertConfig('organizations',{name:'关联机构',type:'external'});
+  api.selectConfigTab('work_sources');
+  const source=api.upsertConfig('work_sources',{name:'机构来源',organization_id:sourceOrg.id});
+  api.openConfigEditor(source.id);
+  assert.match(element('configSourceOrg').innerHTML,/关联机构/);
+  assert.equal(element('configSourceOrg').value,sourceOrg.id);
+  assert.match(element('configTableBody').innerHTML,/删除/);
+  api.selectConfigGroup('organizations');
+  api.deleteConfigEntry(sourceOrg.id);
+  assert.equal(confirmations.length,0,'被工作来源引用的组织不可确认删除');
+  api.deleteConfigEntry(second.id);
+  assert.equal(confirmations.length,1,'未使用组织先确认');
+  assert.match(confirmations[0].message,/永久删除/);
+  confirmations[0].action();
+  assert(!api.getConfig().organizations.some(row=>row.id===second.id));
 });
