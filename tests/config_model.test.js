@@ -10,98 +10,105 @@ assert(begin>=0&&end>begin);
 const source=html.slice(begin,html.lastIndexOf('// ============================================================',end));
 function context(seed={}){
   const values=new Map(Object.entries(seed));
-  const records={todos:[],purchases:[],contracts:[],expenses:[],agencys:[]};
+  const records={todos:[],purchases:[],contracts:[],expenses:[],agencys:[],meetings:[],trainings:[]};
   const sandbox={localStorage:{getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,String(value))},
-    DB:{raw:key=>records[key]||[],get:key=>(records[key]||[]).filter(row=>!row.deleted)},Date,Math};
+    DB:{raw:key=>records[key]||[],get:key=>(records[key]||[]).filter(row=>!row.deleted),set:(key,rows)=>{records[key]=rows;}},Date,Math};
   vm.createContext(sandbox);
-  const api=vm.runInContext(source+'\n({getConfig,saveConfig,upsertConfig,setConfigStatus,moveConfigRow,normalizeConfig,deleteConfigRow,configEntryUsed})',sandbox);
+  const api=vm.runInContext(source+'\n({getConfig,saveConfig,upsertConfig,setConfigStatus,moveConfigRow,normalizeConfig,deleteConfigRow,matchingSourceOrganization,unmatchedWorkSources,activeOrganizations})',sandbox);
   return {api,values,records};
 }
-test('legacy options seed separate work dictionaries and persist stable IDs',()=>{
-  const {api,values}=context({wb_opts_todoCategory:'["专项工作","会议"]'});
+test('work category is the only dictionary and old source configuration is ignored',()=>{
+  const {api}=context({wb_opts_todoCategory:'["专项工作","会议"]'});
   assert.deepEqual(Array.from(api.getConfig().dictionaries.work_categories,row=>row.name),['专项工作','会议']);
-  const row=api.upsertConfig('work_sources',{name:'领导交办'});
-  assert.match(row.id,/^ws_/);
-  assert.equal(api.getConfig().dictionaries.work_sources.at(-1).id,row.id);
-  assert(values.has('wb_config'));
+  assert.deepEqual(Object.keys(api.getConfig().dictionaries),['work_categories']);
+  assert.throws(()=>api.upsertConfig('work_sources',{name:'领导交办'}),/未知配置分组/);
 });
-test('organizations share one master list with status, edits and order',()=>{
+test('organization master list retains status, editing and order',()=>{
   const {api}=context();
-  const a=api.upsertConfig('organizations',{name:'外部单位',type:'external',short_name:'外部'});
-  const a2=api.upsertConfig('organizations',{name:'另一外部单位',type:'external'});
-  const b=api.upsertConfig('organizations',{name:'本单位科室',type:'internal'});
-  const c=api.upsertConfig('organizations',{name:'服务商',type:'supplier'});
-  assert.deepEqual(Array.from(api.getConfig().organizations,row=>row.type),['external','external','internal','supplier']);
+  const a=api.upsertConfig('organizations',{name:'外部单位',type:'external'});
+  const b=api.upsertConfig('organizations',{name:'另一单位',type:'external'});
+  api.upsertConfig('organizations',{name:'内部科',type:'internal'});
   api.upsertConfig('organizations',{...a,name:'更名单位'});
   assert.equal(api.getConfig().organizations[0].id,a.id);
-  assert.equal(api.setConfigStatus('organizations',c.id,'inactive'),true);
-  assert.equal(api.getConfig().organizations[3].status,'inactive');
-  assert.equal(api.setConfigStatus('organizations',c.id,'active'),true);
-  assert.equal(api.moveConfigRow('organizations',a2.id,-1),true);
-  assert.deepEqual(Array.from(api.getConfig().organizations).filter(row=>row.type==='external').sort((x,y)=>x.sort_order-y.sort_order).map(row=>row.id),[a2.id,a.id]);
+  assert.equal(api.setConfigStatus('organizations',a.id,'inactive'),true);
+  assert.equal(api.getConfig().organizations[0].status,'inactive');
+  assert.equal(api.moveConfigRow('organizations',b.id,-1),true);
   assert.equal(api.moveConfigRow('organizations',b.id,-1),false);
-  assert.throws(()=>api.upsertConfig('organizations',{name:'服务商',type:'external'}),/名称已存在/);
+  assert.throws(()=>api.upsertConfig('organizations',{name:'另一单位',type:'supplier'}),/名称已存在/);
 });
-test('invalid or absent cloud configuration initializes safely',()=>{
+test('invalid or absent config initializes safely',()=>{
   const {api}=context();
   assert.equal(api.normalizeConfig(null).organizations.length,0);
   assert(api.normalizeConfig(null).dictionaries.work_categories.length>0);
 });
-test('historical work values backfill once and link source by full name or alias',()=>{
+test('work history backfills category and links only eligible source organizations',()=>{
   const {api,values,records}=context();
   const external=api.upsertConfig('organizations',{name:'重庆市疾病预防控制局',short_name:'市疾控局',type:'external'});
-  const internal=api.upsertConfig('organizations',{name:'综合科',short_name:'综科',type:'internal'});
+  const internal=api.upsertConfig('organizations',{name:'综合科',type:'internal'});
   api.upsertConfig('organizations',{name:'供应商',short_name:'供方',type:'supplier'});
-  records.todos.push({category:['疾控监督员',''],source:['市疾控局','综合科','领导交办','供方','供应商']});
-  const first=api.getConfig();
-  assert(first.dictionaries.work_categories.some(row=>row.name==='疾控监督员'));
-  const sources=first.dictionaries.work_sources;
-  assert.equal(sources.find(row=>row.name==='市疾控局').organization_id,external.id);
-  assert.equal(sources.find(row=>row.name==='综合科').organization_id,internal.id);
-  assert.equal(sources.find(row=>row.name==='领导交办').organization_id,'');
-  assert.equal(sources.find(row=>row.name==='供方').organization_id,'','供应商简称不可自动关联');
-  assert.equal(sources.find(row=>row.name==='供应商').organization_id,'','供应商全称不可自动关联');
-  const saved=values.get('wb_config');
-  assert.deepEqual(Array.from(api.getConfig().dictionaries.work_sources,row=>row.id),Array.from(sources,row=>row.id));
-  assert.equal(values.get('wb_config'),saved,'重复读取不得重复写入');
-});
-test('a device without configuration initializes from existing work records',()=>{
-  const {api,records}=context();
-  records.todos.push({category:'疾控监督员',source:'市疾控局'});
+  records.todos.push({category:['疾控监督员'],source:['市疾控局','综合科','领导交办','供方','供应商']});
   const config=api.getConfig();
   assert(config.dictionaries.work_categories.some(row=>row.name==='疾控监督员'));
-  assert(config.dictionaries.work_sources.some(row=>row.name==='市疾控局'));
-  assert.equal(records.todos[0].source,'市疾控局','历史名称快照不得改写');
+  assert.deepEqual(Array.from(records.todos[0].source_org_ids),[external.id,internal.id,'','','']);
+  assert.deepEqual(Array.from(api.unmatchedWorkSources(config)),['领导交办','供方','供应商']);
+  const saved=values.get('wb_config');
+  assert.equal(api.getConfig().dictionaries.work_categories.length,config.dictionaries.work_categories.length);
+  assert.equal(values.get('wb_config'),saved,'backfill is idempotent');
 });
-test('source association accepts external and internal, rejects supplier',()=>{
+test('old local or Gitee source dictionary is removed without changing source text',()=>{
+  const legacy={organizations:[{id:'org_a',name:'市疾控局',type:'external',status:'active',sort_order:10}],
+    dictionaries:{work_categories:[],work_sources:[{id:'ws_a',name:'市疾控局',organization_id:'org_a'}]}};
+  const {api,values,records}=context({wb_config:JSON.stringify(legacy)});
+  records.todos.push({category:'疾控监督员',source:['市疾控局','领导交办'],work_source_ids:['ws_a','']});
+  const config=api.getConfig();
+  assert.deepEqual(Object.keys(config.dictionaries),['work_categories']);
+  assert(!JSON.parse(values.get('wb_config')).dictionaries.work_sources);
+  assert(config.dictionaries.work_categories.some(row=>row.name==='疾控监督员'));
+  assert.deepEqual(Array.from(records.todos[0].source_org_ids),['org_a','']);
+  assert.deepEqual(Array.from(records.todos[0].source),['市疾控局','领导交办']);
+});
+test('work source candidates are external and internal; supplier is excluded',()=>{
   const {api,records}=context();
   const external=api.upsertConfig('organizations',{name:'外部',type:'external'});
   const internal=api.upsertConfig('organizations',{name:'内部',type:'internal'});
-  const supplier=api.upsertConfig('organizations',{name:'供方',type:'supplier'});
-  assert.equal(api.upsertConfig('work_sources',{name:'外部来源',organization_id:external.id}).organization_id,external.id);
-  assert.equal(api.upsertConfig('work_sources',{name:'内部来源',organization_id:internal.id}).organization_id,internal.id);
-  assert.equal(api.upsertConfig('work_sources',{name:'领导交办',organization_id:''}).organization_id,'');
-  api.upsertConfig('work_sources',{name:'外部',organization_id:''});
-  records.todos.push({source:['外部']});
-  assert.equal(api.getConfig().dictionaries.work_sources.find(row=>row.name==='外部').organization_id,'',
-    '用户明确不关联后，历史回填不能重新关联');
-  assert.throws(()=>api.upsertConfig('work_sources',{name:'错误来源',organization_id:supplier.id}),/只能关联/);
-  assert.throws(()=>api.upsertConfig('organizations',{...external,type:'supplier'}),/已被工作来源关联/);
+  api.upsertConfig('organizations',{name:'供方',type:'supplier'});
+  assert.deepEqual(Array.from(api.activeOrganizations('source'),row=>row.name),['外部','内部']);
+  assert.equal(api.matchingSourceOrganization(api.getConfig(),'外部'),external.id);
+  assert.equal(api.matchingSourceOrganization(api.getConfig(),'内部'),internal.id);
+  assert.equal(api.matchingSourceOrganization(api.getConfig(),'供方'),'');
+  api.upsertConfig('organizations',{...external,short_name:'供方'});
+  assert.equal(api.matchingSourceOrganization(api.getConfig(),'供方'),'','供应商全称不可被另一组织简称误关联');
+  records.todos.push({source:['外部']});api.getConfig();
+  assert.throws(()=>api.upsertConfig('organizations',{...external,type:'supplier'}),/工作来源/);
 });
-test('unused entries can be deleted; history and source links block deletion but allow disabling',()=>{
+test('every typed business ledger backfills one shared organization per name',()=>{
+  const {api,records}=context();
+  records.purchases.push({supplier:'甲单位',contractDept:'综合科',expenseDept:'财务科'});
+  records.contracts.push({party:'甲单位'});
+  records.expenses.push({supplier:'甲单位',expenseDept:'财务科'});
+  records.agencys.push({agent:'甲单位',winSupplier:'乙单位',dept:'综合科'});
+  records.meetings.push({organizer:'甲单位'});
+  records.trainings.push({organizer:'待确认主办方'});
+  const config=api.getConfig();
+  assert.deepEqual(Array.from(config.organizations,row=>row.name).sort(),['乙单位','甲单位','综合科','财务科'].sort());
+  assert.equal(config.organizations.filter(row=>row.name==='甲单位').length,1);
+  assert.equal(config.organizations.find(row=>row.name==='甲单位').type,'supplier');
+  assert.equal(config.organizations.find(row=>row.name==='综合科').type,'internal');
+  assert(!config.organizations.some(row=>row.name==='待确认主办方'));
+  assert.equal(api.getConfig().organizations.length,4);
+});
+test('unused rows delete; historical text and ID references block deletion but permit disabling',()=>{
   const {api,records}=context();
   const unused=api.upsertConfig('organizations',{name:'未使用',type:'external'});
   assert.equal(api.deleteConfigRow('organizations',unused.id),true);
   const linked=api.upsertConfig('organizations',{name:'关联单位',type:'internal'});
-  const source=api.upsertConfig('work_sources',{name:'来源',organization_id:linked.id});
+  records.todos.push({category:['历史类别'],source:['关联单位']});api.getConfig();
   assert.equal(api.deleteConfigRow('organizations',linked.id),false);
   assert.equal(api.setConfigStatus('organizations',linked.id,'inactive'),true);
-  records.todos.push({category:['历史类别'],source:['来源'],work_source_ids:[source.id]});
-  assert.equal(api.deleteConfigRow('work_sources',source.id),false);
-  assert.equal(api.setConfigStatus('work_sources',source.id,'inactive'),true);
-  const historical=api.getConfig().dictionaries.work_categories.find(row=>row.name==='历史类别');
-  assert.equal(api.deleteConfigRow('work_categories',historical.id),false);
+  const category=api.getConfig().dictionaries.work_categories.find(row=>row.name==='历史类别');
+  assert.equal(api.deleteConfigRow('work_categories',category.id),false);
   records.purchases.push({supplier:'历史单位',deleted:true});
-  const oldOrg=api.upsertConfig('organizations',{name:'历史单位',type:'external'});
-  assert.equal(api.deleteConfigRow('organizations',oldOrg.id),false,'软删除记录仍占用历史配置');
+  const org=api.getConfig().organizations.find(row=>row.name==='历史单位');
+  assert(org);
+  assert.equal(api.deleteConfigRow('organizations',org.id),false);
 });

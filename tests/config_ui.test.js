@@ -5,7 +5,7 @@ const vm=require('node:vm');
 
 const html=fs.readFileSync('index.html','utf8');
 const slice=(a,b)=>{const start=html.indexOf(a),end=html.indexOf(b,start+a.length);assert(start>=0&&end>start);return html.slice(start,end);};
-test('configuration page manages all five tabs and renders organization lifecycle',()=>{
+test('configuration page manages organizations and the sole category dictionary',()=>{
   assert.match(html,/<div class="nav-section">管理<\/div>[\s\S]*?navigate\('config'/);
   assert.match(html,/id="page-config"/);
   const values=new Map(),nodes=new Map(),messages=[],confirmations=[];
@@ -33,19 +33,12 @@ test('configuration page manages all five tabs and renders organization lifecycl
   assert.doesNotMatch(element('configTableBody').innerHTML,/甲单位/);
   api.selectConfigGroup('dictionaries');
   assert.match(element('configTabs').innerHTML,/工作类别/);
-  assert.match(element('configTabs').innerHTML,/工作来源/);
+  assert.doesNotMatch(element('configTabs').innerHTML,/工作来源/);
   assert.match(element('configTableBody').innerHTML,/报告/);
   assert.equal(messages.length,0);
-  const sourceOrg=api.upsertConfig('organizations',{name:'关联机构',type:'external'});
-  api.selectConfigTab('work_sources');
-  const source=api.upsertConfig('work_sources',{name:'机构来源',organization_id:sourceOrg.id});
-  api.openConfigEditor(source.id);
-  assert.match(element('configSourceOrg').innerHTML,/关联机构/);
-  assert.equal(element('configSourceOrg').value,sourceOrg.id);
+  assert.doesNotMatch(element('configTabs').innerHTML,/work_sources/);
   assert.match(element('configTableBody').innerHTML,/删除/);
   api.selectConfigGroup('organizations');
-  api.deleteConfigEntry(sourceOrg.id);
-  assert.equal(confirmations.length,0,'被工作来源引用的组织不可确认删除');
   api.deleteConfigEntry(second.id);
   assert.equal(confirmations.length,1,'未使用组织先确认');
   assert.match(confirmations[0].message,/永久删除/);

@@ -6,7 +6,7 @@ const vm=require('node:vm');
 const html=fs.readFileSync('index.html','utf8');
 function section(a,b){const start=html.indexOf(a),end=html.indexOf(b,start+a.length);assert(start>=0&&end>start);return html.slice(start,end);}
 function setup(){
-  const values=new Map(),nodes=new Map(),records={todos:[],purchases:[],contracts:[],expenses:[],agencys:[]};
+  const values=new Map(),nodes=new Map(),records={todos:[],purchases:[],contracts:[],expenses:[],agencys:[],meetings:[],trainings:[]};
   const element=id=>{if(!nodes.has(id)){
     const classes=new Set();nodes.set(id,{id,value:'',innerHTML:'',dataset:{},style:{},attributes:{},
       classList:{add:name=>classes.add(name),remove:name=>classes.delete(name),contains:name=>classes.has(name)},
@@ -15,12 +15,12 @@ function setup(){
   const sandbox={localStorage:{getItem:key=>values.get(key)??null,setItem:(key,val)=>values.set(key,String(val))},
     document:{getElementById:element,querySelector:selector=>{
       const match=selector.match(/data-for="([^"]+)"/);return match?element('button-'+match[1]):null;
-    }},DB:{get:key=>records[key]||[]},Date,Math,
+    }},DB:{get:key=>records[key]||[],raw:key=>records[key]||[],set:(key,rows)=>{records[key]=rows;}},Date,Math,
     toArray:v=>Array.isArray(v)?v:v?[v]:[],esc:v=>String(v??'')};
   vm.createContext(sandbox);
   const source=section('// Configuration is one snapshot object','//  DATA LAYER v1.5')+'\n'+
     section('const OPTIONS_STORE=','// Close dropdowns when clicking outside');
-  const api=vm.runInContext(source+'\n({upsertConfig,getConfig,activeOrganizations,organizationCandidates,setOrgInput,onOrgInput,openOrgCombobox,selectOrgOption,prepareOrgInputs,orgIdForSave,validInternalOrgInput,getOptionStore,getMultiSelected,setMultiSelected,selectedWorkConfigIds})',sandbox);
+  const api=vm.runInContext(source+'\n({upsertConfig,getConfig,activeOrganizations,organizationCandidates,setOrgInput,onOrgInput,openOrgCombobox,selectOrgOption,prepareOrgInputs,orgIdForSave,validInternalOrgInput,getOptionStore,getMultiSelected,setMultiSelected,selectedWorkConfigIds,selectedWorkSourceOrgIds})',sandbox);
   return {api,element,records,values};
 }
 test('one organization ID works for purchase, contract and reimbursement scopes',()=>{
@@ -58,7 +58,7 @@ test('manual new name stays out of config; old text and ID remain stable on pass
   assert.equal(api.orgIdForSave('contractParty',old,'counterparty_org_id','party'),'');
   assert.equal(api.getConfig().organizations.length,1);
 });
-test('work dictionaries feed form and filter; historical values remain filterable and IDs require selection',()=>{
+test('category dictionary and organization source feed form and filter; old text stays filterable',()=>{
   const {api,element,records}=setup();
   records.todos=[{category:['历史类别','报告'],source:['旧来源']}];
   const category=api.upsertConfig('work_categories',{name:'专项工作'});
@@ -71,8 +71,23 @@ test('work dictionaries feed form and filter; historical values remain filterabl
   assert(filter.includes('历史类别')&&filter.includes('报告'));
   assert.equal(filter.filter(name=>name==='报告').length,1);
   assert(api.getOptionStore('todoF_src').includes('旧来源'));
+  const external=api.upsertConfig('organizations',{name:'市疾控局',type:'external'});
+  api.upsertConfig('organizations',{name:'供方',type:'supplier'});
+  assert(api.getOptionStore('todoSource').includes('市疾控局'));
+  assert(!api.getOptionStore('todoSource').includes('供方'));
+  api.setMultiSelected('todoSource',['市疾控局','旧来源']);
+  assert.deepEqual(Array.from(api.selectedWorkSourceOrgIds({source:['旧来源']})),[external.id,'']);
   api.upsertConfig('work_categories',{...category,status:'inactive'});
   assert(api.getOptionStore('todoF_cat').includes('历史类别'));
+});
+test('meeting and training organizers share eligible source organizations and historical names',()=>{
+  const {api,records}=setup();
+  api.upsertConfig('organizations',{name:'内部科',type:'internal'});
+  api.upsertConfig('organizations',{name:'供方',type:'supplier'});
+  records.meetings.push({organizer:'历史主办单位'});
+  const names=Array.from(api.organizationCandidates('source'),row=>row.name);
+  assert(names.includes('内部科')&&names.includes('历史主办单位'));
+  assert(!names.includes('供方'));
 });
 test('organization aliases search by short name but selection and saved name use full name',()=>{
   const {api,element}=setup();
@@ -87,20 +102,22 @@ test('organization aliases search by short name but selection and saved name use
   input.value='市疾控局';api.onOrgInput(input);api.prepareOrgInputs(input.id);
   assert.equal(input.value,row.name,'直接输入完整简称也须规范为全称');
 });
-test('one candidate pool shares manual purchase history across contract and expense forms',()=>{
+test('one candidate pool backfills purchase history for contract and expense forms',()=>{
   const {api,element,records}=setup();
   records.purchases.push({supplier:'临时手输 A 单位'});
   const names=Array.from(api.organizationCandidates('external'),row=>row.name);
   assert(names.includes('临时手输 A 单位'));
+  const org=api.getConfig().organizations.find(row=>row.name==='临时手输 A 单位');
+  assert(org,'历史业务值应幂等回填到配置');
   for(const id of ['contractParty','expenseSupplier']){
     const input=element(id);input.dataset.orgScope='external';
     api.openOrgCombobox(input);
     assert.match(element(id+'Options').innerHTML,/临时手输 A 单位/);
-    api.selectOrgOption(id,'临时手输 A 单位','');
+    api.selectOrgOption(id,'临时手输 A 单位',org.id);
     assert.equal(input.value,'临时手输 A 单位');
-    assert.equal(api.orgIdForSave(id,{},'supplier_org_id','supplier'),'');
+    assert.equal(api.orgIdForSave(id,{},'supplier_org_id','supplier'),org.id);
   }
-  assert.equal(api.getConfig().organizations.length,0,'手工历史单位不得自动写入常用配置');
+  assert.equal(api.getConfig().organizations.length,1);
 });
 test('selecting then reopening resets query and shows the full permitted list',()=>{
   const {api,element}=setup();

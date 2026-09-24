@@ -36,6 +36,7 @@ function getMultiSelected(){return [];}
 function toArray(v){return Array.isArray(v)?v:v?[v]:[];}
 function setMultiSelected(){}
 function selectedWorkConfigIds(){return [];}
+function selectedWorkSourceOrgIds(){return [];}
 function existingRecord(key,id){return DB.raw(key).find(row=>row.id===id)||{};}
 function validDateOrder(){return true;}
 function finishWorkRecord(){}

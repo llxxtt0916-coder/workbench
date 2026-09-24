@@ -96,7 +96,8 @@ function names(rows){return rows.map(r=>r.name);}
   assert.deepEqual(names(decodedPut.todos),['D'],'链路 Case 1：实际 PUT content 必须只有 D');
   assert.deepEqual(decodedPut.todos[0].subtasks,[syncedSubtask],'v1.6：实际 Gitee snapshot 必须完整保留子任务 ID、排序、状态和日期');
   assert.deepEqual(decodedPut.config,JSON.parse(JSON.stringify(pc.dumpData().config)),'配置必须进入完整快照');
-  assert.equal(decodedPut.config.dictionaries.work_sources[0].organization_id,'org_linked','来源关联组织 ID 必须进入快照');
+  assert.equal(decodedPut.config.dictionaries.work_sources,undefined,'旧来源字典不得继续写入云端快照');
+  assert.equal(decodedPut.config.organizations[0].id,'org_linked','组织稳定 ID 必须进入快照');
   pc.keys.forEach(key=>assert.deepEqual(decodedPut[key],JSON.parse(JSON.stringify(pc.dumpData()[key])),
     `链路 Case 1：实际 PUT ${key} 必须等于当前本机快照`));
   assert.equal(actualPut.body.branch,'main');
@@ -159,6 +160,16 @@ function names(rows){return rows.map(r=>r.name);}
   assert.equal(await oldBranchDevice.gitee.push(),'ok');
   assert.equal(masterServer.writes[0].body.branch,'master','同一设备推送也应写入 master');
   assert(masterServer.reads.at(-1).includes('ref=master'),'推送回读也应使用 master');
+  const legacySourceServer=createServer({
+    todos:[{id:8,name:'旧工作',category:['报告'],source:['市疾控局','领导交办'],work_source_ids:['ws_old','']}],
+    config:{organizations:[{id:'org_old',name:'重庆市疾病预防控制局',short_name:'市疾控局',type:'external',status:'active',sort_order:10}],
+      dictionaries:{work_categories:[],work_sources:[{id:'ws_old',name:'市疾控局',organization_id:'org_old'}]}}
+  });
+  const legacySourceDevice=createDevice(legacySourceServer);
+  assert.equal(await legacySourceDevice.gitee.pull(),'ok','带旧来源字典的 Gitee 快照可拉取');
+  assert.equal(JSON.parse(legacySourceDevice.values.get('wb_config')).dictionaries.work_sources,undefined);
+  assert.deepEqual(legacySourceDevice.DB.raw('todos')[0].source,['市疾控局','领导交办']);
+  assert.deepEqual(legacySourceDevice.DB.raw('todos')[0].source_org_ids,['org_old','']);
   const readOnlyPhone=createDevice(server,{todos:old},{wb_gitee_token:'',wb_gitee_branch:'master'});
   assert.equal(await readOnlyPhone.gitee.pull(),'ok','无令牌设备应可从公开仓库拉取');
   assert.deepEqual(names(readOnlyPhone.DB.get('todos')),['D']);
