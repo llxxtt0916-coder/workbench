@@ -2054,6 +2054,74 @@ function unlinkMatterRecord(ledger,id){
   }
   return true;
 }
+const LINKED_NEW_PATHS={
+  todos:['purchases','contracts','expenses','meetings','trainings','agencys'],
+  purchases:['contracts','expenses'],contracts:['expenses'],meetings:['expenses'],
+  trainings:['expenses'],agencys:['expenses']
+};
+function linkedPrefillValues(sourceLedger,source,targetLedger,matterName){
+  if(!LINKED_NEW_PATHS[sourceLedger]?.includes(targetLedger))return null;
+  const title=String(matterName||recordDisplayName(source)||'').trim();
+  const values={assignee:String(source.assignee||'').trim()};
+  if(targetLedger==='expenses')values.content=['meetings','trainings'].includes(sourceLedger)?
+    String(source.name||title).trim():title;
+  else values.name=title;
+  if(((sourceLedger==='purchases'||sourceLedger==='contracts')&&targetLedger==='expenses')||
+     (sourceLedger==='purchases'&&targetLedger==='contracts')){
+    values.subject=String(sourceLedger==='purchases'?source.supplier||'':source.party||'').trim();
+    values.subject_org_id=String(sourceLedger==='purchases'?source.supplier_org_id||'':source.counterparty_org_id||'');
+    const amount=Number(source.amount);
+    if(Number.isFinite(amount)&&amount>0)values.amount=amount;
+  }
+  if(sourceLedger==='trainings'&&targetLedger==='expenses'){
+    const fee=Number(source.fee);
+    if(Number.isFinite(fee)&&fee>0)values.amount=fee;
+  }
+  if(sourceLedger==='agencys'&&targetLedger==='expenses'){
+    values.subject=String(source.winSupplier||'').trim();
+    values.subject_org_id=values.subject?String(source.win_supplier_org_id||''):'';
+    const deal=Number(source.dealAmount);
+    if(Number.isFinite(deal)&&deal>0)values.amount=deal;
+  }
+  return values;
+}
+let pendingLinkedRecord=null;
+function completePendingLinkedRecord(targetLedger,targetId){
+  if(!pendingLinkedRecord||pendingLinkedRecord.targetLedger!==targetLedger)return null;
+  const pending=pendingLinkedRecord;pendingLinkedRecord=null;
+  const result=linkMatterRecords(pending.sourceLedger,pending.sourceId,targetLedger,targetId);
+  if(result.status!=='linked')toast('新记录已保存，但事项关联未完成，请从记录重新关联');
+  return result;
+}
+function openLinkedNewRecord(sourceLedger,sourceId,targetLedger){
+  const source=matterRecord(sourceLedger,sourceId);
+  if(!source||!LINKED_NEW_PATHS[sourceLedger]?.includes(targetLedger)){toast('此业务类型暂不支持新建关联记录');return false;}
+  const existingMatter=source.matter_id?matterById(source.matter_id):null;
+  if(source.matter_id&&!existingMatter){toast('当前记录的事项数据缺失，请先检查快照');return false;}
+  const forms={
+    purchases:['purchaseModal',clearPurchaseForm,'purchaseName','purchaseAssignee','purchaseAmount','purchaseSupplier'],
+    contracts:['contractModal',clearContractForm,'contractName','contractAssignee','contractAmount','contractParty'],
+    expenses:['expenseModal',clearExpenseForm,'expenseContent','expenseAssignee','expenseAmount','expenseSupplier'],
+    meetings:['meetingModal',clearMeetingForm,'meetingName','meetingAssignee'],
+    trainings:['trainingModal',clearTrainingForm,'trainingName','trainingAssignee'],
+    agencys:['agencyModal',clearAgencyForm,'agencyName','agencyAssignee']
+  };
+  const [modalId,clearForm,nameId,assigneeId,amountId,orgInputId]=forms[targetLedger];
+  const values=linkedPrefillValues(sourceLedger,source,targetLedger,existingMatter?.name||recordDisplayName(source));
+  clearForm();
+  document.getElementById(nameId).value=values[targetLedger==='expenses'?'content':'name']||'';
+  document.getElementById(assigneeId).value=values.assignee;
+  if(amountId&&values.amount!==undefined)document.getElementById(amountId).value=values.amount;
+  if(orgInputId&&values.subject){
+    const validId=getConfig().organizations.some(org=>org.id===values.subject_org_id&&
+      (org.type==='external'||org.type==='supplier'))?values.subject_org_id:'';
+    setOrgInput(orgInputId,values.subject,validId);
+  }
+  document.getElementById(modalId+'Title').textContent='新增关联'+({purchases:'采购',contracts:'合同',expenses:'报销',meetings:'会议',trainings:'培训',agencys:'委托'}[targetLedger]);
+  pendingLinkedRecord={sourceLedger,sourceId,targetLedger,modalId};
+  openModal(modalId);
+  return true;
+}
 
 // Configuration is one snapshot object; legacy text fields remain the record's display snapshot.
 const CONFIG_STORAGE_KEY='wb_config';
@@ -3810,7 +3878,7 @@ function hideLifecycleStatusField(modalId){
     const group=el.closest('.form-group');if(group)group.style.display='none';
   });
 }
-function closeModal(id){const modal=document.getElementById(id);if(modal)modal.classList.remove('open');if(id==='confirmDialog')pendingConfirmAction=null;if(id==='configModal')pendingCommonOrgInput=''}
+function closeModal(id){const modal=document.getElementById(id);if(modal)modal.classList.remove('open');if(id==='confirmDialog')pendingConfirmAction=null;if(id==='configModal')pendingCommonOrgInput='';if(pendingLinkedRecord?.modalId===id)pendingLinkedRecord=null;}
 let pendingConfirmAction=null;
 function confirmAction(message,action){
   pendingConfirmAction=action;
@@ -4663,6 +4731,8 @@ function saveTodo(){
     source:getMultiSelected('todoSource'),
     work_category_ids:selectedWorkConfigIds('todoCategory',previousTodo,'work_category_ids'),
     source_org_ids:selectedWorkSourceOrgIds(previousTodo),
+    ...(previousTodo.matter_id?{matter_id:previousTodo.matter_id}:{}),
+    ...(Array.isArray(previousTodo.related_sources)?{related_sources:previousTodo.related_sources}:{}),
     priority:document.getElementById('todoPriority').value,
     content:document.getElementById('todoContent').value,
     issueDate:document.getElementById('todoIssueDate').value,
@@ -5599,6 +5669,7 @@ function saveContract(){
   if(id){const i=contracts.findIndex(c=>c.id===id);if(i>-1){item.todoRef=contracts[i].todoRef;item.deleted=contracts[i].deleted;contracts[i]=item;}else contracts.push(item);}
   else contracts.push(item);
   DB.set('contracts',contracts);
+  if(!id)completePendingLinkedRecord('contracts',item.id);
   closeModal('contractModal');
   clearContractForm();
   renderContracts();
@@ -5772,6 +5843,7 @@ function savePurchase(){
     (item.linked_ledgers??={}).expenses=autoExpense.id;
   }
   if(item.linked_ledgers)DB.set('purchases',purchases);
+  if(!id)completePendingLinkedRecord('purchases',item.id);
 
 
   closeModal('purchaseModal');
@@ -6142,6 +6214,7 @@ function saveAgency(){
     else agencys.push(item);
   }else agencys.push(item);
   DB.set('agencys',agencys);
+  if(!id)completePendingLinkedRecord('agencys',item.id);
 
   closeModal('agencyModal');
   clearAgencyForm();
@@ -6885,6 +6958,7 @@ function saveExpense(){
   if(id){const i=expenses.findIndex(e=>e.id===id);if(i>-1){item.todoRef=expenses[i].todoRef;item.deleted=expenses[i].deleted;expenses[i]=item;}else expenses.push(item);}
   else expenses.push(item);
   DB.set('expenses',expenses);
+  if(!id)completePendingLinkedRecord('expenses',item.id);
   closeModal('expenseModal');
   clearExpenseForm();
   renderExpenses();
@@ -7081,6 +7155,7 @@ function saveMeeting(){
     else meetings.push(item);
   }else meetings.push(item);
   DB.set('meetings',meetings);
+  if(!id)completePendingLinkedRecord('meetings',item.id);
 
   closeModal('meetingModal');
   clearMeetingForm();
@@ -7291,6 +7366,7 @@ function saveTraining(){
     else trainings.push(item);
   }else trainings.push(item);
   DB.set('trainings',trainings);
+  if(!id)completePendingLinkedRecord('trainings',item.id);
 
   closeModal('trainingModal');
   clearTrainingForm();
