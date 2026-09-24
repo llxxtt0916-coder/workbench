@@ -23,7 +23,7 @@ function renderExpenseHeader(expenses,month){
     function belongsToLedger(){return true;}
     function formalLedgerItems(key){return DB.get(key).filter(record=>[STATE.DONE,STATE.CLOSED].includes(recordState(key,record)));}
     function fmt(value){return Number(value||0).toLocaleString('zh-CN');}
-    function renderModuleStats(){} function expenseFundId(){return null;} function fundSubcategories(){return [];} function stateBadge(){return '';} function nativeStatusNote(){return '';} function esc(value){return String(value??'');} function updateGenericFilterCount(){}
+    function renderModuleStats(){} function expenseFundId(){return null;} function fundSubcategories(){return [];} function stateBadge(){return '';} function nativeStatusNote(){return '';} function esc(value){return String(value??'');} function updateGenericFilterCount(){} function refreshUnitFilterChoices(){}
     ${expenseFunctions}
     ${renderExpensesSource}
     ({renderExpenses,getExpenseCompletedDate})

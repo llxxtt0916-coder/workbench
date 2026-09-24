@@ -361,11 +361,8 @@
                 <span class="multi-select-placeholder" id="todoF_catPlaceholder">选择类别</span><span class="multi-select-arrow">▾</span>
               </div>
               <div class="multi-dropdown" id="todoF_catDropdown">
+                <input class="config-choice-search" id="todoF_catSearch" placeholder="搜索类别" oninput="renderMultiOptions('todoF_cat')" onclick="event.stopPropagation()">
                 <div class="multi-dropdown-list" id="todoF_catList"></div>
-                <div class="multi-dropdown-add">
-                  <input class="subtask-input" id="todoF_catNew" placeholder="新增类别..." onkeydown="if(event.key==='Enter')addMultiOption('todoF_cat')">
-                  <button class="btn btn-ghost btn-sm" onclick="addMultiOption('todoF_cat')">+ 新增</button>
-                </div>
               </div>
             </div>
           </div>
@@ -376,11 +373,8 @@
                 <span class="multi-select-placeholder" id="todoF_srcPlaceholder">选择来源</span><span class="multi-select-arrow">▾</span>
               </div>
               <div class="multi-dropdown" id="todoF_srcDropdown">
+                <input class="config-choice-search" id="todoF_srcSearch" placeholder="搜索来源" oninput="renderMultiOptions('todoF_src')" onclick="event.stopPropagation()">
                 <div class="multi-dropdown-list" id="todoF_srcList"></div>
-                <div class="multi-dropdown-add">
-                  <input class="subtask-input" id="todoF_srcNew" placeholder="新增来源..." onkeydown="if(event.key==='Enter')addMultiOption('todoF_src')">
-                  <button class="btn btn-ghost btn-sm" onclick="addMultiOption('todoF_src')">+ 新增</button>
-                </div>
               </div>
             </div>
           </div>
@@ -507,7 +501,7 @@
           </div>
           <div class="filter-item">
             <label>对方单位</label>
-            <input placeholder="签约方..." id="contractF_party" oninput="applyContractFilter()">
+            <input placeholder="输入或选择签约方..." id="contractF_party" list="contractF_partyOptions" oninput="applyContractFilter()"><datalist id="contractF_partyOptions"></datalist>
           </div>
           <div class="filter-item">
             <label>状态</label>
@@ -576,7 +570,7 @@
           </div>
           <div class="filter-item">
             <label>供应商</label>
-            <input placeholder="供应商名称..." id="purchaseF_supplier" oninput="applyPurchaseFilter()">
+            <input placeholder="输入或选择采购对象..." id="purchaseF_supplier" list="purchaseF_supplierOptions" oninput="applyPurchaseFilter()"><datalist id="purchaseF_supplierOptions"></datalist>
           </div>
           <div class="filter-item">
             <label>状态</label>
@@ -696,7 +690,7 @@
           </div>
           <div class="filter-item">
             <label>供应商</label>
-            <input placeholder="供应商..." id="expenseF_supplier" oninput="applyExpenseFilter()">
+            <input placeholder="输入或选择单位..." id="expenseF_supplier" list="expenseF_supplierOptions" oninput="applyExpenseFilter()"><datalist id="expenseF_supplierOptions"></datalist>
           </div>
           <div class="filter-item">
             <label>发票号</label>
@@ -759,7 +753,7 @@
           <div class="filter-item"><label>需求科室</label><input id="agencyF_dept" oninput="applyAgencyFilter()" placeholder="关键词"></div>
           <div class="filter-item"><label>项目状态</label><select id="agencyF_status" onchange="applyAgencyFilter()"><option value="">全部</option><option>未开始</option><option>进行中</option><option>已完成</option><option>已关闭</option></select></div>
           <div class="filter-item"><label>类别</label><input id="agencyF_category" oninput="applyAgencyFilter()" placeholder="关键词"></div>
-          <div class="filter-item"><label>成交供应商</label><input id="agencyF_supplier" oninput="applyAgencyFilter()" placeholder="关键词"></div>
+          <div class="filter-item"><label>成交供应商</label><input id="agencyF_supplier" list="agencyF_supplierOptions" oninput="applyAgencyFilter()" placeholder="输入或选择单位"><datalist id="agencyF_supplierOptions"></datalist></div>
           <div class="filter-item"><label>预算金额</label><div class="filter-range"><input type="number" id="agencyF_budgetMin" placeholder="最低" oninput="applyAgencyFilter()"><span>—</span><input type="number" id="agencyF_budgetMax" placeholder="最高" oninput="applyAgencyFilter()"></div></div>
           <div class="filter-item"><label>委托时间</label><div class="filter-range"><input type="date" id="agencyF_dateFrom" onchange="applyAgencyFilter()"><span>—</span><input type="date" id="agencyF_dateTo" onchange="applyAgencyFilter()"></div></div>
         </div>
@@ -2150,10 +2144,32 @@ function saveCommonOrg(inputId){
 }
 function refreshConfigConsumers(){
   refreshOrgChoices();
+  refreshUnitFilterChoices();
   ['todoCategory','todoSource','todoF_cat','todoF_src'].forEach(name=>{
     if(document.getElementById(name+'List'))renderMultiOptions(name);
   });
   if(typeof currentPage!=='undefined'&&currentPage==='config')renderConfigPage();
+}
+const UNIT_FILTER_FIELDS={
+  contractF_party:['contracts','party'],purchaseF_supplier:['purchases','supplier'],
+  expenseF_supplier:['expenses','supplier'],agencyF_supplier:['agencys','winSupplier']
+};
+function unitFilterCandidates(key){
+  const [ledger,field]=UNIT_FILTER_FIELDS[key]||[];
+  if(!ledger)return [];
+  const names=[...activeOrganizations('external').map(row=>row.name),...DB.get(ledger).map(row=>row[field])];
+  const seen=new Set();
+  return names.map(name=>String(name||'').trim()).filter(name=>{
+    const normalized=name.toLocaleLowerCase();
+    if(!name||seen.has(normalized))return false;
+    seen.add(normalized);return true;
+  });
+}
+function refreshUnitFilterChoices(){
+  Object.keys(UNIT_FILTER_FIELDS).forEach(key=>{
+    const list=document.getElementById(key+'Options');
+    if(list)list.innerHTML=unitFilterCandidates(key).map(name=>`<option value="${esc(name)}"></option>`).join('');
+  });
 }
 
 // ============================================================
@@ -5229,6 +5245,7 @@ function viewInsp(id){
 const contractStatusBadge={执行中:'badge-blue',已完成:'badge-green',已关闭:'badge-gray',已终止:'badge-gray',已解除:'badge-gray',已过期:'badge-red',待签:'badge-yellow'};
 
 function renderContracts(){
+  refreshUnitFilterChoices();
   const contracts=formalLedgerItems('contracts');
   const q=(document.getElementById('contractF_name')?.value||'').toLowerCase();
   const party=(document.getElementById('contractF_party')?.value||'').toLowerCase();
@@ -5358,6 +5375,7 @@ function deleteContract(id,confirmed=false){
 const purchaseStatusBadge={申请中:'badge-yellow',审批通过:'badge-blue',已到货:'badge-green',已拒绝:'badge-red'};
 
 function renderPurchases(){
+  refreshUnitFilterChoices();
   const purchases=formalLedgerItems('purchases');
   // 筛选
   const q=(document.getElementById('purchaseF_name')?.value||'').toLowerCase();
@@ -5715,6 +5733,7 @@ function deletePurchase(id,confirmed=false){
 const agencyStatusBadge={待委托:'badge-yellow',已委托:'badge-blue',已完成:'badge-green',已流标:'badge-red',已取消:'badge-gray'};
 
 function renderAgencys(){
+  refreshUnitFilterChoices();
   const data=formalLedgerItems('agencys');
   const q=(document.getElementById('agencyF_name')?.value||'').toLowerCase();
   const qm=(document.getElementById('agencyF_method')?.value||'').toLowerCase();
@@ -6468,6 +6487,7 @@ function expenseMonthlyReimbursed(expenses,month){
 }
 
 function renderExpenses(){
+  refreshUnitFilterChoices();
   const expenses=formalLedgerItems('expenses');
   const allExpenses=DB.get('expenses').filter(e=>belongsToLedger('expenses',e));
   const now=new Date().toISOString().slice(0,7);
