@@ -100,6 +100,11 @@
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.51-1.31c-.562-.649-1.413-1.076-2.353-1.253V5z" clip-rule="evenodd"/></svg>
       经费台账
     </div>
+    <div class="nav-section">管理</div>
+    <div class="nav-item" onclick="navigate('config',this)">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4h14v2H3zm0 5h14v2H3zm0 5h14v2H3z"/><circle cx="7" cy="5" r="2" fill="white"/><circle cx="13" cy="10" r="2" fill="white"/><circle cx="9" cy="15" r="2" fill="white"/></svg>
+      配置
+    </div>
   </nav>
 
   <div class="sidebar-footer" id="clockDisplay">加载中…</div>
@@ -871,11 +876,39 @@
       <div id="fundList"></div>
     </div>
 
+    <div class="page" id="page-config">
+      <div class="v16-content-header"><div><h1>配置</h1><p>维护业务表单共用的组织资料和工作字典。</p></div></div>
+      <div class="config-toolbar">
+        <div class="seg-control" aria-label="配置分组">
+          <button type="button" class="config-segment active" data-group="organizations" onclick="selectConfigGroup('organizations')">组织与单位</button>
+          <button type="button" class="config-segment" data-group="dictionaries" onclick="selectConfigGroup('dictionaries')">工作字典</button>
+        </div>
+        <button class="btn btn-primary" onclick="openConfigEditor()">+ 新增</button>
+      </div>
+      <div class="config-tabs" id="configTabs" aria-label="配置类别"></div>
+      <div class="table-wrap"><table class="ledger-table config-table"><thead id="configTableHead"></thead><tbody id="configTableBody"></tbody></table></div>
+      <p class="config-help">停用后，新建记录不再推荐；历史记录和历史筛选值保留。</p>
+    </div>
+
   </div><!-- page-content end -->
 </div><!-- main end -->
 </div><!-- app end -->
 
 <!-- ===== MODALS ===== -->
+
+<div class="modal-overlay" id="configModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header"><span class="modal-title" id="configModalTitle">新增配置</span><button class="close-btn" onclick="closeModal('configModal')">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="configEntryId">
+      <div class="form-group"><label class="form-label" for="configName">名称 *</label><input class="form-control" id="configName" maxlength="100"></div>
+      <div class="form-group" id="configShortNameGroup"><label class="form-label" for="configShortName">简称</label><input class="form-control" id="configShortName" maxlength="60"></div>
+      <div class="form-group" id="configTypeGroup"><label class="form-label" for="configType">类别</label><select class="form-control" id="configType"><option value="external">外部单位</option><option value="internal">内部组织</option><option value="supplier">供应商</option></select></div>
+      <div class="form-group"><label class="form-label" for="configRemark">备注</label><textarea class="form-control" id="configRemark" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('configModal')">取消</button><button class="btn btn-primary" onclick="saveConfigEditor()">保存</button></div>
+  </div>
+</div>
 
 <!-- Todo Modal V2 -->
 <div class="modal-overlay" id="todoModal">
@@ -2060,12 +2093,12 @@ function setConfigStatus(group,id,status){
 function moveConfigRow(group,id,direction){
   const config=getConfig(),rows=group==='organizations'?config.organizations:config.dictionaries[group];
   if(!rows)return false;
-  const ordered=rows.slice().sort((a,b)=>a.sort_order-b.sort_order);
+  const current=rows.find(row=>row.id===id);
+  const ordered=rows.filter(row=>group!=='organizations'||row.type===current?.type).sort((a,b)=>a.sort_order-b.sort_order);
   const index=ordered.findIndex(row=>row.id===id),other=ordered[index+direction];
   if(index<0||!other)return false;
-  ordered[index].sort_order=(index+direction+1)*10;
-  other.sort_order=(index+1)*10;
-  ordered.sort((a,b)=>a.sort_order-b.sort_order).forEach((row,i)=>row.sort_order=(i+1)*10);
+  const previous=ordered[index].sort_order;
+  ordered[index].sort_order=other.sort_order;other.sort_order=previous;
   saveConfig(config);return true;
 }
 
@@ -3317,7 +3350,82 @@ function repairData(){
 // ============================================================
 //  NAVIGATION
 // ============================================================
-const pageTitles={dashboard:'驾驶舱',todo:'工作台账',quick:'速记箱',inspiration:'灵感收集',待办:'待办',长期目标:'长期目标',提醒:'提醒中心',meeting:'会议日程',training:'培训记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账','monthly-summary':'本月摘要',agency:'委托管理',handover:'交接台账',fund:'经费台账'};
+const CONFIG_TABS={organizations:[['external','外部单位'],['internal','内部组织'],['supplier','供应商']],dictionaries:[['work_categories','工作类别'],['work_sources','工作来源']]};
+let configGroup='organizations',configTab='external';
+function selectConfigGroup(group){
+  if(!CONFIG_TABS[group])return;
+  configGroup=group;configTab=CONFIG_TABS[group][0][0];renderConfigPage();
+}
+function selectConfigTab(tab){
+  if(!CONFIG_TABS[configGroup].some(([key])=>key===tab))return;
+  configTab=tab;renderConfigPage();
+}
+function visibleConfigRows(){
+  return configRows(configGroup==='organizations'?'organizations':configTab)
+    .filter(row=>configGroup!=='organizations'||row.type===configTab)
+    .sort((a,b)=>a.sort_order-b.sort_order||a.name.localeCompare(b.name,'zh-CN'));
+}
+function renderConfigPage(){
+  document.querySelectorAll('.config-segment').forEach(button=>button.classList.toggle('active',button.dataset.group===configGroup));
+  document.getElementById('configTabs').innerHTML=CONFIG_TABS[configGroup].map(([key,label])=>
+    `<button type="button" class="config-tab${configTab===key?' active':''}" data-tab="${key}" onclick="selectConfigTab(this.dataset.tab)">${label}</button>`).join('');
+  const org=configGroup==='organizations';
+  document.getElementById('configTableHead').innerHTML=org?'<tr><th>名称</th><th>简称</th><th>类型</th><th>状态</th><th>排序</th><th>操作</th></tr>':'<tr><th>名称</th><th>状态</th><th>排序</th><th>备注</th><th>操作</th></tr>';
+  const rows=visibleConfigRows();
+  document.getElementById('configTableBody').innerHTML=rows.length?rows.map((row,index)=>{
+    const controls=`<button class="btn btn-ghost btn-sm" data-id="${esc(row.id)}" onclick="moveConfigEntry(this.dataset.id,-1)" ${index===0?'disabled':''} aria-label="上移">↑</button><button class="btn btn-ghost btn-sm" data-id="${esc(row.id)}" onclick="moveConfigEntry(this.dataset.id,1)" ${index===rows.length-1?'disabled':''} aria-label="下移">↓</button>`;
+    const actions=`<button class="btn btn-ghost btn-sm" data-id="${esc(row.id)}" onclick="openConfigEditor(this.dataset.id)">编辑</button><button class="btn btn-ghost btn-sm" data-id="${esc(row.id)}" onclick="toggleConfigEntry(this.dataset.id)">${row.status==='inactive'?'启用':'停用'}</button>`;
+    const status=`<span class="badge ${row.status==='inactive'?'badge-gray':'badge-green'}">${row.status==='inactive'?'停用':'启用'}</span>`;
+    return org?`<tr><td>${esc(row.name)}</td><td>${esc(row.short_name||'—')}</td><td>${CONFIG_TABS.organizations.find(([key])=>key===row.type)?.[1]||''}</td><td>${status}</td><td>${controls}</td><td>${actions}</td></tr>`:
+      `<tr><td>${esc(row.name)}</td><td>${status}</td><td>${controls}</td><td>${esc(row.remark||'—')}</td><td>${actions}</td></tr>`;
+  }).join(''):`<tr><td colspan="${org?6:5}"><div class="empty-state">暂无配置，点击“新增”开始维护。</div></td></tr>`;
+}
+function openConfigEditor(id=''){
+  const group=configGroup==='organizations'?'organizations':configTab;
+  const row=configRows(group).find(item=>item.id===id);
+  document.getElementById('configEntryId').value=row?.id||'';
+  document.getElementById('configName').value=row?.name||'';
+  document.getElementById('configShortName').value=row?.short_name||'';
+  document.getElementById('configType').value=row?.type||configTab;
+  document.getElementById('configRemark').value=row?.remark||'';
+  document.getElementById('configShortNameGroup').style.display=group==='organizations'?'':'none';
+  document.getElementById('configTypeGroup').style.display=group==='organizations'?'':'none';
+  document.getElementById('configModalTitle').textContent=(row?'编辑':'新增')+(CONFIG_TABS[configGroup].find(([key])=>key===configTab)?.[1]||'配置');
+  openModal('configModal');
+}
+function saveConfigEditor(){
+  const group=configGroup==='organizations'?'organizations':configTab;
+  const id=document.getElementById('configEntryId').value;
+  const old=configRows(group).find(row=>row.id===id);
+  try{
+    upsertConfig(group,{...old,id,name:document.getElementById('configName').value,
+      short_name:document.getElementById('configShortName').value,
+      type:document.getElementById('configType').value,
+      remark:document.getElementById('configRemark').value});
+    closeModal('configModal');renderConfigPage();toast('配置已保存');
+  }catch(error){toast(error.message);}
+}
+function configEntryUsed(row,group){
+  const same=value=>String(value||'').trim()===row.name;
+  if(group==='organizations'){
+    return DB.get('purchases').some(r=>same(r.supplier)||same(r.contractDept)||same(r.expenseDept))||
+      DB.get('contracts').some(r=>same(r.party))||DB.get('expenses').some(r=>same(r.supplier));
+  }
+  return DB.get('todos').some(r=>(Array.isArray(r[group==='work_categories'?'category':'source'])?
+    r[group==='work_categories'?'category':'source']:[r[group==='work_categories'?'category':'source']]).some(same));
+}
+function toggleConfigEntry(id){
+  const group=configGroup==='organizations'?'organizations':configTab;
+  const row=configRows(group).find(item=>item.id===id);
+  if(!row)return;
+  if(row.status!=='inactive'&&configEntryUsed(row,group))toast('该配置项已被历史记录使用。停用不会修改历史数据，仅停止在新建表单中推荐。');
+  setConfigStatus(group,id,row.status==='inactive'?'active':'inactive');renderConfigPage();
+}
+function moveConfigEntry(id,direction){
+  const group=configGroup==='organizations'?'organizations':configTab;
+  if(moveConfigRow(group,id,direction))renderConfigPage();
+}
+const pageTitles={dashboard:'驾驶舱',todo:'工作台账',quick:'速记箱',inspiration:'灵感收集',待办:'待办',长期目标:'长期目标',提醒:'提醒中心',meeting:'会议日程',training:'培训记录',contract:'合同管理',purchase:'采购管理',expense:'报销台账','monthly-summary':'本月摘要',agency:'委托管理',handover:'交接台账',fund:'经费台账',config:'配置'};
 let currentPage='dashboard';
 
 function navigate(page,el){
@@ -3344,6 +3452,7 @@ function navigate(page,el){
   if(page==='agency')renderAgencys();
   if(page==='handover')renderHandovers();
   if(page==='fund')renderFunds();
+  if(page==='config')renderConfigPage();
   if(page==='quick')renderQuick();
   if(page==='待办')renderTodos();
   if(page==='长期目标')renderGoals();

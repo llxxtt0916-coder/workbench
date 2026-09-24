@@ -26,16 +26,18 @@ test('legacy options seed separate work dictionaries and persist stable IDs',()=
 test('organizations share one master list with status, edits and order',()=>{
   const {api}=context();
   const a=api.upsertConfig('organizations',{name:'外部单位',type:'external',short_name:'外部'});
+  const a2=api.upsertConfig('organizations',{name:'另一外部单位',type:'external'});
   const b=api.upsertConfig('organizations',{name:'本单位科室',type:'internal'});
   const c=api.upsertConfig('organizations',{name:'服务商',type:'supplier'});
-  assert.deepEqual(Array.from(api.getConfig().organizations,row=>row.type),['external','internal','supplier']);
+  assert.deepEqual(Array.from(api.getConfig().organizations,row=>row.type),['external','external','internal','supplier']);
   api.upsertConfig('organizations',{...a,name:'更名单位'});
   assert.equal(api.getConfig().organizations[0].id,a.id);
   assert.equal(api.setConfigStatus('organizations',c.id,'inactive'),true);
-  assert.equal(api.getConfig().organizations[2].status,'inactive');
+  assert.equal(api.getConfig().organizations[3].status,'inactive');
   assert.equal(api.setConfigStatus('organizations',c.id,'active'),true);
-  assert.equal(api.moveConfigRow('organizations',b.id,-1),true);
-  assert.deepEqual(Array.from(api.getConfig().organizations).sort((x,y)=>x.sort_order-y.sort_order).map(row=>row.id),[b.id,a.id,c.id]);
+  assert.equal(api.moveConfigRow('organizations',a2.id,-1),true);
+  assert.deepEqual(Array.from(api.getConfig().organizations).filter(row=>row.type==='external').sort((x,y)=>x.sort_order-y.sort_order).map(row=>row.id),[a2.id,a.id]);
+  assert.equal(api.moveConfigRow('organizations',b.id,-1),false);
   assert.throws(()=>api.upsertConfig('organizations',{name:'服务商',type:'external'}),/名称已存在/);
 });
 test('invalid or absent cloud configuration initializes safely',()=>{

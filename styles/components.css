@@ -2070,3 +2070,16 @@ tr:hover td {
 
 /* 悬浮按钮角标（速记收件箱计数） */
 .fab-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;background:#ef4444;color:#fff;border-radius:9px;font-size:11px;line-height:18px;text-align:center;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+
+/* Configuration center follows the v1.6 page header, segmented control and ledger table. */
+.config-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:20px 0 16px}
+.config-toolbar .seg-control{display:flex;gap:4px;padding:4px;background:var(--color-bg-secondary,#f2f2f7);border-radius:10px}
+.config-segment,.config-tab{border:0;background:transparent;color:var(--color-text2);font:inherit;font-size:13px;cursor:pointer;border-radius:8px;padding:8px 14px;transition:background .15s,color .15s}
+.config-segment.active{background:var(--color-bg-card,#fff);color:var(--color-primary,#007aff);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.config-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;border-bottom:1px solid var(--color-border);padding-bottom:8px}
+.config-tab.active{background:rgba(0,122,255,.1);color:var(--color-primary,#007aff);font-weight:600}
+.config-table{width:100%}
+.config-table td{vertical-align:middle}
+.config-table .btn{margin-right:4px}
+.config-help{font-size:12px;color:var(--color-text3);margin-top:12px}
+@media(max-width:480px){.config-toolbar{align-items:stretch;flex-direction:column}.config-toolbar .seg-control{justify-content:space-between}.config-segment{flex:1}}
