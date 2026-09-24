@@ -25,6 +25,7 @@ function belongsToLedger(){return true;}
 function stateBadge(){return '';}
 function recordDisplayName(r){return r.name||r.title||'未命名';}
 function esc(v){return String(v??'');}
+function matterActionButton(){return '';}
 function priorityTag(p){return p?'<span>'+esc(p)+'</span>':'';}
 function openStateModal(){} function openOrganizeModal(){} function renderReminders(){} function updateTodoBadge(){}
 function renderTodo(){} function renderDashboard(){} function renderSummary(){} function expenseFundId(e){return e.fundItem||null;}

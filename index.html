@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.svg">
 <link rel="stylesheet" href="styles/base.css">
 <link rel="stylesheet" href="styles/layout.css">
-<link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="styles/components.css?v=linked-records-1">
 </head>
 <body>
 <div class="app">
@@ -1675,7 +1675,14 @@
       <button class="close-btn" onclick="cancelConfirmAction()" aria-label="关闭">×</button>
     </div>
     <div class="modal-body"><p id="confirmDialogMessage" class="confirm-message"></p></div>
-    <div class="modal-footer"><button class="btn btn-outline" onclick="cancelConfirmAction()">取消</button><button class="btn btn-danger" onclick="runConfirmAction()">确认删除</button></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="cancelConfirmAction()">取消</button><button class="btn btn-danger" id="confirmDialogAction" onclick="runConfirmAction()">确认删除</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay matter-overlay" id="matterPanel" role="dialog" aria-modal="true" aria-labelledby="matterPanelTitle">
+  <div class="modal matter-drawer">
+    <div class="modal-header"><span class="modal-title" id="matterPanelTitle">关联业务</span><button class="close-btn" onclick="closeModal('matterPanel')" aria-label="关闭">×</button></div>
+    <div class="modal-body" id="matterPanelBody"></div>
   </div>
 </div>
 
@@ -3880,9 +3887,10 @@ function hideLifecycleStatusField(modalId){
 }
 function closeModal(id){const modal=document.getElementById(id);if(modal)modal.classList.remove('open');if(id==='confirmDialog')pendingConfirmAction=null;if(id==='configModal')pendingCommonOrgInput='';if(pendingLinkedRecord?.modalId===id)pendingLinkedRecord=null;}
 let pendingConfirmAction=null;
-function confirmAction(message,action){
+function confirmAction(message,action,confirmLabel='确认删除'){
   pendingConfirmAction=action;
   document.getElementById('confirmDialogMessage').textContent=message;
+  document.getElementById('confirmDialogAction').textContent=confirmLabel;
   openModal('confirmDialog');
 }
 function cancelConfirmAction(){pendingConfirmAction=null;closeModal('confirmDialog');}
@@ -3891,6 +3899,119 @@ function runConfirmAction(){
   pendingConfirmAction=null;
   closeModal('confirmDialog');
   if(typeof action==='function')action();
+}
+const MATTER_LABELS={todos:'工作',purchases:'采购',contracts:'合同',expenses:'报销',
+  meetings:'会议',trainings:'培训',agencys:'委托'};
+const MATTER_DATES={todos:['issueDate','deadline','due_date','dueDate'],purchases:['date'],contracts:['signDate'],
+  expenses:['appDate'],meetings:['date'],trainings:['startDate'],agencys:['date']};
+let matterPanelContext=null;
+function matterActionButton(ledger,record){
+  if(!MATTER_LEDGER_TYPES[ledger]||!matterRecord(ledger,record.id))return '';
+  const count=record.matter_id&&matterById(record.matter_id)?matterMembers(record.matter_id).length:0;
+  const label=count?'关联 '+count+' 项':'关联业务';
+  return `<button type="button" class="btn btn-ghost btn-sm matter-action" data-ledger="${ledger}" data-id="${esc(record.id)}" onclick="openMatterActions(this.dataset.ledger,this.dataset.id)">${label}</button>`;
+}
+function matterSearchCandidates(sourceLedger,sourceId,filters={}){
+  const source=matterRecord(sourceLedger,sourceId);
+  if(!source)return [];
+  const keyword=String(filters.keyword||'').trim().toLowerCase();
+  const assignee=String(filters.assignee||'').trim().toLowerCase();
+  const date=String(filters.date||'').trim();
+  return Object.keys(MATTER_LEDGER_TYPES).flatMap(ledger=>{
+    if(filters.type&&filters.type!==ledger)return [];
+    return DB.get(ledger).filter(record=>matterRecord(ledger,record.id)&&
+      !(ledger===sourceLedger&&String(record.id)===String(sourceId))).map(record=>({
+      ledger,record,status:recordState(ledger,record),date:String(MATTER_DATES[ledger].map(key=>record[key]).find(Boolean)||'')
+    }));
+  }).filter(row=>{
+    if(keyword&&!`${recordDisplayName(row.record)} ${row.record.supplier||''} ${row.record.party||''}`.toLowerCase().includes(keyword))return false;
+    if(assignee&&!String(row.record.assignee||'').toLowerCase().includes(assignee))return false;
+    if(date&&!row.date.includes(date))return false;
+    if(filters.status&&filters.status!==row.status)return false;
+    return true;
+  });
+}
+function openMatterActions(ledger,id){
+  if(!matterRecord(ledger,id)){toast('记录不存在或不支持事项关联');return;}
+  matterPanelContext={ledger,id};renderMatterPanel();openModal('matterPanel');
+}
+function renderMatterPanel(){
+  if(!matterPanelContext)return;
+  const {ledger,id}=matterPanelContext,source=matterRecord(ledger,id),body=document.getElementById('matterPanelBody');
+  if(!source){body.innerHTML='<p>记录已不存在。</p>';return;}
+  const matter=source.matter_id?matterById(source.matter_id):null;
+  const paths=LINKED_NEW_PATHS[ledger]||[];
+  const sections=[];
+  sections.push(`<div class="matter-meta">当前记录 · ${MATTER_LABELS[ledger]} · ${esc(recordDisplayName(source))}</div>`);
+  if(source.matter_id&&!matter){body.innerHTML=sections.join('')+'<p>事项数据缺失，请检查本地或 Gitee 快照。</p>';return;}
+  if(matter){
+    const members=matterMembers(matter.id);
+    sections.push(`<section class="matter-section"><h3>事项名称</h3><div class="matter-toolbar"><input class="form-control" id="matterNameInput" value="${esc(matter.name)}" aria-label="事项名称"><button class="btn btn-outline btn-sm" onclick="saveMatterName()">保存名称</button></div><div class="matter-meta">名称独立于各业务记录，不联动状态。</div></section>`);
+    sections.push('<section class="matter-section"><h3>事项内记录（'+members.length+'）</h3>');
+    for(const groupLedger of Object.keys(MATTER_LEDGER_TYPES)){
+      const group=members.filter(item=>item.ledger===groupLedger);
+      if(!group.length)continue;
+      sections.push(`<div class="matter-meta">${MATTER_LABELS[groupLedger]}</div>`);
+      sections.push(group.map(({record})=>`<div class="matter-member"><button class="btn btn-ghost btn-sm" data-ledger="${groupLedger}" data-id="${esc(record.id)}" onclick="jumpMatterRecord(this.dataset.ledger,this.dataset.id)">${esc(recordDisplayName(record))}</button><span class="matter-meta">${esc(recordState(groupLedger,record))}</span></div>`).join(''));
+    }
+    sections.push('</section>');
+  }else sections.push('<section class="matter-section"><p class="matter-meta">这条记录尚未加入事项。新建或关联已有记录时会自动建立事项。</p></section>');
+  if(paths.length)sections.push(`<section class="matter-section"><h3>新建关联记录</h3><div class="matter-toolbar">${paths.map(target=>`<button class="btn btn-outline btn-sm" onclick="startMatterNew('${target}')">+ ${MATTER_LABELS[target]}</button>`).join('')}</div></section>`);
+  sections.push(`<section class="matter-section"><h3>关联已有记录</h3><div class="matter-search">
+    <select class="form-control" id="matterSearchType" aria-label="业务类型" onchange="renderMatterCandidates()"><option value="">全部类型</option>${Object.keys(MATTER_LEDGER_TYPES).map(key=>`<option value="${key}">${MATTER_LABELS[key]}</option>`).join('')}</select>
+    <select class="form-control" id="matterSearchStatus" aria-label="状态" onchange="renderMatterCandidates()"><option value="">全部状态</option>${[STATE.TODO,STATE.DOING,STATE.DONE,STATE.CLOSED].map(state=>`<option value="${esc(state)}">${esc(state)}</option>`).join('')}</select>
+    <input class="form-control" id="matterSearchKeyword" placeholder="名称或单位关键词" aria-label="关键词" oninput="renderMatterCandidates()">
+    <input class="form-control" id="matterSearchAssignee" placeholder="经办人" aria-label="经办人" oninput="renderMatterCandidates()">
+    <input class="form-control" id="matterSearchDate" type="date" aria-label="日期" onchange="renderMatterCandidates()">
+  </div><div id="matterCandidateResults" style="margin-top:8px"></div></section>`);
+  if(matter)sections.push('<button class="btn btn-outline btn-sm" onclick="confirmRemoveFromMatter()">移出事项</button>');
+  body.innerHTML=sections.join('');renderMatterCandidates();
+}
+function renderMatterCandidates(){
+  if(!matterPanelContext)return;
+  const {ledger,id}=matterPanelContext;
+  const read=key=>document.getElementById('matterSearch'+key)?.value||'';
+  const rows=matterSearchCandidates(ledger,id,{type:read('Type'),status:read('Status'),keyword:read('Keyword'),assignee:read('Assignee'),date:read('Date')});
+  const source=matterRecord(ledger,id),box=document.getElementById('matterCandidateResults');
+  box.innerHTML=`<div class="matter-meta">找到 ${rows.length} 条${rows.length>100?'，显示前 100 条':''}</div>`+
+    rows.slice(0,100).map(({ledger:targetLedger,record,status,date})=>{
+      const conflict=source.matter_id&&record.matter_id&&source.matter_id!==record.matter_id;
+      const same=source.matter_id&&source.matter_id===record.matter_id;
+      return `<div class="matter-candidate"><button class="btn btn-ghost btn-sm" data-ledger="${targetLedger}" data-id="${esc(record.id)}" onclick="matterChooseExisting(this.dataset.ledger,this.dataset.id)" ${conflict?'disabled':''}>${esc(recordDisplayName(record))}<div class="matter-meta">${MATTER_LABELS[targetLedger]} · ${esc(status)} · ${esc(date||'无日期')} · ${esc(record.assignee||'无经办人')}</div></button><span class="matter-meta">${conflict?'属于其他事项':same?'已在同一事项':'可关联'}</span></div>`;
+    }).join('');
+}
+function startMatterNew(targetLedger){
+  if(!matterPanelContext)return;
+  const {ledger,id}=matterPanelContext;
+  if(openLinkedNewRecord(ledger,id,targetLedger))closeModal('matterPanel');
+}
+function matterChooseExisting(targetLedger,targetId){
+  if(!matterPanelContext)return;
+  const {ledger,id}=matterPanelContext;
+  const result=linkMatterRecords(ledger,id,targetLedger,targetId);
+  if(result.status==='conflict')toast('两条记录已属于不同事项，不能自动合并');
+  else if(result.status==='already-linked')toast('这条记录已在同一事项中');
+  else if(result.status==='linked'){toast('关联成功');renderMatterPanel();}
+  else toast('关联未完成，请检查记录或事项数据');
+}
+function saveMatterName(){
+  const record=matterPanelContext&&matterRecord(matterPanelContext.ledger,matterPanelContext.id);
+  if(!record?.matter_id)return;
+  if(!renameMatter(record.matter_id,document.getElementById('matterNameInput').value)){toast('请输入事项名称');return;}
+  toast('事项名称已更新');renderMatterPanel();
+}
+function confirmRemoveFromMatter(){
+  if(!matterPanelContext)return;
+  const {ledger,id}=matterPanelContext;
+  confirmAction('确定将这条记录移出事项？业务记录及其状态会保留。',()=>{
+    if(unlinkMatterRecord(ledger,id)){toast('已移出事项');renderMatterPanel();}
+  },'确认移出');
+}
+function jumpMatterRecord(ledger,id){
+  const pages={todos:'todo',purchases:'purchase',contracts:'contract',expenses:'expense',
+    meetings:'meeting',trainings:'training',agencys:'agency'};
+  if(!matterRecord(ledger,id))return;
+  closeModal('matterPanel');navigate(pages[ledger]);openOrganizeModal(ledger,Number(id)||id);
 }
 document.querySelectorAll('.modal-overlay').forEach(m=>{
   m.addEventListener('click',function(e){if(e.target===this)e.stopPropagation();});
@@ -4594,7 +4715,7 @@ function renderTodo(){
       <td>${esc(typeLabel)}</td><td>${esc(t.assignee||'—')}</td><td>${esc(t.issueDate||'—')}</td><td>${esc(t.completeDate||'—')}</td>
       <td>${stateBadge(Object.assign({_ledger:'todos'},t))}</td>
       <td><button class="ledger-expand" onclick="toggleLedgerSubtasks(${t.id})"><span class="subtask-progress"><span class="subtask-done-bar" style="width:${st?(sd/st*100):0}%"></span></span><span>${sd}/${st}</span><span class="expand-icon" id="expandIcon-${t.id}">▸</span></button></td>
-      <td class="ledger-actions"><button class="btn btn-ghost btn-sm" onclick="openStateModal('todos',${t.id})">状态</button><button class="btn btn-ghost btn-sm" onclick="editTodo(${t.id})">编辑</button><button class="btn btn-ghost btn-sm" onclick="deleteTodo(${t.id})" style="color:var(--color-danger)">删除</button></td>
+      <td class="ledger-actions"><button class="btn btn-ghost btn-sm" onclick="openStateModal('todos',${t.id})">状态</button><button class="btn btn-ghost btn-sm" onclick="editTodo(${t.id})">编辑</button>${matterActionButton('todos',t)}<button class="btn btn-ghost btn-sm" onclick="deleteTodo(${t.id})" style="color:var(--color-danger)">删除</button></td>
     </tr><tr class="ledger-detail-row" id="subtaskList-${t.id}" style="display:none"><td colspan="8"><div class="ledger-detail-content">${renderSubtasks(t)}<div class="subtask-add"><input class="subtask-input" id="subtaskInput-${t.id}" placeholder="输入子任务…" onkeydown="if(event.key==='Enter')addSubtask(${t.id})"><button class="btn btn-ghost btn-sm" onclick="addSubtask(${t.id})">添加</button></div></div></td></tr>`;
   }).join('');
   document.getElementById('todoTabContent').innerHTML=`<div class="table-wrap work-ledger-table"><table><thead><tr><th>工作名称</th><th>类型</th><th>经办人</th><th>开始日期</th><th>完成日期</th><th>状态</th><th>子任务进度</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></div>`;
@@ -5629,7 +5750,7 @@ function renderContracts(){
       <td>${stateBadge({...c,_ledger:'contracts'})}${nativeStatusNote('contracts',c)}</td>
       <td>
         <div style="display:flex;gap:4px">
-          <button class="btn btn-ghost btn-sm" onclick="editContract(${c.id})">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="editContract(${c.id})">✏️</button>${matterActionButton('contracts',c)}
           <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteContract(${c.id})">🗑</button>
         </div>
       </td>
@@ -5766,7 +5887,7 @@ function renderPurchases(){
       <td style="color:var(--color-text2);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.note||'—')}</td>
       <td>
         <div style="display:flex;gap:4px">
-          <button class="btn btn-ghost btn-sm" onclick="editPurchase(${p.id})">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="editPurchase(${p.id})">✏️</button>${matterActionButton('purchases',p)}
           <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deletePurchase(${p.id})">🗑</button>
         </div>
       </td>
@@ -6133,7 +6254,7 @@ function renderAgencys(){
       <td>${esc(a.winSupplier||'—')}</td>
       <td>${a.savingsRate!=null?a.savingsRate+'%':'—'}</td>
       <td>
-        <button class="btn btn-ghost btn-sm" onclick="editAgency(${a.id})">✏️</button>
+        <button class="btn btn-ghost btn-sm" onclick="editAgency(${a.id})">✏️</button>${matterActionButton('agencys',a)}
         <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteAgency(${a.id})">🗑</button>
       </td>
     </tr>
@@ -6899,7 +7020,7 @@ function renderExpenses(){
       <td style="color:var(--color-text2);white-space:nowrap">${e.reimbDate||'—'}</td>
       <td>
         <div style="display:flex;gap:4px">
-          <button class="btn btn-ghost btn-sm" onclick="editExpense(${e.id})">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="editExpense(${e.id})">✏️</button>${matterActionButton('expenses',e)}
           <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteExpense(${e.id})">🗑</button>
         </div>
       </td>
@@ -7090,7 +7211,7 @@ function renderMeetingList(highlightDay){
           ${actionCount>0?`<div style="margin-top:6px;font-size:11px;color:var(--color-text3)">✅ 行动项 ${actionDone}/${actionCount}</div>`:''}
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">
-          <button class="btn btn-ghost btn-sm" onclick="editMeeting(${m.id})" title="编辑">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="editMeeting(${m.id})" title="编辑">✏️</button>${matterActionButton('meetings',m)}
           <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteMeeting(${m.id})" title="删除">🗑</button>
         </div>
       </div>
@@ -7312,7 +7433,7 @@ function renderTrainings(){
           </div>`:''}
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">
-          <button class="btn btn-ghost btn-sm" onclick="editTraining(${t.id})" title="编辑">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="editTraining(${t.id})" title="编辑">✏️</button>${matterActionButton('trainings',t)}
           <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" onclick="deleteTraining(${t.id})" title="删除">🗑</button>
         </div>
       </div>
@@ -8530,7 +8651,7 @@ function renderTodosV16(){
   }).map(r=>{
     const overdue=isOverdue(r,r._ledger), sub=r._ledger==='todos'?subtaskSummary(r):null, due=getDueDate(r,r._ledger);
     const isWork=r._ledger==='todos', open=isWork&&v16ExpandedSubtasks.has(String(r.id));
-    return `<div class="todo-card" ${overdue?'style="border-left:3px solid var(--color-danger)"':''} data-bulk-key="${r._ledger}" data-bulk-id="${esc(r.id)}"><div class="todo-card-header"><div class="todo-card-title">${esc(recordDisplayName(r))}</div><div class="todo-card-actions">${stateBadge(r)} <button class="btn btn-ghost btn-sm" onclick="openStateModal('${r._ledger}',${r.id})">状态</button><button class="btn btn-ghost btn-sm" onclick="openOrganizeModal('${r._ledger}',${r.id})">整理</button><button class="btn btn-ghost btn-sm todo-delete" onclick="deleteActiveItem('${r._ledger}',${r.id})">删除</button></div></div>${todoCardMetadata(r,isWork,due,overdue)}${isWork?`<div class="todo-subtask-bar" onclick="toggleSubtasks(${r.id})"><span class="subtask-progress"><span class="subtask-done-bar" style="width:${sub.pct}%"></span></span><span>子任务 ${sub.done}/${sub.total}</span>${sub.next?'<span>下一步：'+esc(sub.next.name)+'</span>':''}<span class="expand-icon" id="expandIcon-${r.id}">${open?'▾':'▸'}</span></div><div class="todo-subtask-list" id="subtaskList-${r.id}" style="display:${open?'block':'none'}">${renderSubtasks(r)}<div class="subtask-add"><input class="subtask-input" id="subtaskInput-${r.id}" placeholder="新增子任务" onkeydown="if(event.key==='Enter')addSubtask(${r.id})"><button class="btn btn-ghost btn-sm" onclick="addSubtask(${r.id})">添加</button></div></div>`:''}</div>`;
+    return `<div class="todo-card" ${overdue?'style="border-left:3px solid var(--color-danger)"':''} data-bulk-key="${r._ledger}" data-bulk-id="${esc(r.id)}"><div class="todo-card-header"><div class="todo-card-title">${esc(recordDisplayName(r))}</div><div class="todo-card-actions">${stateBadge(r)} <button class="btn btn-ghost btn-sm" onclick="openStateModal('${r._ledger}',${r.id})">状态</button><button class="btn btn-ghost btn-sm" onclick="openOrganizeModal('${r._ledger}',${r.id})">整理</button>${matterActionButton(r._ledger,r)}<button class="btn btn-ghost btn-sm todo-delete" onclick="deleteActiveItem('${r._ledger}',${r.id})">删除</button></div></div>${todoCardMetadata(r,isWork,due,overdue)}${isWork?`<div class="todo-subtask-bar" onclick="toggleSubtasks(${r.id})"><span class="subtask-progress"><span class="subtask-done-bar" style="width:${sub.pct}%"></span></span><span>子任务 ${sub.done}/${sub.total}</span>${sub.next?'<span>下一步：'+esc(sub.next.name)+'</span>':''}<span class="expand-icon" id="expandIcon-${r.id}">${open?'▾':'▸'}</span></div><div class="todo-subtask-list" id="subtaskList-${r.id}" style="display:${open?'block':'none'}">${renderSubtasks(r)}<div class="subtask-add"><input class="subtask-input" id="subtaskInput-${r.id}" placeholder="新增子任务" onkeydown="if(event.key==='Enter')addSubtask(${r.id})"><button class="btn btn-ghost btn-sm" onclick="addSubtask(${r.id})">添加</button></div></div>`:''}</div>`;
   }).join('')+'</div>').join('');
 }
 renderTodos=renderTodosV16;

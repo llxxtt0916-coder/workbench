@@ -20,7 +20,7 @@ const rows=[
   {id:1,name:'目标一',is_goal:true,state:'DOING',recurrence:'none'},
   {id:2,name:'目标二',is_goal:true,state:'DOING',recurrence:'none'},
   {id:3,name:'已完成目标',is_goal:true,state:'DONE',recurrence:'none'},
-  {id:10,name:'原工作',type:'record',state:'TODO',priority:'重要且紧急',parent_goal:'todos:1',subtasks:[{id:11,name:'子任务'}]}
+  {id:10,name:'原工作',type:'record',state:'TODO',priority:'重要且紧急',parent_goal:'todos:1',subtasks:[{id:11,name:'子任务'}],matter_id:'matter_1',related_sources:[{type:'purchase',id:4}]}
 ];
 const DB={get:()=>structuredClone(rows.filter(r=>!r.deleted)),raw:()=>rows,nextId:a=>Math.max(0,...a.map(r=>r.id))+1,set:(_k,v)=>rows.splice(0,rows.length,...structuredClone(v))};
 const sandbox={document:{getElementById:element},DB,Date,console};
@@ -54,6 +54,8 @@ element('todoGoal').value='2';
 api.saveTodo();
 assert.equal(rows.find(r=>r.id===10).parent_goal,'todos:2');
 assert.equal(rows.find(r=>r.id===10).subtasks.length,1);
+assert.equal(rows.find(r=>r.id===10).matter_id,'matter_1');
+assert.deepEqual(rows.find(r=>r.id===10).related_sources,[{type:'purchase',id:4}]);
 api.editTodo(10);
 element('todoGoal').value='';
 api.saveTodo();

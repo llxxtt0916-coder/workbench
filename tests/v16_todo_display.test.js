@@ -47,6 +47,7 @@ function subtaskSummary(){return {pct:0,done:0,total:0,next:null};}
 function renderSubtasks(){return '';}
 function stateBadge(){return '';}
 function recordDisplayName(r){return r.name;}
+function matterActionButton(){return '';}
 ${renderer}
 renderTodos();
 `, Object.assign(sandbox,{records}));

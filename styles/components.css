@@ -2094,3 +2094,19 @@ tr:hover td {
 .org-combobox-options.open{display:block}
 .org-combobox-option{display:block;width:100%;padding:9px 12px;border:0;background:none;color:var(--color-text);font:inherit;font-size:13px;text-align:left;cursor:pointer}
 .org-combobox-option:hover,.org-combobox-option[aria-selected="true"]{background:var(--color-bg2)}
+
+/* Matter details use the existing modal layer as a right-side drawer. */
+#matterPanel.modal-overlay{justify-content:flex-end;align-items:stretch;padding:0;z-index:210}
+#confirmDialog.open{z-index:220}
+#matterPanel .matter-drawer{height:100vh;max-height:100vh;max-width:560px!important;border-radius:16px 0 0 16px;overflow:hidden;display:flex;flex-direction:column}
+#matterPanel .matter-drawer .modal-body{overflow-y:auto;flex:1}
+.matter-action{font-size:11px;white-space:nowrap}
+.matter-section{margin:18px 0 22px}
+.matter-section h3{font-size:14px;margin:0 0 10px}
+.matter-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.matter-member,.matter-candidate{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--color-border-soft)}
+.matter-member button,.matter-candidate button{text-align:left;min-width:0}
+.matter-meta{color:var(--color-text3);font-size:11px;line-height:1.5}
+.matter-search{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.matter-search input,.matter-search select{min-width:0}
+@media(max-width:700px){#matterPanel .matter-drawer{max-width:100%!important;border-radius:0}.matter-search{grid-template-columns:1fr}}

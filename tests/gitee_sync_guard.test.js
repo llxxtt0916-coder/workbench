@@ -87,7 +87,8 @@ function names(rows){return rows.map(r=>r.name);}
   const server=createServer({todos:old,trainings:[{id:10,name:'旧培训'}],otherMetadata:{kept:true}});
   const syncedSubtask={id:'sub-1',name:'同步子任务',start_date:'2026-09-01',due_date:'2026-09-10',completed_date:'2026-09-09',completed:true,sort_order:0,created_at:'2026-09-01',updated_at:'2026-09-09'};
   const syncedMatter={id:'matter_sync',name:'同步事项',created_at:'2026-09-01T00:00:00.000Z',remark:''};
-  const pc=createDevice(server,{todos:[{id:4,name:'D',subtasks:[syncedSubtask],matter_id:syncedMatter.id}],matters:[syncedMatter],trainings:[]});
+  const linkedPurchase={id:12,name:'关联采购',supplier:'关联单位',supplier_org_id:'org_linked',matter_id:syncedMatter.id,related_sources:[{type:'work',id:4}]};
+  const pc=createDevice(server,{todos:[{id:4,name:'D',subtasks:[syncedSubtask],matter_id:syncedMatter.id}],purchases:[linkedPurchase],matters:[syncedMatter],trainings:[]});
   const linkedConfig={organizations:[{id:'org_linked',name:'关联单位',type:'external',status:'active',sort_order:10,remark:'',short_name:'单位'}],
     dictionaries:{work_categories:[],work_sources:[{id:'ws_linked',name:'单位来源',organization_id:'org_linked',status:'active',sort_order:10,remark:''}]}};
   pc.values.set('wb_config',JSON.stringify(linkedConfig));
@@ -98,6 +99,7 @@ function names(rows){return rows.map(r=>r.name);}
   assert.deepEqual(decodedPut.todos[0].subtasks,[syncedSubtask],'v1.6：实际 Gitee snapshot 必须完整保留子任务 ID、排序、状态和日期');
   assert.deepEqual(decodedPut.matters,[syncedMatter],'事项容器必须进入完整快照');
   assert.equal(decodedPut.todos[0].matter_id,syncedMatter.id,'事项关系必须保留在原业务记录');
+  assert.deepEqual(decodedPut.purchases[0],linkedPurchase,'直接来源与组织稳定 ID 必须进入完整快照');
   assert.deepEqual(decodedPut.config,JSON.parse(JSON.stringify(pc.dumpData().config)),'配置必须进入完整快照');
   assert.equal(decodedPut.config.dictionaries.work_sources,undefined,'旧来源字典不得继续写入云端快照');
   assert.equal(decodedPut.config.organizations[0].id,'org_linked','组织稳定 ID 必须进入快照');
@@ -142,6 +144,9 @@ function names(rows){return rows.map(r=>r.name);}
   assert.deepEqual(phone.DB.get('trainings'),[]);
   assert.deepEqual(phone.DB.get('quick_notes'),[]);
   assert.deepEqual(phone.DB.get('matters'),[syncedMatter]);
+  assert.deepEqual(phone.DB.get('purchases')[0].related_sources,linkedPurchase.related_sources,'拉取后直接来源必须保持一致');
+  assert.equal(phone.DB.get('purchases')[0].matter_id,syncedMatter.id,'拉取后事项 ID 必须保持一致');
+  assert.equal(phone.DB.get('purchases')[0].supplier_org_id,'org_linked','拉取后组织 ID 必须保持一致');
   assert.deepEqual(JSON.parse(phone.values.get('wb_config')),server.data.config,'拉取必须恢复配置');
   assert.equal(phone.values.get('wb_gitee_token'),'phone-token','测试5：手机凭据保留');
   assert.equal(phone.values.get('wb_backup_interval'),'30','测试5：设备偏好保留');
