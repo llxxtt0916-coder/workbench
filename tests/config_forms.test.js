@@ -9,7 +9,9 @@ function setup(){
   const values=new Map(),nodes=new Map(),records={todos:[]};
   const element=id=>{if(!nodes.has(id))nodes.set(id,{id,value:'',innerHTML:'',dataset:{},style:{},getAttribute:key=>key==='list'?id+'Options':''});return nodes.get(id);};
   const sandbox={localStorage:{getItem:key=>values.get(key)??null,setItem:(key,val)=>values.set(key,String(val))},
-    document:{getElementById:element,querySelector:()=>null},DB:{get:key=>records[key]||[]},Date,Math,
+    document:{getElementById:element,querySelector:selector=>{
+      const match=selector.match(/data-for="([^"]+)"/);return match?element('button-'+match[1]):null;
+    }},DB:{get:key=>records[key]||[]},Date,Math,
     toArray:v=>Array.isArray(v)?v:v?[v]:[],esc:v=>String(v??'')};
   vm.createContext(sandbox);
   const source=section('// Configuration is one snapshot object','//  DATA LAYER v1.5')+'\n'+
@@ -24,7 +26,7 @@ test('one organization ID works for purchase, contract and reimbursement scopes'
   const internal=api.upsertConfig('organizations',{name:'财务科',type:'internal'});
   assert.deepEqual(Array.from(api.activeOrganizations('external'),r=>r.id),[supplier.id,external.id]);
   assert.deepEqual(Array.from(api.activeOrganizations('internal'),r=>r.id),[internal.id]);
-  for(const field of ['purchaseSupplier','contractParty','expenseSupplier']){
+  for(const field of ['purchaseSupplier','contractParty','expenseSupplier','agencyAgent','agencySupplier']){
     const input=element(field);input.dataset.orgScope='external';
     api.setOrgInput(field,'甲公司','');api.onOrgInput(input);
     assert.equal(api.orgIdForSave(field,{},'supplier_org_id','supplier'),supplier.id);
@@ -34,6 +36,9 @@ test('one organization ID works for purchase, contract and reimbursement scopes'
   assert.equal(api.validInternalOrgInput(dept.id,{},'contractDept'),true);
   dept.value='甲公司';api.onOrgInput(dept);
   assert.equal(api.validInternalOrgInput(dept.id,{},'contractDept'),false);
+  const agencyDept=element('agencyDept');agencyDept.dataset.orgScope='internal';
+  api.setOrgInput(agencyDept.id,'财务科','');api.onOrgInput(agencyDept);
+  assert.equal(api.validInternalOrgInput(agencyDept.id,{},'dept'),true);
 });
 test('manual new name stays out of config; old text and ID remain stable on passive edit',()=>{
   const {api,element}=setup();
@@ -42,6 +47,7 @@ test('manual new name stays out of config; old text and ID remain stable on pass
   api.upsertConfig('organizations',{...row,name:'新名'});
   assert.equal(old.party,'历史快照');
   api.setOrgInput('contractParty',old.party,old.counterparty_org_id);
+  assert.equal(element('button-contractParty').hidden,true,'更名后的历史快照不应提示重复保存常用单位');
   assert.equal(api.orgIdForSave('contractParty',old,'counterparty_org_id','party'),row.id);
   const input=element('contractParty');input.dataset.orgScope='external';input.value='临时新单位';api.onOrgInput(input);
   assert.equal(api.orgIdForSave('contractParty',old,'counterparty_org_id','party'),'');

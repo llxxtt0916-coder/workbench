@@ -147,6 +147,11 @@ function names(rows){return rows.map(r=>r.name);}
   assert.equal(await oldBranchDevice.gitee.pull(),'ok');
   assert(masterServer.reads.at(-1).includes('ref=master'),'缓存中的 main 不得优先于仓库默认 master');
   assert.deepEqual(names(oldBranchDevice.DB.get('todos')),['D']);
+  const staleConfig={organizations:[{id:'org_stale',name:'本机旧配置',type:'external',status:'active',sort_order:10}],dictionaries:{work_categories:[],work_sources:[]}};
+  const legacyCloudDevice=createDevice(masterServer,{todos:old},{wb_config:JSON.stringify(staleConfig)});
+  assert.equal(await legacyCloudDevice.gitee.pull(),'ok','旧云端无 config 时应安全拉取');
+  assert.deepEqual(JSON.parse(legacyCloudDevice.values.get('wb_config')).organizations,[],'旧云端无 config 不应保留本机陈旧配置');
+  assert(JSON.parse(legacyCloudDevice.values.get('wb_config')).dictionaries.work_categories.length>0,'旧云端无 config 时默认工作类别不能消失');
   assert.equal(await oldBranchDevice.gitee.push(),'ok');
   assert.equal(masterServer.writes[0].body.branch,'master','同一设备推送也应写入 master');
   assert(masterServer.reads.at(-1).includes('ref=master'),'推送回读也应使用 master');

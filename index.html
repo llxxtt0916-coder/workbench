@@ -749,8 +749,8 @@
         <div class="filter-grid">
           <div class="filter-item"><label>项目名称</label><input id="agencyF_name" oninput="applyAgencyFilter()" placeholder="关键词"></div>
           <div class="filter-item"><label>比选方式</label><input id="agencyF_method" oninput="applyAgencyFilter()" placeholder="关键词"></div>
-          <div class="filter-item"><label>代理机构</label><input id="agencyF_agent" oninput="applyAgencyFilter()" placeholder="关键词"></div>
-          <div class="filter-item"><label>需求科室</label><input id="agencyF_dept" oninput="applyAgencyFilter()" placeholder="关键词"></div>
+          <div class="filter-item"><label>代理机构</label><input id="agencyF_agent" list="agencyF_agentOptions" oninput="applyAgencyFilter()" placeholder="输入或选择单位"><datalist id="agencyF_agentOptions"></datalist></div>
+          <div class="filter-item"><label>需求科室</label><input id="agencyF_dept" list="agencyF_deptOptions" oninput="applyAgencyFilter()" placeholder="输入或选择科室"><datalist id="agencyF_deptOptions"></datalist></div>
           <div class="filter-item"><label>项目状态</label><select id="agencyF_status" onchange="applyAgencyFilter()"><option value="">全部</option><option>未开始</option><option>进行中</option><option>已完成</option><option>已关闭</option></select></div>
           <div class="filter-item"><label>类别</label><input id="agencyF_category" oninput="applyAgencyFilter()" placeholder="关键词"></div>
           <div class="filter-item"><label>成交供应商</label><input id="agencyF_supplier" list="agencyF_supplierOptions" oninput="applyAgencyFilter()" placeholder="输入或选择单位"><datalist id="agencyF_supplierOptions"></datalist></div>
@@ -1774,29 +1774,12 @@
       <div class="form-row" id="agencyAgentRow" style="display:flex">
         <div class="form-group">
           <label class="form-label">代理机构</label>
-          <div class="multi-select" id="agencyAgentSelect" onclick="event.stopPropagation();toggleMultiSelect('agencyAgent')">
-            <div class="multi-select-placeholder" id="agencyAgentPlaceholder" data-selected="">请选择或新增代理机构…</div>
-            <div class="multi-select-dropdown" id="agencyAgentDropdown">
-              <div class="multi-select-list" id="agencyAgentList"></div>
-              <div class="multi-dropdown-add">
-                <input class="subtask-input" id="agencyAgentNew" placeholder="新增代理机构" onkeydown="if(event.key==='Enter')addMultiOption('agencyAgent')">
-                <button class="btn btn-sm btn-primary" onclick="addMultiOption('agencyAgent')">新增</button>
-              </div>
-            </div>
-          </div>
+          <input class="form-control" id="agencyAgent" list="agencyAgentOptions" data-org-scope="external" placeholder="输入或选择代理机构" oninput="onOrgInput(this)"><datalist id="agencyAgentOptions"></datalist>
+          <button type="button" class="config-save-common" data-for="agencyAgent" onclick="saveCommonOrg(this.dataset.for)">+ 保存为常用单位</button>
         </div>
         <div class="form-group">
           <label class="form-label">需求科室</label>
-          <div class="multi-select" id="agencyDeptSelect" onclick="event.stopPropagation();toggleMultiSelect('agencyDept')">
-            <div class="multi-select-placeholder" id="agencyDeptPlaceholder" data-selected="">请选择或新增需求科室…</div>
-            <div class="multi-select-dropdown" id="agencyDeptDropdown">
-              <div class="multi-select-list" id="agencyDeptList"></div>
-              <div class="multi-dropdown-add">
-                <input class="subtask-input" id="agencyDeptNew" placeholder="新增需求科室" onkeydown="if(event.key==='Enter')addMultiOption('agencyDept')">
-                <button class="btn btn-sm btn-primary" onclick="addMultiOption('agencyDept')">新增</button>
-              </div>
-            </div>
-          </div>
+          <input class="form-control" id="agencyDept" list="agencyDeptOptions" data-org-scope="internal" placeholder="选择需求科室" oninput="onOrgInput(this)"><datalist id="agencyDeptOptions"></datalist>
         </div>
       </div>
       <div class="form-row">
@@ -1838,16 +1821,8 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">成交供应商</label>
-          <div class="multi-select" id="agencySupplierSelect" onclick="event.stopPropagation();toggleMultiSelect('agencySupplier')">
-            <div class="multi-select-placeholder" id="agencySupplierPlaceholder" data-selected="">请选择或新增成交供应商…</div>
-            <div class="multi-select-dropdown" id="agencySupplierDropdown">
-              <div class="multi-select-list" id="agencySupplierList"></div>
-              <div class="multi-dropdown-add">
-                <input class="subtask-input" id="agencySupplierNew" placeholder="新增成交供应商" onkeydown="if(event.key==='Enter')addMultiOption('agencySupplier')">
-                <button class="btn btn-sm btn-primary" onclick="addMultiOption('agencySupplier')">新增</button>
-              </div>
-            </div>
-          </div>
+          <input class="form-control" id="agencySupplier" list="agencySupplierOptions" data-org-scope="external" placeholder="输入或选择成交供应商" oninput="onOrgInput(this)"><datalist id="agencySupplierOptions"></datalist>
+          <button type="button" class="config-save-common" data-for="agencySupplier" onclick="saveCommonOrg(this.dataset.for)">+ 保存为常用单位</button>
         </div>
         <div class="form-group">
           <label class="form-label">采购资料到位时间</label>
@@ -2119,7 +2094,9 @@ function onOrgInput(input){
 }
 function updateCommonOrgButton(id){
   const input=document.getElementById(id),button=document.querySelector(`.config-save-common[data-for="${id}"]`);
-  if(button&&input)button.hidden=!input.value.trim()||!!configRows('organizations').find(row=>row.name===input.value.trim());
+  if(button&&input)button.hidden=!input.value.trim()||
+    !!configRows('organizations').find(row=>row.name===input.value.trim()||
+      (input.dataset.touched!=='1'&&row.id===input.dataset.selectedId));
 }
 function orgIdForSave(inputId,previous,idField,textField){
   const input=document.getElementById(inputId);
@@ -2152,12 +2129,13 @@ function refreshConfigConsumers(){
 }
 const UNIT_FILTER_FIELDS={
   contractF_party:['contracts','party'],purchaseF_supplier:['purchases','supplier'],
-  expenseF_supplier:['expenses','supplier'],agencyF_supplier:['agencys','winSupplier']
+  expenseF_supplier:['expenses','supplier'],agencyF_supplier:['agencys','winSupplier'],
+  agencyF_agent:['agencys','agent'],agencyF_dept:['agencys','dept']
 };
 function unitFilterCandidates(key){
   const [ledger,field]=UNIT_FILTER_FIELDS[key]||[];
   if(!ledger)return [];
-  const names=[...activeOrganizations('external').map(row=>row.name),...DB.get(ledger).map(row=>row[field])];
+  const names=[...activeOrganizations(key==='agencyF_dept'?'internal':'external').map(row=>row.name),...DB.get(ledger).map(row=>row[field])];
   const seen=new Set();
   return names.map(name=>String(name||'').trim()).filter(name=>{
     const normalized=name.toLocaleLowerCase();
@@ -3484,7 +3462,8 @@ function configEntryUsed(row,group){
   const same=value=>String(value||'').trim()===row.name;
   if(group==='organizations'){
     return DB.get('purchases').some(r=>same(r.supplier)||same(r.contractDept)||same(r.expenseDept))||
-      DB.get('contracts').some(r=>same(r.party))||DB.get('expenses').some(r=>same(r.supplier));
+      DB.get('contracts').some(r=>same(r.party))||DB.get('expenses').some(r=>same(r.supplier))||
+      DB.get('agencys').some(r=>same(r.agent)||same(r.winSupplier)||same(r.dept));
   }
   return DB.get('todos').some(r=>(Array.isArray(r[group==='work_categories'?'category':'source'])?
     r[group==='work_categories'?'category':'source']:[r[group==='work_categories'?'category':'source']]).some(same));
@@ -5815,7 +5794,7 @@ function toggleAgencyAgent(){
     agentGroup.style.display='';
   }else{
     agentGroup.style.display='none';
-    setMultiSelected('agencyAgent',[]);
+    setOrgInput('agencyAgent','','');
   }
 }
 
@@ -5824,15 +5803,16 @@ function saveAgency(){
   if(!name){toast('请输入项目名称');return;}
   const agencys=DB.raw('agencys');
   const id=+document.getElementById('agencyId').value;
+  const previousAgency=existingRecord('agencys',id);
+  if(!validInternalOrgInput('agencyDept',previousAgency,'dept')){
+    toast('需求科室只能从内部组织配置中选择');return;
+  }
   const now=new Date().toISOString().slice(0,10);
   const budget=+(document.getElementById('agencyBudget').value||0);
   const deal=+(document.getElementById('agencyDealAmount').value||0);
   let savingsRate=null;
   if(budget>0&&deal>=0)savingsRate=+((budget-deal)/budget*100).toFixed(1);
   const methodEl=document.getElementById('agencyMethodPlaceholder');
-  const agentEl=document.getElementById('agencyAgentPlaceholder');
-  const supplierEl=document.getElementById('agencySupplierPlaceholder');
-  const deptEl=document.getElementById('agencyDeptPlaceholder');
   const item={
     ...existingRecord('agencys',id),
     id:id||DB.nextId(agencys.filter(a=>!a.deleted)),
@@ -5844,12 +5824,15 @@ function saveAgency(){
     evalMethod:document.getElementById('agencyEvalMethod').value,
     budget:budget,
     date:document.getElementById('agencyDate').value,
-    agent:agentEl&&agentEl.dataset.selected?JSON.parse(agentEl.dataset.selected)[0]||'':'',
+    agent:document.getElementById('agencyAgent').value.trim(),
+    agent_org_id:orgIdForSave('agencyAgent',previousAgency,'agent_org_id','agent'),
     status:id?existingRecord('agencys',id).status:document.getElementById('agencyStatus').value,
     dealAmount:deal,
     savingsRate:savingsRate,
-    winSupplier:supplierEl&&supplierEl.dataset.selected?JSON.parse(supplierEl.dataset.selected)[0]||'':'',
-    dept:deptEl&&deptEl.dataset.selected?JSON.parse(deptEl.dataset.selected)[0]||'':'',
+    winSupplier:document.getElementById('agencySupplier').value.trim(),
+    win_supplier_org_id:orgIdForSave('agencySupplier',previousAgency,'win_supplier_org_id','winSupplier'),
+    dept:document.getElementById('agencyDept').value.trim(),
+    dept_org_id:orgIdForSave('agencyDept',previousAgency,'dept_org_id','dept'),
     contact:document.getElementById('agencyContact').value.trim(),
     docDate:document.getElementById('agencyDocDate').value,
     todoRef:null,
@@ -5884,11 +5867,11 @@ function editAgency(id){
   document.getElementById('agencyEvalMethod').value=a.evalMethod||'';
   document.getElementById('agencyBudget').value=a.budget||'';
   document.getElementById('agencyDate').value=a.date||'';
-  if(a.agent)setMultiSelected('agencyAgent',[a.agent]);
+  setOrgInput('agencyAgent',a.agent,a.agent_org_id);
   document.getElementById('agencyStatus').value=a.status||'待委托';
   document.getElementById('agencyDealAmount').value=a.dealAmount||'';
-  if(a.winSupplier)setMultiSelected('agencySupplier',[a.winSupplier]);
-  if(a.dept)setMultiSelected('agencyDept',[a.dept]);
+  setOrgInput('agencySupplier',a.winSupplier,a.win_supplier_org_id);
+  setOrgInput('agencyDept',a.dept,a.dept_org_id);
   document.getElementById('agencyContact').value=a.contact||'';
   document.getElementById('agencyDocDate').value=a.docDate||'';
   calcAgencySavings();
@@ -5912,9 +5895,7 @@ function clearAgencyForm(){
   document.getElementById('agencyEvalMethod').value='';
   document.getElementById('agencyStatus').value='待委托';
   setMultiSelected('agencyMethod',[]);
-  setMultiSelected('agencyAgent',[]);
-  setMultiSelected('agencySupplier',[]);
-  setMultiSelected('agencyDept',[]);
+  ['agencyAgent','agencySupplier','agencyDept'].forEach(id=>setOrgInput(id,'',''));
   document.getElementById('agencySavingsRate').value='';
   document.getElementById('agencySavingsRate').style.color='var(--color-text3)';
   document.getElementById('agencyModalTitle').textContent='新增委托';

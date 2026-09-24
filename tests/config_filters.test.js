@@ -12,7 +12,7 @@ test('unit filters merge active configuration and actual history without duplica
   const values=new Map(),records={
     purchases:[{supplier:'甲公司'},{supplier:'旧供应商'}],
     contracts:[{party:'旧对方单位'}],expenses:[{supplier:'旧收款单位'}],
-    agencys:[{winSupplier:'旧成交单位'}]
+    agencys:[{winSupplier:'旧成交单位',agent:'旧代理机构',dept:'旧科室'}]
   };
   const sandbox={localStorage:{getItem:key=>values.get(key)??null,setItem:(key,val)=>values.set(key,String(val))},
     DB:{get:key=>records[key]||[]},Date,Math};
@@ -25,6 +25,8 @@ test('unit filters merge active configuration and actual history without duplica
   assert.deepEqual(Array.from(api.unitFilterCandidates('contractF_party')),['甲公司','乙单位','旧对方单位']);
   assert(api.unitFilterCandidates('expenseF_supplier').includes('旧收款单位'));
   assert(api.unitFilterCandidates('agencyF_supplier').includes('旧成交单位'));
+  assert(api.unitFilterCandidates('agencyF_agent').includes('旧代理机构'));
+  assert.deepEqual(Array.from(api.unitFilterCandidates('agencyF_dept')),['财务科','旧科室']);
   assert(!api.unitFilterCandidates('purchaseF_supplier').includes('财务科'));
   api.setConfigStatus('organizations',first.id,'inactive');
   assert(api.unitFilterCandidates('purchaseF_supplier').includes('甲公司'),'停用但历史使用的值仍可筛选');
@@ -32,8 +34,8 @@ test('unit filters merge active configuration and actual history without duplica
   records.purchases.push({supplier:'新录入单位'});
   assert(api.unitFilterCandidates('purchaseF_supplier').includes('新录入单位'),'保存新记录后候选立即更新');
 });
-test('four unit filter controls accept typing and datalist selection',()=>{
-  for(const id of ['purchaseF_supplier','contractF_party','expenseF_supplier','agencyF_supplier']){
+test('unit filter controls accept typing and datalist selection',()=>{
+  for(const id of ['purchaseF_supplier','contractF_party','expenseF_supplier','agencyF_supplier','agencyF_agent','agencyF_dept']){
     assert.match(html,new RegExp(`id="${id}"[^>]*list="${id}Options"|list="${id}Options"[^>]*id="${id}"`));
     assert.match(html,new RegExp(`id="${id}Options"`));
   }
