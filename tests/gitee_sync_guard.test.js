@@ -86,7 +86,8 @@ function names(rows){return rows.map(r=>r.name);}
   const old=[{id:1,name:'A'},{id:2,name:'B'},{id:3,name:'C'}];
   const server=createServer({todos:old,trainings:[{id:10,name:'旧培训'}],otherMetadata:{kept:true}});
   const syncedSubtask={id:'sub-1',name:'同步子任务',start_date:'2026-09-01',due_date:'2026-09-10',completed_date:'2026-09-09',completed:true,sort_order:0,created_at:'2026-09-01',updated_at:'2026-09-09'};
-  const pc=createDevice(server,{todos:[{id:4,name:'D',subtasks:[syncedSubtask]}],trainings:[]});
+  const syncedMatter={id:'matter_sync',name:'同步事项',created_at:'2026-09-01T00:00:00.000Z',remark:''};
+  const pc=createDevice(server,{todos:[{id:4,name:'D',subtasks:[syncedSubtask],matter_id:syncedMatter.id}],matters:[syncedMatter],trainings:[]});
   const linkedConfig={organizations:[{id:'org_linked',name:'关联单位',type:'external',status:'active',sort_order:10,remark:'',short_name:'单位'}],
     dictionaries:{work_categories:[],work_sources:[{id:'ws_linked',name:'单位来源',organization_id:'org_linked',status:'active',sort_order:10,remark:''}]}};
   pc.values.set('wb_config',JSON.stringify(linkedConfig));
@@ -95,6 +96,8 @@ function names(rows){return rows.map(r=>r.name);}
   const decodedPut=JSON.parse(decodeURIComponent(escape(atob(actualPut.body.content))));
   assert.deepEqual(names(decodedPut.todos),['D'],'链路 Case 1：实际 PUT content 必须只有 D');
   assert.deepEqual(decodedPut.todos[0].subtasks,[syncedSubtask],'v1.6：实际 Gitee snapshot 必须完整保留子任务 ID、排序、状态和日期');
+  assert.deepEqual(decodedPut.matters,[syncedMatter],'事项容器必须进入完整快照');
+  assert.equal(decodedPut.todos[0].matter_id,syncedMatter.id,'事项关系必须保留在原业务记录');
   assert.deepEqual(decodedPut.config,JSON.parse(JSON.stringify(pc.dumpData().config)),'配置必须进入完整快照');
   assert.equal(decodedPut.config.dictionaries.work_sources,undefined,'旧来源字典不得继续写入云端快照');
   assert.equal(decodedPut.config.organizations[0].id,'org_linked','组织稳定 ID 必须进入快照');
@@ -138,6 +141,7 @@ function names(rows){return rows.map(r=>r.name);}
   assert(phone.logs.some(entry=>entry[0]==='LOCAL AFTER PULL'));
   assert.deepEqual(phone.DB.get('trainings'),[]);
   assert.deepEqual(phone.DB.get('quick_notes'),[]);
+  assert.deepEqual(phone.DB.get('matters'),[syncedMatter]);
   assert.deepEqual(JSON.parse(phone.values.get('wb_config')),server.data.config,'拉取必须恢复配置');
   assert.equal(phone.values.get('wb_gitee_token'),'phone-token','测试5：手机凭据保留');
   assert.equal(phone.values.get('wb_backup_interval'),'30','测试5：设备偏好保留');
@@ -157,6 +161,7 @@ function names(rows){return rows.map(r=>r.name);}
   assert.equal(await legacyCloudDevice.gitee.pull(),'ok','旧云端无 config 时应安全拉取');
   assert.deepEqual(JSON.parse(legacyCloudDevice.values.get('wb_config')).organizations,[],'旧云端无 config 不应保留本机陈旧配置');
   assert(JSON.parse(legacyCloudDevice.values.get('wb_config')).dictionaries.work_categories.length>0,'旧云端无 config 时默认工作类别不能消失');
+  assert.deepEqual(legacyCloudDevice.DB.raw('matters'),[],'旧云端无 matters 时安全初始化为空');
   assert.equal(await oldBranchDevice.gitee.push(),'ok');
   assert.equal(masterServer.writes[0].body.branch,'master','同一设备推送也应写入 master');
   assert(masterServer.reads.at(-1).includes('ref=master'),'推送回读也应使用 master');

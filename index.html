@@ -1986,6 +1986,75 @@ function existingRecord(key,id){
   return id ? (DB.raw(key).find(r=>String(r.id)===String(id))||{}) : {};
 }
 
+// A matter groups existing business records; it never owns their state or lifecycle.
+const MATTER_LEDGER_TYPES={todos:'work',purchases:'purchase',contracts:'contract',expenses:'expense',
+  meetings:'meeting',trainings:'training',agencys:'agency'};
+const MATTER_TYPE_LEDGERS=Object.fromEntries(Object.entries(MATTER_LEDGER_TYPES).map(([key,type])=>[type,key]));
+function matterRecord(ledger,id){
+  if(!MATTER_LEDGER_TYPES[ledger])return null;
+  const record=DB.raw(ledger).find(row=>String(row.id)===String(id)&&!row.deleted);
+  if(!record||record.owner_ledger&&record.owner_ledger!==ledger)return null;
+  if(ledger==='todos'&&(record.is_goal||record.origin&&/^(contracts|purchases|expenses|meetings|trainings|agencys):/.test(record.origin)))return null;
+  return record;
+}
+function matterMembers(matterId){
+  return Object.keys(MATTER_LEDGER_TYPES).flatMap(ledger=>DB.raw(ledger)
+    .filter(record=>!record.deleted&&record.matter_id===matterId&&matterRecord(ledger,record.id))
+    .map(record=>({ledger,record})));
+}
+function matterById(id){return DB.raw('matters').find(row=>row.id===id)||null;}
+function matterSourceRef(ledger,id){return {type:MATTER_LEDGER_TYPES[ledger],id};}
+function sameMatterSource(a,b){return a?.type===b?.type&&String(a?.id)===String(b?.id);}
+function newMatterId(){return 'matter_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);}
+function linkMatterRecords(sourceLedger,sourceId,targetLedger,targetId){
+  const source=matterRecord(sourceLedger,sourceId),target=matterRecord(targetLedger,targetId);
+  if(!source||!target)return {status:'missing'};
+  if(sourceLedger===targetLedger&&String(sourceId)===String(targetId))return {status:'same-record'};
+  if(source.matter_id&&target.matter_id&&source.matter_id!==target.matter_id)return {status:'conflict'};
+  const matterId=source.matter_id||target.matter_id;
+  const matter=matterId?matterById(matterId):{
+    id:newMatterId(),name:String(recordDisplayName(source)).trim()||'未命名事项',created_at:new Date().toISOString(),remark:''
+  };
+  if(!matter)return {status:'missing-matter'};
+  if(source.matter_id===matter.id&&target.matter_id===matter.id)return {status:'already-linked',matter};
+  const sourceRows=DB.raw(sourceLedger),targetRows=sourceLedger===targetLedger?sourceRows:DB.raw(targetLedger);
+  const savedSource=sourceRows.find(row=>String(row.id)===String(sourceId));
+  const savedTarget=targetRows.find(row=>String(row.id)===String(targetId));
+  savedSource.matter_id=matter.id;savedTarget.matter_id=matter.id;
+  const ref=matterSourceRef(sourceLedger,savedSource.id);
+  if(!Array.isArray(savedTarget.related_sources))savedTarget.related_sources=[];
+  if(!savedTarget.related_sources.some(existing=>sameMatterSource(existing,ref)))savedTarget.related_sources.push(ref);
+  if(!matterId){const matters=DB.raw('matters');matters.push(matter);DB.set('matters',matters);}
+  DB.set(sourceLedger,sourceRows);
+  if(targetLedger!==sourceLedger)DB.set(targetLedger,targetRows);
+  return {status:'linked',matter};
+}
+function renameMatter(id,name){
+  const clean=String(name||'').trim();if(!clean)return false;
+  const matters=DB.raw('matters'),matter=matters.find(row=>row.id===id);
+  if(!matter)return false;
+  matter.name=clean;DB.set('matters',matters);return true;
+}
+function unlinkMatterRecord(ledger,id){
+  const record=matterRecord(ledger,id);
+  if(!record?.matter_id)return false;
+  const matterId=record.matter_id,ref=matterSourceRef(ledger,record.id);
+  for(const key of Object.keys(MATTER_LEDGER_TYPES)){
+    const rows=DB.raw(key);let changed=false;
+    rows.forEach(row=>{
+      if(row.matter_id!==matterId)return;
+      if(key===ledger&&String(row.id)===String(id)){
+        delete row.matter_id;delete row.related_sources;changed=true;
+      }else if(Array.isArray(row.related_sources)){
+        const filtered=row.related_sources.filter(source=>!sameMatterSource(source,ref));
+        if(filtered.length!==row.related_sources.length){row.related_sources=filtered;changed=true;}
+      }
+    });
+    if(changed)DB.set(key,rows);
+  }
+  return true;
+}
+
 // Configuration is one snapshot object; legacy text fields remain the record's display snapshot.
 const CONFIG_STORAGE_KEY='wb_config';
 const CONFIG_DEFAULTS={
@@ -7294,7 +7363,7 @@ function clearTrainingForm(){
 //  EXPORT / IMPORT DATA
 // ============================================================
 const SYNC_BUSINESS_KEYS=['todos','inspirations','contracts','purchases','expenses','meetings',
-  'trainings','agencys','handovers','funds','fundRecords','quick_notes'];
+  'trainings','agencys','handovers','funds','fundRecords','quick_notes','matters'];
 const SYNC_REMOTE_PATH='data.json';
 function normalizedSyncRows(data,key){
   return (Array.isArray(data?.[key])?data[key]:[]).filter(row=>row&&!row.deleted);
