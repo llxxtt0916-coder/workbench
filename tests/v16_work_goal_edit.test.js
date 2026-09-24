@@ -13,7 +13,7 @@ const goalFunctions=section('function activeGoalOptions(){','// 新建长期目�
 const editFunctions=section('function saveTodo(){','function deleteTodo(');
 const nodes=new Map();
 function element(id){
-  if(!nodes.has(id))nodes.set(id,{value:'',innerHTML:'',textContent:'',style:{},classList:{add(){},remove(){}}});
+  if(!nodes.has(id))nodes.set(id,{value:'',innerHTML:'',textContent:'',dataset:{},style:{},classList:{add(){},remove(){}}});
   return nodes.get(id);
 }
 const rows=[
@@ -35,6 +35,8 @@ function normalizeSubtasks(s){return s;}
 function getMultiSelected(){return [];}
 function toArray(v){return Array.isArray(v)?v:v?[v]:[];}
 function setMultiSelected(){}
+function selectedWorkConfigIds(){return [];}
+function existingRecord(key,id){return DB.raw(key).find(row=>row.id===id)||{};}
 function validDateOrder(){return true;}
 function finishWorkRecord(){}
 function openModal(){} function closeModal(){} function onRecTypeChange(){}

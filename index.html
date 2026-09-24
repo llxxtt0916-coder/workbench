@@ -955,12 +955,9 @@
             <span class="multi-select-arrow">▾</span>
           </div>
           <div class="multi-dropdown" id="todoCategoryDropdown">
+            <input class="config-choice-search" id="todoCategorySearch" placeholder="搜索工作类别" oninput="renderMultiOptions('todoCategory')" onclick="event.stopPropagation()">
             <div class="multi-dropdown-list" id="todoCategoryList"></div>
-            <div class="multi-dropdown-add">
-              <input class="subtask-input" id="todoCategoryNew" placeholder="新增类别…" onkeydown="if(event.key==='Enter')addMultiOption('todoCategory')">
-              <button class="btn btn-ghost btn-sm" onclick="addMultiOption('todoCategory')">+ 新增</button>
-            </div>
-            <div class="multi-dropdown-clear"><button onclick="event.stopPropagation();clearMultiOptions('todoCategory')">🗑 清空备选项</button></div>
+            <div class="config-choice-help">类别在「管理 → 配置」中维护。</div>
           </div>
         </div>
         <div class="form-group" style="position:relative">
@@ -970,12 +967,9 @@
             <span class="multi-select-arrow">▾</span>
           </div>
           <div class="multi-dropdown" id="todoSourceDropdown">
+            <input class="config-choice-search" id="todoSourceSearch" placeholder="搜索工作来源" oninput="renderMultiOptions('todoSource')" onclick="event.stopPropagation()">
             <div class="multi-dropdown-list" id="todoSourceList"></div>
-            <div class="multi-dropdown-add">
-              <input class="subtask-input" id="todoSourceNew" placeholder="新增来源…" onkeydown="if(event.key==='Enter')addMultiOption('todoSource')">
-              <button class="btn btn-ghost btn-sm" onclick="addMultiOption('todoSource')">+ 新增</button>
-            </div>
-            <div class="multi-dropdown-clear"><button onclick="event.stopPropagation();clearMultiOptions('todoSource')">🗑 清空备选项</button></div>
+            <div class="config-choice-help">来源在「管理 → 配置」中维护。</div>
           </div>
         </div>
       </div>
@@ -1152,7 +1146,8 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">对方单位</label>
-          <input class="form-control" id="contractParty" placeholder="签约方">
+          <input class="form-control" id="contractParty" list="contractPartyOptions" data-org-scope="external" placeholder="输入或选择签约方" oninput="onOrgInput(this)">
+          <datalist id="contractPartyOptions"></datalist><button type="button" class="config-save-common" data-for="contractParty" onclick="saveCommonOrg(this.dataset.for)">+ 保存为常用单位</button>
         </div>
         <div class="form-group">
           <label class="form-label">合同金额（元）</label>
@@ -1227,7 +1222,8 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">供应商</label>
-          <input class="form-control" id="purchaseSupplier" placeholder="供应商名称">
+          <input class="form-control" id="purchaseSupplier" list="purchaseSupplierOptions" data-org-scope="external" placeholder="输入或选择采购对象" oninput="onOrgInput(this)">
+          <datalist id="purchaseSupplierOptions"></datalist><button type="button" class="config-save-common" data-for="purchaseSupplier" onclick="saveCommonOrg(this.dataset.for)">+ 保存为常用单位</button>
         </div>
         <div class="form-group">
           <label class="form-label">金额（元）</label>
@@ -1260,7 +1256,7 @@
         </div>
         <div class="form-group" id="purchaseContractDeptGroup" style="display:none">
           <label class="form-label">签订科室</label>
-          <input class="form-control" id="purchaseContractDept" placeholder="输入签订科室…">
+          <input class="form-control" id="purchaseContractDept" list="purchaseContractDeptOptions" data-org-scope="internal" placeholder="选择签订科室" oninput="onOrgInput(this)"><datalist id="purchaseContractDeptOptions"></datalist>
         </div>
       </div>
       <div class="form-row">
@@ -1275,7 +1271,7 @@
         </div>
         <div class="form-group" id="purchaseExpenseDeptGroup" style="display:none">
           <label class="form-label">报账科室</label>
-          <input class="form-control" id="purchaseExpenseDept" placeholder="输入报账科室…">
+          <input class="form-control" id="purchaseExpenseDept" list="purchaseExpenseDeptOptions" data-org-scope="internal" placeholder="选择报账科室" oninput="onOrgInput(this)"><datalist id="purchaseExpenseDeptOptions"></datalist>
         </div>
       </div>
       <div class="form-group">
@@ -1329,7 +1325,8 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">供应商名称</label>
-          <input class="form-control" id="expenseSupplier" placeholder="如：XX科技有限公司">
+          <input class="form-control" id="expenseSupplier" list="expenseSupplierOptions" data-org-scope="external" placeholder="输入或选择单位" oninput="onOrgInput(this)">
+          <datalist id="expenseSupplierOptions"></datalist><button type="button" class="config-save-common" data-for="expenseSupplier" onclick="saveCommonOrg(this.dataset.for)">+ 保存为常用单位</button>
         </div>
         <div class="form-group">
           <label class="form-label">统一信用代码/纳税人识别号</label>
@@ -2056,7 +2053,8 @@ function getConfig(){
 }
 function saveConfig(config){
   localStorage.setItem(CONFIG_STORAGE_KEY,JSON.stringify(normalizeConfig(config)));
-  if(typeof refreshConfigConsumers==='function')refreshConfigConsumers();
+  if(typeof document!=='undefined'&&typeof document.querySelector==='function'&&
+     typeof document.querySelectorAll==='function'&&typeof refreshConfigConsumers==='function')refreshConfigConsumers();
 }
 function configRows(group){
   const config=getConfig();
@@ -2100,6 +2098,62 @@ function moveConfigRow(group,id,direction){
   const previous=ordered[index].sort_order;
   ordered[index].sort_order=other.sort_order;other.sort_order=previous;
   saveConfig(config);return true;
+}
+function activeOrganizations(scope){
+  return configRows('organizations').filter(row=>row.status==='active'&&
+    (scope==='internal'?row.type==='internal':row.type==='external'||row.type==='supplier'))
+    .sort((a,b)=>a.sort_order-b.sort_order||a.name.localeCompare(b.name,'zh-CN'));
+}
+function refreshOrgChoices(){
+  document.querySelectorAll('input[data-org-scope]').forEach(input=>{
+    const list=document.getElementById(input.getAttribute('list'));
+    if(list)list.innerHTML=activeOrganizations(input.dataset.orgScope).map(row=>
+      `<option value="${esc(row.name)}" label="${esc(row.short_name||row.type)}"></option>`).join('');
+    if(input.dataset.orgScope==='external')updateCommonOrgButton(input.id);
+  });
+}
+function setOrgInput(id,name,orgId=''){
+  const input=document.getElementById(id);if(!input)return;
+  input.value=name||'';input.dataset.selectedId=orgId||'';input.dataset.touched='0';
+  updateCommonOrgButton(id);
+}
+function onOrgInput(input){
+  input.dataset.touched='1';
+  const match=activeOrganizations(input.dataset.orgScope).find(row=>row.name===input.value.trim());
+  input.dataset.selectedId=match?.id||'';
+  updateCommonOrgButton(input.id);
+}
+function updateCommonOrgButton(id){
+  const input=document.getElementById(id),button=document.querySelector(`.config-save-common[data-for="${id}"]`);
+  if(button&&input)button.hidden=!input.value.trim()||!!configRows('organizations').find(row=>row.name===input.value.trim());
+}
+function orgIdForSave(inputId,previous,idField,textField){
+  const input=document.getElementById(inputId);
+  if(input.dataset.touched!=='1'&&previous?.[textField]===input.value)return previous?.[idField]||'';
+  return input.dataset.selectedId||'';
+}
+function validInternalOrgInput(inputId,previous,textField){
+  const input=document.getElementById(inputId);
+  return !input.value.trim()||(input.dataset.touched!=='1'&&previous?.[textField]===input.value)||
+    !!activeOrganizations('internal').find(row=>row.id===input.dataset.selectedId&&row.name===input.value.trim());
+}
+let pendingCommonOrgInput='';
+function saveCommonOrg(inputId){
+  const input=document.getElementById(inputId),name=input?.value.trim();
+  if(!name)return;
+  const existing=configRows('organizations').find(row=>row.name===name);
+  if(existing){toast(existing.status==='inactive'?'该单位已停用，请在配置中启用':'该单位已在配置中');return;}
+  configGroup='organizations';configTab=inputId==='contractParty'?'external':'supplier';
+  openConfigEditor();
+  document.getElementById('configName').value=name;
+  pendingCommonOrgInput=inputId;
+}
+function refreshConfigConsumers(){
+  refreshOrgChoices();
+  ['todoCategory','todoSource','todoF_cat','todoF_src'].forEach(name=>{
+    if(document.getElementById(name+'List'))renderMultiOptions(name);
+  });
+  if(typeof currentPage!=='undefined'&&currentPage==='config')renderConfigPage();
 }
 
 // ============================================================
@@ -3398,10 +3452,15 @@ function saveConfigEditor(){
   const id=document.getElementById('configEntryId').value;
   const old=configRows(group).find(row=>row.id===id);
   try{
-    upsertConfig(group,{...old,id,name:document.getElementById('configName').value,
+    const row=upsertConfig(group,{...old,id,name:document.getElementById('configName').value,
       short_name:document.getElementById('configShortName').value,
       type:document.getElementById('configType').value,
       remark:document.getElementById('configRemark').value});
+    if(pendingCommonOrgInput){
+      setOrgInput(pendingCommonOrgInput,row.name,row.id);
+      document.getElementById(pendingCommonOrgInput).dataset.touched='1';
+      pendingCommonOrgInput='';
+    }
     closeModal('configModal');renderConfigPage();toast('配置已保存');
   }catch(error){toast(error.message);}
 }
@@ -3483,7 +3542,7 @@ function hideLifecycleStatusField(modalId){
     const group=el.closest('.form-group');if(group)group.style.display='none';
   });
 }
-function closeModal(id){const modal=document.getElementById(id);if(modal)modal.classList.remove('open');if(id==='confirmDialog')pendingConfirmAction=null}
+function closeModal(id){const modal=document.getElementById(id);if(modal)modal.classList.remove('open');if(id==='confirmDialog')pendingConfirmAction=null;if(id==='configModal')pendingCommonOrgInput=''}
 let pendingConfirmAction=null;
 function confirmAction(message,action){
   pendingConfirmAction=action;
@@ -4327,12 +4386,15 @@ function saveTodo(){
     toast('请选择有效的长期目标');return;
   }
   const now=new Date().toISOString().slice(0,10);
+  const previousTodo=existingRecord('todos',id);
   const item={
     id:id||DB.nextId(todos),
     type:document.getElementById('todoType').value,
     name,
     category:getMultiSelected('todoCategory'),
     source:getMultiSelected('todoSource'),
+    work_category_ids:selectedWorkConfigIds('todoCategory',previousTodo,'work_category_ids'),
+    work_source_ids:selectedWorkConfigIds('todoSource',previousTodo,'work_source_ids'),
     priority:document.getElementById('todoPriority').value,
     content:document.getElementById('todoContent').value,
     issueDate:document.getElementById('todoIssueDate').value,
@@ -4424,6 +4486,8 @@ function editTodo(id){
   setTodoGoalOptions(t.parent_goal);
   setMultiSelected('todoCategory',toArray(t.category));
   setMultiSelected('todoSource',toArray(t.source));
+  document.getElementById('todoCategoryPlaceholder').dataset.configTouched='0';
+  document.getElementById('todoSourcePlaceholder').dataset.configTouched='0';
   document.getElementById('todoContent').value=t.content||'';
   document.getElementById('todoIssueDate').value=t.issueDate||'';
   document.getElementById('todoDeadline').value=t.deadline||'';
@@ -4462,6 +4526,8 @@ function clearTodoForm(){
   if(subtaskHint)subtaskHint.textContent='子任务请在「待办」中的工作卡片下直接维护。';
   setMultiSelected('todoCategory',[]);
   setMultiSelected('todoSource',[]);
+  document.getElementById('todoCategoryPlaceholder').dataset.configTouched='0';
+  document.getElementById('todoSourcePlaceholder').dataset.configTouched='0';
   // 重置周期字段
   document.getElementById('recurrenceConfig').style.display='none';
   document.getElementById('recType').value='';
@@ -4805,7 +4871,13 @@ function updateGenericFilterCount(section){
 const OPTIONS_STORE={};
 
 function getOptionStore(name){
-  const defaults={todoCategory:'["报告","会议","审批","调研","培训","材料"]',todoSource:'["上级交办","自研","协作","会议部署","文件要求","其他来源"]'};
+  const workGroup=workDictionaryGroup(name);
+  if(workGroup){
+    const names=configRows(workGroup).filter(row=>row.status==='active').sort((a,b)=>a.sort_order-b.sort_order).map(row=>row.name);
+    const extras=name.startsWith('todoF_')?DB.get('todos').flatMap(row=>toArray(row[workGroup==='work_categories'?'category':'source'])):getMultiSelected(name);
+    return [...new Set([...names,...extras].filter(Boolean))];
+  }
+  const defaults={};
   // 筛选面板共享表单的备选项，保证两边同步
   const baseName=(name==='todoF_cat')?'todoCategory':(name==='todoF_src')?'todoSource':name;
   if(!OPTIONS_STORE[baseName]){
@@ -4815,6 +4887,7 @@ function getOptionStore(name){
   return OPTIONS_STORE[baseName];
 }
 function saveOptionStore(name){
+  if(workDictionaryGroup(name))return;
   const baseName=(name==='todoF_cat')?'todoCategory':(name==='todoF_src')?'todoSource':name;
   localStorage.setItem('wb_opts_'+baseName,JSON.stringify(OPTIONS_STORE[baseName]));
 }
@@ -4823,14 +4896,23 @@ function renderMultiOptions(name){
   const opts=getOptionStore(name);
   const list=document.getElementById(name+'List');
   const sel=getMultiSelected(name);
-  list.innerHTML=opts.map((o,i)=>`
+  const work=!!workDictionaryGroup(name);
+  const query=(document.getElementById(name+'Search')?.value||'').trim().toLocaleLowerCase();
+  list.innerHTML=opts.map((o,i)=>({o,i})).filter(({o})=>!query||o.toLocaleLowerCase().includes(query)).map(({o,i})=>`
     <div class="multi-dropdown-item" onclick="event.stopPropagation();toggleMultiOption('${name}',this.querySelector('.multi-opt-label').textContent)">
       <input type="checkbox" ${sel.includes(o)?'checked':''} tabindex="-1">
       <span class="multi-opt-label">${esc(o)}</span>
-      <span class="multi-opt-edit" title="重命名此选项" onclick="event.stopPropagation();editOptionItem('${name}',${i})">✎</span>
-      <span class="multi-opt-del" title="删除此选项" onclick="event.stopPropagation();deleteOptionItem('${name}',${i})">×</span>
+      ${work?'':`<span class="multi-opt-edit" title="重命名此选项" onclick="event.stopPropagation();editOptionItem('${name}',${i})">✎</span>
+      <span class="multi-opt-del" title="删除此选项" onclick="event.stopPropagation();deleteOptionItem('${name}',${i})">×</span>`}
     </div>
   `).join('');
+}
+function workDictionaryGroup(name){return name==='todoCategory'||name==='todoF_cat'?'work_categories':name==='todoSource'||name==='todoF_src'?'work_sources':'';}
+function selectedWorkConfigIds(name,previous,field){
+  const placeholder=document.getElementById(name+'Placeholder');
+  if(placeholder?.dataset.configTouched!=='1')return previous?.[field]||[];
+  const rows=configRows(workDictionaryGroup(name));
+  return getMultiSelected(name).map(value=>rows.find(row=>row.status==='active'&&row.name===value)?.id).filter(Boolean);
 }
 
 function getMultiSelected(name){
@@ -4863,6 +4945,7 @@ function setMultiSelected(name,ary){
 }
 
 function toggleMultiOption(name,value){
+  if(workDictionaryGroup(name))document.getElementById(name+'Placeholder').dataset.configTouched='1';
   // single-select for agency fields
   if(name==='agencyMethod'||name==='agencyAgent'||name==='agencySupplier'||name==='agencyDept'){
     const sel=getMultiSelected(name);
@@ -4878,6 +4961,7 @@ function toggleMultiOption(name,value){
 }
 
 function removeMultiOption(name,value){
+  if(workDictionaryGroup(name))document.getElementById(name+'Placeholder').dataset.configTouched='1';
   const sel=getMultiSelected(name).filter(v=>v!==value);
   setMultiSelected(name,sel);
   if(name.startsWith('todoF_'))applyTodoFilter();
@@ -5201,6 +5285,7 @@ function saveContract(){
   if(!validDateOrder('contractSignDate','contractExpiry','合同签署日期不能晚于到期日期'))return;
   const contracts=DB.raw('contracts');
   const id=+document.getElementById('contractId').value;
+  const previousContract=existingRecord('contracts',id);
   const now=new Date().toISOString().slice(0,10);
   const item={
     ...existingRecord('contracts',id),
@@ -5208,6 +5293,7 @@ function saveContract(){
     name,
     assignee:document.getElementById('contractAssignee').value.trim(),
     party:document.getElementById('contractParty').value,
+    counterparty_org_id:orgIdForSave('contractParty',previousContract,'counterparty_org_id','party'),
     amount:+(document.getElementById('contractAmount').value||0),
     category:document.getElementById('contractCategory').value,
     signDate:document.getElementById('contractSignDate').value,
@@ -5236,7 +5322,7 @@ function editContract(id){
   document.getElementById('contractId').value=c.id;
   document.getElementById('contractAssignee').value=c.assignee||'';
   document.getElementById('contractName').value=c.name;
-  document.getElementById('contractParty').value=c.party||'';
+  setOrgInput('contractParty',c.party,c.counterparty_org_id);
   document.getElementById('contractAmount').value=c.amount||'';
   document.getElementById('contractCategory').value=c.category||'货物类';
   document.getElementById('contractSignDate').value=c.signDate||'';
@@ -5252,6 +5338,7 @@ function clearContractForm(){
   ['contractId','contractName','contractParty','contractAmount','contractSignDate','contractExpiry','contractNo','contractNote','contractAssignee'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('contractStatus').value='执行中';
   document.getElementById('contractModalTitle').textContent='新增合同';
+  setOrgInput('contractParty','','');
 }
 
 function deleteContract(id,confirmed=false){
@@ -5331,6 +5418,11 @@ function savePurchase(){
   if(!name){toast('请输入采购名称');return;}
   const purchases=DB.raw('purchases');
   const id=+document.getElementById('purchaseId').value;
+  const previousPurchase=existingRecord('purchases',id);
+  if(!validInternalOrgInput('purchaseContractDept',previousPurchase,'contractDept')||
+     !validInternalOrgInput('purchaseExpenseDept',previousPurchase,'expenseDept')){
+    toast('科室只能从内部组织配置中选择');return;
+  }
   const now=new Date().toISOString().slice(0,10);
   const item={
     ...existingRecord('purchases',id),
@@ -5338,6 +5430,7 @@ function savePurchase(){
     name,
     assignee:document.getElementById('purchaseAssignee').value.trim(),
     supplier:document.getElementById('purchaseSupplier').value,
+    supplier_org_id:orgIdForSave('purchaseSupplier',previousPurchase,'supplier_org_id','supplier'),
     amount:+(document.getElementById('purchaseAmount').value||0),
     date:document.getElementById('purchaseDate').value,
     category:document.getElementById('purchaseCategory').value,
@@ -5345,8 +5438,10 @@ function savePurchase(){
     note:document.getElementById('purchaseNote').value,
     hasContract:document.getElementById('purchaseHasContract').value,
     contractDept:document.getElementById('purchaseContractDept').value,
+    contract_dept_org_id:orgIdForSave('purchaseContractDept',previousPurchase,'contract_dept_org_id','contractDept'),
     hasExpense:document.getElementById('purchaseHasExpense').value,
     expenseDept:document.getElementById('purchaseExpenseDept').value,
+    expense_dept_org_id:orgIdForSave('purchaseExpenseDept',previousPurchase,'expense_dept_org_id','expenseDept'),
     items:(window._purchaseItems||[]).filter(i=>i&&i.name),
     todoRef:null,
     deleted:false,
@@ -5362,7 +5457,7 @@ function savePurchase(){
     const contracts=DB.raw('contracts');
     let autoContract=contracts.find(c=>String(c._fromPurchase)===String(item.id)&&!c.deleted);
     if(!autoContract){
-      autoContract={id:DB.nextId(contracts),name:item.name,party:item.supplier,amount:item.amount,
+      autoContract={id:DB.nextId(contracts),name:item.name,party:item.supplier,counterparty_org_id:item.supplier_org_id||'',amount:item.amount,
         category:item.category,signDate:'',expiry:'',status:'待签',no:'',note:'（由采购自动生成）',createdAt:now,
         assignee:item.assignee||'',state:STATE.TODO,state_manual:true,owner_ledger:'contracts',origin:'purchases:'+item.id,linked_from_work:true,
         todoRef:null,deleted:false,_fromPurchase:item.id};
@@ -5375,7 +5470,7 @@ function savePurchase(){
     const expenses=DB.raw('expenses');
     let autoExpense=expenses.find(e=>String(e._fromPurchase)===String(item.id)&&!e.deleted);
     if(!autoExpense){
-      autoExpense={id:DB.nextId(expenses),appDate:now,amount:item.amount,supplier:item.supplier,
+      autoExpense={id:DB.nextId(expenses),appDate:now,amount:item.amount,supplier:item.supplier,supplier_org_id:item.supplier_org_id||'',
         supplierCode:'',invoice:'',invoiceDate:'',content:item.name,
         status:'待报销',reimbDate:'',createdAt:now,
         assignee:item.assignee||'',state:STATE.TODO,state_manual:true,owner_ledger:'expenses',origin:'purchases:'+item.id,linked_from_work:true,
@@ -5400,13 +5495,13 @@ function editPurchase(id){
   document.getElementById('purchaseId').value=p.id;
   document.getElementById('purchaseAssignee').value=p.assignee||'';
   document.getElementById('purchaseName').value=p.name;
-  document.getElementById('purchaseSupplier').value=p.supplier||'';
+  setOrgInput('purchaseSupplier',p.supplier,p.supplier_org_id);
   document.getElementById('purchaseAmount').value=p.amount||'';
   document.getElementById('purchaseCategory').value=p.category||'货物类';
   document.getElementById('purchaseHasContract').value=p.hasContract||'';
-  document.getElementById('purchaseContractDept').value=p.contractDept||'';
+  setOrgInput('purchaseContractDept',p.contractDept,p.contract_dept_org_id);
   document.getElementById('purchaseHasExpense').value=p.hasExpense||'';
-  document.getElementById('purchaseExpenseDept').value=p.expenseDept||'';
+  setOrgInput('purchaseExpenseDept',p.expenseDept,p.expense_dept_org_id);
   onPurchaseContractChange();onPurchaseExpenseChange();
   // 加载采购明细
   clearPurchaseItems();
@@ -5430,6 +5525,7 @@ function clearPurchaseForm(){
   document.getElementById('purchaseExpenseDeptGroup').style.display='none';
   clearPurchaseItems();
   document.getElementById('purchaseModalTitle').textContent='新增采购';
+  ['purchaseSupplier','purchaseContractDept','purchaseExpenseDept'].forEach(id=>setOrgInput(id,'',''));
 }
 
 // 采购-合同/报销 联动切换
@@ -6458,6 +6554,7 @@ function saveExpense(){
   if(subcategoryId&&!fundSubcategories(fundItem).some(s=>String(s.id)===String(subcategoryId))){toast('请选择该经费项目下的子类别');return;}
   const expenses=DB.raw('expenses');
   const id=+document.getElementById('expenseId').value;
+  const previousExpense=existingRecord('expenses',id);
   const status=id?existingRecord('expenses',id).status:document.getElementById('expenseStatus').value;
   // 已报销时自动记录报销日期
   let reimbDate=document.getElementById('expenseReimbDate').value;
@@ -6468,6 +6565,7 @@ function saveExpense(){
     id:id||DB.nextId(expenses),
     appDate,
     supplier:document.getElementById('expenseSupplier').value.trim(),
+    supplier_org_id:orgIdForSave('expenseSupplier',previousExpense,'supplier_org_id','supplier'),
     supplierCode:document.getElementById('expenseSupplierCode').value.trim(),
     invoice,
     invoiceDate:document.getElementById('expenseInvoiceDate').value,
@@ -6504,7 +6602,7 @@ function editExpense(id){
   document.getElementById('expenseAssignee').value=e.assignee||'';
   document.getElementById('expenseAppDate').value=e.appDate||'';
   document.getElementById('expenseAmount').value=e.amount||'';
-  document.getElementById('expenseSupplier').value=e.supplier||'';
+  setOrgInput('expenseSupplier',e.supplier,e.supplier_org_id);
   document.getElementById('expenseSupplierCode').value=e.supplierCode||'';
   document.getElementById('expenseInvoice').value=e.invoice||'';
   document.getElementById('expenseInvoiceDate').value=e.invoiceDate||'';
@@ -6535,6 +6633,7 @@ function clearExpenseForm(){
   ['expenseId','expenseAppDate','expenseAmount','expenseSupplier','expenseSupplierCode','expenseInvoice','expenseInvoiceDate','expenseContent','expenseNote','expenseReimbDate','expenseFundItem','expenseSubcategory','expenseAssignee'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('expenseStatus').value='待报销';
   document.getElementById('expenseModalTitle').textContent='新增报销';
+  setOrgInput('expenseSupplier','','');
   // 弹出前刷新经费项目下拉
   populateExpenseFundDropdown();
   populateExpenseSubcategories();
@@ -7709,6 +7808,7 @@ function renderCurrentPage(){
   if(currentPage==='agency')renderAgencys();
   if(currentPage==='handover')renderHandovers();
   if(currentPage==='fund')renderFunds();
+  if(currentPage==='config')renderConfigPage();
   if(currentPage==='待办')renderTodos();
   if(currentPage==='长期目标')renderGoals();
   if(currentPage==='提醒')renderRemindCenter();
@@ -8207,6 +8307,7 @@ checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/
 // 拉取会覆盖本机业务快照，因此仅由用户点击“拉取数据”触发。
 (function(){
   v16ReplaceSurfaces();
+  refreshConfigConsumers();
   v16EnhanceContentHeaders();
   ensureDashboardCalendar();
   renderDashboard();
