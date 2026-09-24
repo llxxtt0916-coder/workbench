@@ -9,7 +9,8 @@ function section(start,end){
   assert(a>=0&&b>a,`找不到代码段 ${start}`);
   return html.slice(a,b);
 }
-const source=section('const SYNC_BUSINESS_KEYS=','function exportData(){')+'\n'+
+const source=section('// Configuration is one snapshot object','//  DATA LAYER v1.5')+'\n'+
+  section('const SYNC_BUSINESS_KEYS=','function exportData(){')+'\n'+
   section('const GITEE={','//  SETTINGS')+'\n'+
   section('function repairData(){','//  NAVIGATION')+'\n'+
   section('function snapshotBeforeV14(){','// 从快照恢复 localStorage')+'\n'+
@@ -91,6 +92,7 @@ function names(rows){return rows.map(r=>r.name);}
   const decodedPut=JSON.parse(decodeURIComponent(escape(atob(actualPut.body.content))));
   assert.deepEqual(names(decodedPut.todos),['D'],'链路 Case 1：实际 PUT content 必须只有 D');
   assert.deepEqual(decodedPut.todos[0].subtasks,[syncedSubtask],'v1.6：实际 Gitee snapshot 必须完整保留子任务 ID、排序、状态和日期');
+  assert.deepEqual(decodedPut.config,JSON.parse(JSON.stringify(pc.dumpData().config)),'配置必须进入完整快照');
   pc.keys.forEach(key=>assert.deepEqual(decodedPut[key],JSON.parse(JSON.stringify(pc.dumpData()[key])),
     `链路 Case 1：实际 PUT ${key} 必须等于当前本机快照`));
   assert.equal(actualPut.body.branch,'main');
@@ -131,6 +133,7 @@ function names(rows){return rows.map(r=>r.name);}
   assert(phone.logs.some(entry=>entry[0]==='LOCAL AFTER PULL'));
   assert.deepEqual(phone.DB.get('trainings'),[]);
   assert.deepEqual(phone.DB.get('quick_notes'),[]);
+  assert.deepEqual(JSON.parse(phone.values.get('wb_config')),server.data.config,'拉取必须恢复配置');
   assert.equal(phone.values.get('wb_gitee_token'),'phone-token','测试5：手机凭据保留');
   assert.equal(phone.values.get('wb_backup_interval'),'30','测试5：设备偏好保留');
   assert.equal(phone.scheduledPushes,0,'拉取不得触发自动反向推送');
