@@ -5,6 +5,7 @@ const vm=require('node:vm');
 const html=fs.readFileSync('index.html','utf8');
 function section(start,end){const a=html.indexOf(start),b=html.indexOf(end,a+start.length);assert(a>=0&&b>a,`找不到区段：${start}`);return html.slice(a,b);}
 const source=section("let v16DraggedSubtaskId='';",'//  INIT');
+const financeSource=section('function fundUsage','function renderFunds');
 const rows={todos:[],funds:[],fundRecords:[],expenses:[]};
 const DB={raw:k=>structuredClone(rows[k]||[]),get:k=>structuredClone((rows[k]||[]).filter(r=>!r.deleted)),set:(k,v)=>rows[k]=structuredClone(v)};
 const today='2026-09-18';
@@ -22,6 +23,7 @@ function isOverdue(r){const due=getDueDate(r);return !!due&&due<todayStr()&&![ST
 function getActiveItems(){return DB.get('todos').filter(r=>[STATE.TODO,STATE.DOING].includes(r.state)).map(r=>Object.assign({_ledger:'todos'},r));}
 function getVisibleTodoItems(){return getActiveItems();}
 function belongsToLedger(){return true;}
+function formalLedgerItems(key){return DB.get(key).filter(r=>!r.state||[STATE.DONE,STATE.CLOSED].includes(r.state));}
 function stateBadge(){return '';}
 function recordDisplayName(r){return r.name||r.title||'未命名';}
 function esc(v){return String(v??'');}
@@ -32,8 +34,9 @@ function renderTodo(){} function renderDashboard(){} function renderSummary(){} 
 function fmtCNY(n){return '¥'+Number(n).toFixed(2);} function navigate(){} function toast(m){messages.push(m);} const messages=[];
 function setState(key,id,state){statusWrites++;return {key,id,state};} function openModal(){} function closeModal(){} function saveTodo(){}
 const document=doc; const navigator={}; const confirm=()=>true; const prompt=()=>null;
+${financeSource}
 ${source}
-({normalizeSubtasks,workSubtasks,subtaskSummary,ensureV16Data,toggleSubtask,writeWorkSubtasks,moveSubtaskTo,setState,v16AlertData,v16MonthData,monthlySummaryText,dashboardCalendarEntries,completedCalendarDate,v16ExpandedSubtasks,messages})`,sandbox);
+({normalizeSubtasks,workSubtasks,subtaskSummary,ensureV16Data,toggleSubtask,writeWorkSubtasks,moveSubtaskTo,setState,v16AlertData,v16MonthData,monthlySummaryText,fundUsage,dashboardCalendarEntries,completedCalendarDate,v16ExpandedSubtasks,messages})`,sandbox);
 
 // 历史数据无 subtasks 与旧 text/done 格式均应兼容，不改父记录 ID。
 rows.todos=[
@@ -92,12 +95,38 @@ sandbox.summaryDateRange={start:'2026-09-01',end:'2026-09-30'};
 const monthApi=api.v16MonthData();
 assert.equal(monthApi.completed.length,1);
 assert.equal(monthApi.subs.length,1);
-assert.equal(monthApi.cross.length,2,'正常长期跨月不等于逾期');
-assert.equal(monthApi.overdue.length,1);
+assert.equal(monthApi.cross.length,2,'按所选月末，未到期的长期工作仍是正常跨月');
+assert.equal(monthApi.overdue.length,1,'所选月末已到期且未结束的工作计入9月逾期');
 assert(!monthApi.overdue.some(t=>t.name==='正常跨月'),'正常跨月事项不得混入逾期');
+rows.todos=[
+  {id:25,name:'8月逾期9月完成',state:'DONE',issueDate:'2026-07-01',deadline:'2026-08-10',completeDate:'2026-09-10',subtasks:[]},
+  {id:26,name:'8月跨月9月完成',state:'DONE',issueDate:'2026-07-01',deadline:'2026-09-20',completeDate:'2026-09-11',subtasks:[]},
+  {id:27,name:'8月内已完成',state:'DONE',issueDate:'2026-08-01',deadline:'2026-08-15',completeDate:'2026-08-14',subtasks:[]},
+  {id:28,name:'9月才关闭',state:'CLOSED',issueDate:'2026-07-01',deadline:'2026-08-20',closed_at:'2026-09-05T10:00:00Z',subtasks:[]},
+  {id:29,name:'8月内已关闭',state:'CLOSED',issueDate:'2026-07-01',deadline:'2026-08-20',closed_at:'2026-08-19T10:00:00Z',subtasks:[]}
+];
+sandbox.summaryDateRange={start:'2026-08-01',end:'2026-08-31'};
+const august=api.v16MonthData();
+assert.deepEqual(august.overdue.map(t=>t.id),[25,28],'9月才完成或关闭的工作在8月月末仍逾期');
+assert.deepEqual(august.cross.map(t=>t.id),[26],'9月才完成的工作在8月月末仍跨月');
+assert(!august.active.some(t=>t.id===27||t.id===29),'8月已完成或关闭工作不再计入8月月末未完成');
+sandbox.summaryDateRange={start:'2026-09-01',end:'2026-09-30'};
+rows.todos=[
+  {id:21,name:'跨月完成父工作',state:'DONE',type:'key',completeDate:'2026-09-10',issueDate:'2026-08-20',subtasks:[]},
+  {id:22,name:'长期推进',state:'DOING',type:'key',issueDate:'2026-08-01',subtasks:[{id:'s',name:'本月成果',completed:true,completed_date:'2026-09-12',sort_order:0,created_at:'2026-08-01',updated_at:'2026-09-12'}]}
+];
 rows.funds=[{id:1,name:'示例项目',budget:10000}];
 rows.fundRecords=[{fundId:1,date:'2026-09-15',amount:500}];
+rows.expenses=[
+  {id:1,fundItem:1,amount:1000,state:'TODO',appDate:'2026-09-01'},
+  {id:2,fundItem:1,amount:300,state:'DOING',appDate:'2026-09-02'},
+  {id:3,fundItem:1,amount:200,state:'DONE',appDate:'2026-09-03'}
+];
+assert.equal(api.fundUsage(1).used,700,'正式经费口径只计入独立经费记录和已完成报销');
+assert(html.includes('const usage=fundUsage(f.id)')&&html.includes('const u=fundUsage(f.id)')&&
+  !html.includes('v16FundUsage('),'正式经费台账、驾驶舱和本月摘要必须复用唯一已使用口径');
 const copied=api.monthlySummaryText();
+assert(copied.includes('累计支出 ¥700.00'),'本月摘要对同一组数据应展示与正式经费相同的已使用金额');
 assert(copied.includes('跨月完成父工作')&&copied.includes('本月成果'),'月度摘要必须包含实际工作和子任务名称');
 assert(copied.includes('示例项目')&&copied.includes('一、本月完成工作')&&copied.includes('六、项目经费'),'月度摘要必须使用结构化固定模板并包含实际项目名称');
 

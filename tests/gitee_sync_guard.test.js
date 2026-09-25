@@ -9,7 +9,8 @@ function section(start,end){
   assert(a>=0&&b>a,`找不到代码段 ${start}`);
   return html.slice(a,b);
 }
-const source=section('// Configuration is one snapshot object','//  DATA LAYER v1.5')+'\n'+
+const source=section('// A matter groups existing business records','// Configuration is one snapshot object')+'\n'+
+  section('// Configuration is one snapshot object','//  DATA LAYER v1.5')+'\n'+
   section('const SYNC_BUSINESS_KEYS=','function exportData(){')+'\n'+
   section('const GITEE={','//  SETTINGS')+'\n'+
   section('function repairData(){','//  NAVIGATION')+'\n'+
@@ -46,7 +47,7 @@ function createServer(initial,options={}){
     }
   };
 }
-function createDevice(server,rows={},settings={}){
+function createDevice(server,rows={},settings={},confirmResponse=true){
   const values=new Map(Object.entries({
     wb_gitee_user:'user',wb_gitee_repo:'repo',wb_gitee_token:'local-token',
     wb_backup_interval:'7',...settings
@@ -58,7 +59,7 @@ function createDevice(server,rows={},settings={}){
     set:(key,value)=>values.set(key,JSON.stringify(value))
   };
   let scheduledPushes=0,renders=0;
-  const logs=[],toasts=[];
+  const logs=[],toasts=[],prompts=[];
   const localStorage={
     get length(){return values.size;},key:i=>Array.from(values.keys())[i],
     getItem:k=>values.has(k)?values.get(k):null,setItem:(k,v)=>values.set(k,String(v))
@@ -75,8 +76,9 @@ function createDevice(server,rows={},settings={}){
     btoa,atob,escape,unescape,encodeURIComponent,decodeURIComponent,
     toast:message=>toasts.push(message),console:{log:(...args)=>logs.push(args),error:(...args)=>logs.push(args)},Date
   };
+  sandbox.confirm=message=>{prompts.push(message);return confirmResponse;};
   const api=vm.runInNewContext(source+'\n({GITEE,SYNC_BUSINESS_KEYS,dumpData,manualPush,manualPull,restart(){snapshotBeforeV14();GITEE._applyingSnapshot=true;try{repairData();retireVerifiedLegacyMirrors();}finally{GITEE._applyingSnapshot=false;}renderCurrentPage();}})',sandbox);
-  return {gitee:api.GITEE,keys:Array.from(api.SYNC_BUSINESS_KEYS),values,DB,logs,toasts,
+  return {gitee:api.GITEE,keys:Array.from(api.SYNC_BUSINESS_KEYS),values,DB,logs,toasts,prompts,
     dumpData:api.dumpData,manualPush:api.manualPush,manualPull:api.manualPull,restart:api.restart,
     get scheduledPushes(){return scheduledPushes;},get renders(){return renders;}};
 }
@@ -151,6 +153,10 @@ function names(rows){return rows.map(r=>r.name);}
   assert.equal(phone.values.get('wb_gitee_token'),'phone-token','测试5：手机凭据保留');
   assert.equal(phone.values.get('wb_backup_interval'),'30','测试5：设备偏好保留');
   assert.equal(phone.scheduledPushes,0,'拉取不得触发自动反向推送');
+  const completeDevice=createDevice(server,{todos:[{id:99,name:'本机旧工作',matter_id:'matter_local'}],
+    matters:[{id:'matter_local',name:'本机事项'}]}, {wb_config:JSON.stringify(linkedConfig)});
+  assert.equal(await completeDevice.gitee.pull(),'ok','完整新版本快照应直接覆盖本机旧配置和事项');
+  assert.equal(completeDevice.prompts.length,0,'完整新版本快照不应额外确认');
   phone.restart();
   assert.deepEqual(names(phone.DB.get('todos')),['D'],'链路 Case 4：重新执行真实修复/镜像清理及渲染后仍只有 D');
   assert(phone.renders>=2);
@@ -164,9 +170,21 @@ function names(rows){return rows.map(r=>r.name);}
   const staleConfig={organizations:[{id:'org_stale',name:'本机旧配置',type:'external',status:'active',sort_order:10}],dictionaries:{work_categories:[],work_sources:[]}};
   const legacyCloudDevice=createDevice(masterServer,{todos:old},{wb_config:JSON.stringify(staleConfig)});
   assert.equal(await legacyCloudDevice.gitee.pull(),'ok','旧云端无 config 时应安全拉取');
+  assert(legacyCloudDevice.prompts[0].includes('配置中心'),'旧快照覆盖本机配置前必须明确警告');
   assert.deepEqual(JSON.parse(legacyCloudDevice.values.get('wb_config')).organizations,[],'旧云端无 config 不应保留本机陈旧配置');
   assert(JSON.parse(legacyCloudDevice.values.get('wb_config')).dictionaries.work_categories.length>0,'旧云端无 config 时默认工作类别不能消失');
   assert.deepEqual(legacyCloudDevice.DB.raw('matters'),[],'旧云端无 matters 时安全初始化为空');
+  const localMatter={id:'matter_local',name:'本机事项'};
+  const cancelDevice=createDevice(masterServer,{todos:[{id:31,name:'本机工作',matter_id:localMatter.id}],matters:[localMatter]},
+    {wb_config:JSON.stringify(staleConfig)},false);
+  const beforeCancel={todo:cancelDevice.DB.raw('todos'),matters:cancelDevice.DB.raw('matters'),config:cancelDevice.values.get('wb_config')};
+  assert.equal(await cancelDevice.manualPull(),undefined);
+  assert(cancelDevice.prompts[0].includes('配置中心')&&cancelDevice.prompts[0].includes('事项关联'),'旧快照应同时告知缺失的数据类型');
+  assert.deepEqual(cancelDevice.DB.raw('todos'),beforeCancel.todo,'取消不得覆盖工作');
+  assert.deepEqual(cancelDevice.DB.raw('matters'),beforeCancel.matters,'取消不得覆盖事项');
+  assert.equal(cancelDevice.values.get('wb_config'),beforeCancel.config,'取消不得覆盖配置');
+  assert(cancelDevice.toasts.some(message=>message.includes('已取消拉取')),'取消应提示本机未修改');
+  assert.equal(phone.prompts.length,0,'完整新版本云端快照不应额外确认');
   assert.equal(await oldBranchDevice.gitee.push(),'ok');
   assert.equal(masterServer.writes[0].body.branch,'master','同一设备推送也应写入 master');
   assert(masterServer.reads.at(-1).includes('ref=master'),'推送回读也应使用 master');

@@ -35,8 +35,17 @@ test('one matter accepts multiple same-type records and a record accepts multipl
   assert.equal(api.linkMatterRecords('purchases',3,'contracts',4).status,'linked');
   assert.equal(rows.matters.length,1);
   assert.equal(api.matterMembers(first.matter.id).length,4);
+  assert.equal(api.linkMatterRecords('todos',2,'contracts',4).status,'linked');
+  assert.deepEqual(rows.contracts[0].related_sources,[{type:'purchase',id:3},{type:'work',id:2}]);
   assert.equal(api.linkMatterRecords('todos',2,'contracts',4).status,'already-linked');
-  assert.equal(rows.contracts[0].related_sources.length,1);
+});
+test('last member leaving removes its empty matter',()=>{
+  const {api,rows}=setup({todos:[{id:1,name:'工作'}],purchases:[{id:2,name:'采购'}]});
+  api.linkMatterRecords('todos',1,'purchases',2);
+  assert.equal(api.unlinkMatterRecord('todos',1),true);
+  assert.equal(rows.matters.length,1);
+  assert.equal(api.unlinkMatterRecord('purchases',2),true);
+  assert.deepEqual(rows.matters,[]);
 });
 test('independent records join, same matter is idempotent, different matters never merge',()=>{
   const {api,rows}=setup({todos:[{id:1,name:'A'},{id:2,name:'B'},{id:3,name:'C'},{id:4,name:'D'}]});
