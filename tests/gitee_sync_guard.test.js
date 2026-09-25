@@ -9,7 +9,9 @@ function section(start,end){
   assert(a>=0&&b>a,`找不到代码段 ${start}`);
   return html.slice(a,b);
 }
-const source=section('const SYNC_BUSINESS_KEYS=','function exportData(){')+'\n'+
+const source=section('// A matter groups existing business records','// Configuration is one snapshot object')+'\n'+
+  section('// Configuration is one snapshot object','//  DATA LAYER v1.5')+'\n'+
+  section('const SYNC_BUSINESS_KEYS=','function exportData(){')+'\n'+
   section('const GITEE={','//  SETTINGS')+'\n'+
   section('function repairData(){','//  NAVIGATION')+'\n'+
   section('function snapshotBeforeV14(){','// 从快照恢复 localStorage')+'\n'+
@@ -45,7 +47,7 @@ function createServer(initial,options={}){
     }
   };
 }
-function createDevice(server,rows={},settings={}){
+function createDevice(server,rows={},settings={},confirmResponse=true){
   const values=new Map(Object.entries({
     wb_gitee_user:'user',wb_gitee_repo:'repo',wb_gitee_token:'local-token',
     wb_backup_interval:'7',...settings
@@ -57,7 +59,7 @@ function createDevice(server,rows={},settings={}){
     set:(key,value)=>values.set(key,JSON.stringify(value))
   };
   let scheduledPushes=0,renders=0;
-  const logs=[],toasts=[];
+  const logs=[],toasts=[],prompts=[];
   const localStorage={
     get length(){return values.size;},key:i=>Array.from(values.keys())[i],
     getItem:k=>values.has(k)?values.get(k):null,setItem:(k,v)=>values.set(k,String(v))
@@ -74,8 +76,9 @@ function createDevice(server,rows={},settings={}){
     btoa,atob,escape,unescape,encodeURIComponent,decodeURIComponent,
     toast:message=>toasts.push(message),console:{log:(...args)=>logs.push(args),error:(...args)=>logs.push(args)},Date
   };
+  sandbox.confirm=message=>{prompts.push(message);return confirmResponse;};
   const api=vm.runInNewContext(source+'\n({GITEE,SYNC_BUSINESS_KEYS,dumpData,manualPush,manualPull,restart(){snapshotBeforeV14();GITEE._applyingSnapshot=true;try{repairData();retireVerifiedLegacyMirrors();}finally{GITEE._applyingSnapshot=false;}renderCurrentPage();}})',sandbox);
-  return {gitee:api.GITEE,keys:Array.from(api.SYNC_BUSINESS_KEYS),values,DB,logs,toasts,
+  return {gitee:api.GITEE,keys:Array.from(api.SYNC_BUSINESS_KEYS),values,DB,logs,toasts,prompts,
     dumpData:api.dumpData,manualPush:api.manualPush,manualPull:api.manualPull,restart:api.restart,
     get scheduledPushes(){return scheduledPushes;},get renders(){return renders;}};
 }
@@ -85,12 +88,23 @@ function names(rows){return rows.map(r=>r.name);}
   const old=[{id:1,name:'A'},{id:2,name:'B'},{id:3,name:'C'}];
   const server=createServer({todos:old,trainings:[{id:10,name:'旧培训'}],otherMetadata:{kept:true}});
   const syncedSubtask={id:'sub-1',name:'同步子任务',start_date:'2026-09-01',due_date:'2026-09-10',completed_date:'2026-09-09',completed:true,sort_order:0,created_at:'2026-09-01',updated_at:'2026-09-09'};
-  const pc=createDevice(server,{todos:[{id:4,name:'D',subtasks:[syncedSubtask]}],trainings:[]});
+  const syncedMatter={id:'matter_sync',name:'同步事项',created_at:'2026-09-01T00:00:00.000Z',remark:''};
+  const linkedPurchase={id:12,name:'关联采购',supplier:'关联单位',supplier_org_id:'org_linked',matter_id:syncedMatter.id,related_sources:[{type:'work',id:4}]};
+  const pc=createDevice(server,{todos:[{id:4,name:'D',subtasks:[syncedSubtask],matter_id:syncedMatter.id}],purchases:[linkedPurchase],matters:[syncedMatter],trainings:[]});
+  const linkedConfig={organizations:[{id:'org_linked',name:'关联单位',type:'external',status:'active',sort_order:10,remark:'',short_name:'单位'}],
+    dictionaries:{work_categories:[],work_sources:[{id:'ws_linked',name:'单位来源',organization_id:'org_linked',status:'active',sort_order:10,remark:''}]}};
+  pc.values.set('wb_config',JSON.stringify(linkedConfig));
   assert.equal(await pc.gitee.push(),'ok');
   const actualPut=server.writes[0];
   const decodedPut=JSON.parse(decodeURIComponent(escape(atob(actualPut.body.content))));
   assert.deepEqual(names(decodedPut.todos),['D'],'链路 Case 1：实际 PUT content 必须只有 D');
   assert.deepEqual(decodedPut.todos[0].subtasks,[syncedSubtask],'v1.6：实际 Gitee snapshot 必须完整保留子任务 ID、排序、状态和日期');
+  assert.deepEqual(decodedPut.matters,[syncedMatter],'事项容器必须进入完整快照');
+  assert.equal(decodedPut.todos[0].matter_id,syncedMatter.id,'事项关系必须保留在原业务记录');
+  assert.deepEqual(decodedPut.purchases[0],linkedPurchase,'直接来源与组织稳定 ID 必须进入完整快照');
+  assert.deepEqual(decodedPut.config,JSON.parse(JSON.stringify(pc.dumpData().config)),'配置必须进入完整快照');
+  assert.equal(decodedPut.config.dictionaries.work_sources,undefined,'旧来源字典不得继续写入云端快照');
+  assert.equal(decodedPut.config.organizations[0].id,'org_linked','组织稳定 ID 必须进入快照');
   pc.keys.forEach(key=>assert.deepEqual(decodedPut[key],JSON.parse(JSON.stringify(pc.dumpData()[key])),
     `链路 Case 1：实际 PUT ${key} 必须等于当前本机快照`));
   assert.equal(actualPut.body.branch,'main');
@@ -131,9 +145,18 @@ function names(rows){return rows.map(r=>r.name);}
   assert(phone.logs.some(entry=>entry[0]==='LOCAL AFTER PULL'));
   assert.deepEqual(phone.DB.get('trainings'),[]);
   assert.deepEqual(phone.DB.get('quick_notes'),[]);
+  assert.deepEqual(phone.DB.get('matters'),[syncedMatter]);
+  assert.deepEqual(phone.DB.get('purchases')[0].related_sources,linkedPurchase.related_sources,'拉取后直接来源必须保持一致');
+  assert.equal(phone.DB.get('purchases')[0].matter_id,syncedMatter.id,'拉取后事项 ID 必须保持一致');
+  assert.equal(phone.DB.get('purchases')[0].supplier_org_id,'org_linked','拉取后组织 ID 必须保持一致');
+  assert.deepEqual(JSON.parse(phone.values.get('wb_config')),server.data.config,'拉取必须恢复配置');
   assert.equal(phone.values.get('wb_gitee_token'),'phone-token','测试5：手机凭据保留');
   assert.equal(phone.values.get('wb_backup_interval'),'30','测试5：设备偏好保留');
   assert.equal(phone.scheduledPushes,0,'拉取不得触发自动反向推送');
+  const completeDevice=createDevice(server,{todos:[{id:99,name:'本机旧工作',matter_id:'matter_local'}],
+    matters:[{id:'matter_local',name:'本机事项'}]}, {wb_config:JSON.stringify(linkedConfig)});
+  assert.equal(await completeDevice.gitee.pull(),'ok','完整新版本快照应直接覆盖本机旧配置和事项');
+  assert.equal(completeDevice.prompts.length,0,'完整新版本快照不应额外确认');
   phone.restart();
   assert.deepEqual(names(phone.DB.get('todos')),['D'],'链路 Case 4：重新执行真实修复/镜像清理及渲染后仍只有 D');
   assert(phone.renders>=2);
@@ -144,9 +167,37 @@ function names(rows){return rows.map(r=>r.name);}
   assert.equal(await oldBranchDevice.gitee.pull(),'ok');
   assert(masterServer.reads.at(-1).includes('ref=master'),'缓存中的 main 不得优先于仓库默认 master');
   assert.deepEqual(names(oldBranchDevice.DB.get('todos')),['D']);
+  const staleConfig={organizations:[{id:'org_stale',name:'本机旧配置',type:'external',status:'active',sort_order:10}],dictionaries:{work_categories:[],work_sources:[]}};
+  const legacyCloudDevice=createDevice(masterServer,{todos:old},{wb_config:JSON.stringify(staleConfig)});
+  assert.equal(await legacyCloudDevice.gitee.pull(),'ok','旧云端无 config 时应安全拉取');
+  assert(legacyCloudDevice.prompts[0].includes('配置中心'),'旧快照覆盖本机配置前必须明确警告');
+  assert.deepEqual(JSON.parse(legacyCloudDevice.values.get('wb_config')).organizations,[],'旧云端无 config 不应保留本机陈旧配置');
+  assert(JSON.parse(legacyCloudDevice.values.get('wb_config')).dictionaries.work_categories.length>0,'旧云端无 config 时默认工作类别不能消失');
+  assert.deepEqual(legacyCloudDevice.DB.raw('matters'),[],'旧云端无 matters 时安全初始化为空');
+  const localMatter={id:'matter_local',name:'本机事项'};
+  const cancelDevice=createDevice(masterServer,{todos:[{id:31,name:'本机工作',matter_id:localMatter.id}],matters:[localMatter]},
+    {wb_config:JSON.stringify(staleConfig)},false);
+  const beforeCancel={todo:cancelDevice.DB.raw('todos'),matters:cancelDevice.DB.raw('matters'),config:cancelDevice.values.get('wb_config')};
+  assert.equal(await cancelDevice.manualPull(),undefined);
+  assert(cancelDevice.prompts[0].includes('配置中心')&&cancelDevice.prompts[0].includes('事项关联'),'旧快照应同时告知缺失的数据类型');
+  assert.deepEqual(cancelDevice.DB.raw('todos'),beforeCancel.todo,'取消不得覆盖工作');
+  assert.deepEqual(cancelDevice.DB.raw('matters'),beforeCancel.matters,'取消不得覆盖事项');
+  assert.equal(cancelDevice.values.get('wb_config'),beforeCancel.config,'取消不得覆盖配置');
+  assert(cancelDevice.toasts.some(message=>message.includes('已取消拉取')),'取消应提示本机未修改');
+  assert.equal(phone.prompts.length,0,'完整新版本云端快照不应额外确认');
   assert.equal(await oldBranchDevice.gitee.push(),'ok');
   assert.equal(masterServer.writes[0].body.branch,'master','同一设备推送也应写入 master');
   assert(masterServer.reads.at(-1).includes('ref=master'),'推送回读也应使用 master');
+  const legacySourceServer=createServer({
+    todos:[{id:8,name:'旧工作',category:['报告'],source:['市疾控局','领导交办'],work_source_ids:['ws_old','']}],
+    config:{organizations:[{id:'org_old',name:'重庆市疾病预防控制局',short_name:'市疾控局',type:'external',status:'active',sort_order:10}],
+      dictionaries:{work_categories:[],work_sources:[{id:'ws_old',name:'市疾控局',organization_id:'org_old'}]}}
+  });
+  const legacySourceDevice=createDevice(legacySourceServer);
+  assert.equal(await legacySourceDevice.gitee.pull(),'ok','带旧来源字典的 Gitee 快照可拉取');
+  assert.equal(JSON.parse(legacySourceDevice.values.get('wb_config')).dictionaries.work_sources,undefined);
+  assert.deepEqual(legacySourceDevice.DB.raw('todos')[0].source,['市疾控局','领导交办']);
+  assert.deepEqual(legacySourceDevice.DB.raw('todos')[0].source_org_ids,['org_old','']);
   const readOnlyPhone=createDevice(server,{todos:old},{wb_gitee_token:'',wb_gitee_branch:'master'});
   assert.equal(await readOnlyPhone.gitee.pull(),'ok','无令牌设备应可从公开仓库拉取');
   assert.deepEqual(names(readOnlyPhone.DB.get('todos')),['D']);
