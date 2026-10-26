@@ -1,34 +1,59 @@
-name: Deploy to GitHub Pages
-
+name: Verified UI 2.0 Production Pages
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
+    inputs:
+      production_commit:
+        description: Exact separately authorized production main commit SHA
+        required: true
+        type: string
+permissions: {}
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: false
-
 jobs:
+  build:
+    if: github.repository == 'llxxtt0916-coder/workbench' && github.ref == 'refs/heads/main' && github.sha == inputs.production_commit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.production_commit }}
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.19.0'
+          check-latest: false
+      - name: Verify source and build exact public closure
+        env:
+          APPROVED_ASSETS_SHA: ccae2a2bdc35445d98dbb92fb9c67f846e53fad8b19c008c7b8fb89e15bfdf76
+          APPROVED_PROVENANCE_SHA: 78596ea5e8241d455566c645ad486e0beddbd14fbfe6553e46de15388fe186f5
+        run: |
+          test "$GITHUB_SHA" = "${{ inputs.production_commit }}"
+          node --version
+          cat /etc/os-release
+          node scripts/g2-release-verify.cjs "$RUNNER_TEMP/workbench-site" "$RUNNER_TEMP/workbench-assets.json"
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+        with:
+          path: ${{ runner.temp }}/workbench-site
+          retention-days: 1
   deploy:
+    needs: build
+    if: github.repository == 'llxxtt0916-coder/workbench' && github.ref == 'refs/heads/main' && github.sha == inputs.production_commit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@1f0c5cde4bc74cd7e1254d0cb4de8d49e9068c7d
         with:
-          path: '.'
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          enablement: false
+      - id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e

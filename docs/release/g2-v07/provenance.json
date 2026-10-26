@@ -1,0 +1,177 @@
+{
+  "originalSourceCommit": "54eac92db183b67964607fc739a71494dd56d6b9",
+  "basePreviewCommit": "acaced5c8e0fe197acdd0f9f56195d7de12585c9",
+  "baseBuildId": "g2-b5-i06-c8150fabf518c6a7",
+  "targetRepository": "llxxtt0916-coder/workbench",
+  "targetBranch": "main",
+  "parentCommit": "60f8eaac37c23868571489e363dac365ab3b0a0b",
+  "buildId": "g2-b5-i06-2cc34381b1f33ae5",
+  "actualProductionCommit": null,
+  "actualLinuxBuild": "NOT RUN",
+  "inputs": [
+    {
+      "path": "index.html",
+      "sha256": "d8b9a79558b08f2e962c115c49198c8c7923a4b462bb86712320ac2197857fd7",
+      "bytes": 532676
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "82860a4136d879c09b27c048549fe2576cf7917ea39ae37979b0f53c6f359e1d",
+      "bytes": 850
+    },
+    {
+      "path": "icons/icon-192.svg",
+      "sha256": "880b14642b79724261f017dd8cb34005e3e8979d9917394a0c9659443998186e",
+      "bytes": 775
+    },
+    {
+      "path": "icons/icon-512.svg",
+      "sha256": "9028d1204f6b4276b0262f3c214e8636c0de7de8c0b025d1041b7d8f771e6890",
+      "bytes": 786
+    },
+    {
+      "path": "styles/base.css",
+      "sha256": "4c53176d53f6484b281d4ea1ca422eef49beb01cf3f78515e65b53dd07918cf7",
+      "bytes": 2388
+    },
+    {
+      "path": "styles/layout.css",
+      "sha256": "cfbca3a9c413bca7868060e8d3829e2c275452c6d4de491ea9144e92786c73f1",
+      "bytes": 4564
+    },
+    {
+      "path": "styles/components.css",
+      "sha256": "4d601cf5cc393a26d612722c0ccfaf7d700b858bfe1e8ad9dff90b41e6b38234",
+      "bytes": 58956
+    },
+    {
+      "path": "assets/ui2/foundations.css",
+      "sha256": "ffe9696d861f4377ae69ac7c39256a58e0f853a0da7e67c66e4bdf5b98b4930e",
+      "bytes": 1343
+    },
+    {
+      "path": "assets/ui2/components.css",
+      "sha256": "124a1055b124607cc4cc9b20361383ffc4f0c7b1fb457d4e7af1e43fdd2c75f1",
+      "bytes": 16320
+    },
+    {
+      "path": "assets/ui2/pages.css",
+      "sha256": "6b5b3bc9ab883a90237eccb5147ef04fd8a2a26d7e131705a5175d05f20809ea",
+      "bytes": 25046
+    },
+    {
+      "path": "assets/ui2/business-records.css",
+      "sha256": "1adc5b9ad40633f0b0053793a2d179fe8ff2a0618b2ce453252587acd3c487e7",
+      "bytes": 3346
+    },
+    {
+      "path": "scripts/g2-b1-core.js",
+      "sha256": "2606802f87705035d9ec230d8fe7eb38ac5481ce644030d02d94b8c70b304a4b",
+      "bytes": 26482
+    },
+    {
+      "path": "scripts/g2-b2-entry.js",
+      "sha256": "ddc462842f9867f55a7c264cd1bc6c4d0a57cf39c5e32e85400c8e5af48226c2",
+      "bytes": 3010
+    },
+    {
+      "path": "scripts/g2-b2-core.js",
+      "sha256": "9715ffc5782734b990755f9b3283ada11d7a21191e855b0204d0ab285804a3b4",
+      "bytes": 12618
+    },
+    {
+      "path": "scripts/g2-b2-bindings.js",
+      "sha256": "c418aa47b8a69dbfb6e82dfac965d14c23304c6d0cec55e890a6f8a0c2be8737",
+      "bytes": 9390
+    },
+    {
+      "path": "scripts/g2-b2-ui.js",
+      "sha256": "025cdd78c43e9904afa39ffcb944317cfe47b40288306541ae6dc2ffa9d308a3",
+      "bytes": 81700
+    },
+    {
+      "path": "scripts/g2-b2-legacy.js",
+      "sha256": "1cb1a7ed08cf68613a549eede8ba5e4a635a78828820775e39b77ce02c520c69",
+      "bytes": 1341
+    },
+    {
+      "path": "scripts/g2-b3-core.js",
+      "sha256": "87dd1de1b59dd13a086e10c390af8684c5354eae39947391002d5e6d10ebcb03",
+      "bytes": 12862
+    },
+    {
+      "path": "scripts/g2-b3-bindings.js",
+      "sha256": "f3cd0cfd637dbfa2136574959e53856587de7bacc9ad8329dcb7c5655507260e",
+      "bytes": 4862
+    },
+    {
+      "path": "scripts/g2-b3-ui.js",
+      "sha256": "fadd571815d0ad6c353e4060facd287c67b556831cb7fb28b35450e651aeef05",
+      "bytes": 11269
+    },
+    {
+      "path": "scripts/g2-b4-core.js",
+      "sha256": "94b42960b6e5349c550500d5a76e2bc999cb4bad0cf681133615e8d7f834cc51",
+      "bytes": 30783
+    },
+    {
+      "path": "scripts/g2-b4-bindings.js",
+      "sha256": "c110cbbcab018bf550ffbff533ecdd0c0b89f59d5a1d3616ffdd90ef039188bd",
+      "bytes": 11035
+    },
+    {
+      "path": "scripts/g2-b4-ui.js",
+      "sha256": "3483bc007960e728389b308f3a565da4a507ca0b881f2923ea4594bb5b3fe025",
+      "bytes": 23119
+    },
+    {
+      "path": "scripts/g2-b5-core.js",
+      "sha256": "9524e6e12304d6ec9af34dac6122b0f3580e60cc67b491bc00966a8adb3d472d",
+      "bytes": 34832
+    },
+    {
+      "path": "scripts/g2-b5-storage.js",
+      "sha256": "2eb3337bf00e5db89ab1e8ee5fe843ab0624802bd44d2222b9ae49acb03edcd2",
+      "bytes": 23916
+    },
+    {
+      "path": "scripts/g2-b5-bindings.js",
+      "sha256": "31183f61b31fc85c7f9e63c8e824b98fc47fb1ce59907cfbca0470d4b8d39f76",
+      "bytes": 24018
+    },
+    {
+      "path": "scripts/g2-b5-sync.js",
+      "sha256": "58a43687b7b296571a0c0f898cbb08c0e4ecfe273e802bc25bc20e45fc9a6101",
+      "bytes": 29977
+    },
+    {
+      "path": "scripts/g2-b5-ui.js",
+      "sha256": "ca266983c96508e692990d3006680bf65cbc04dca0b597aee0ce2acb1cf372e1",
+      "bytes": 34030
+    },
+    {
+      "path": "scripts/g2-b5-build.cjs",
+      "sha256": "3259aacee911b3331dbf296002ae345ed17764ce08723dfa61329236c48b0552",
+      "bytes": 4570
+    }
+  ],
+  "overlays": [
+    {
+      "source": "G2_V06_CONFIG_UI_20261025/ui-only.patch",
+      "buildId": "g2-b5-i06-0d103f18a5a41636",
+      "scope": [
+        "scripts/g2-b5-ui.js",
+        "assets/ui2/pages.css"
+      ],
+      "status": "Requested local UI correction; no claim c815 includes it"
+    },
+    {
+      "scope": [
+        "index.html",
+        "scripts/g2-b2-entry.js"
+      ],
+      "status": "V07 standalone product startup repair, independent of preview wrappers"
+    }
+  ],
+  "credentialDataIncluded": false
+}

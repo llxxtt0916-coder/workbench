@@ -1,7 +1,30 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-g2-startup="pending">
 <head>
 <meta charset="UTF-8">
+<style id="g2-startup-style">
+/* Critical product shell: independent of all external styles and preview tools. */
+html[data-g2-startup] body{margin:0;background:#f6f8fc}
+html[data-g2-startup] body>:not(#g2-startup):not(script):not(style):not(link){display:none!important}
+#g2-startup{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;background:#f6f8fc;color:#172033;font:16px/1.7 system-ui,"Microsoft YaHei",sans-serif}
+#g2-startup .g2-startup-card{width:100%;max-width:440px;box-sizing:border-box;padding:32px;background:#fff;border:1px solid #e2e8f2;border-radius:16px;text-align:center}
+#g2-startup h1{margin:0 0 12px;font-size:22px}#g2-startup p{margin:0;color:#586982}#g2-startup small{display:block;margin-top:18px;font-size:12px;overflow-wrap:anywhere;color:#65758b}
+#g2-startup .g2-startup-spinner{width:28px;height:28px;margin:0 auto 18px;border:3px solid #e0eaff;border-top-color:#087bff;border-radius:50%;animation:g2-startup-spin 1s linear infinite}
+html[data-g2-startup="failed"] #g2-startup .g2-startup-spinner{display:none}
+@keyframes g2-startup-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){#g2-startup .g2-startup-spinner{animation:none}}
+</style>
+<script>
+// Display lifecycle only. No storage reads, credentials, network, or fence release.
+window.G2B5Startup=(()=>{let state='pending',observer;
+ const show=()=>{if(!document.body)return;let box=document.getElementById('g2-startup');if(!box){box=document.createElement('div');box.id='g2-startup';box.innerHTML='<div class="g2-startup-card"><div class="g2-startup-spinner" aria-hidden="true"></div><h1></h1><p></p><small></small></div>';document.body.prepend(box);}box.setAttribute('role',state==='failed'?'alert':'status');box.querySelector('h1').textContent=state==='failed'?'工作台未能安全启动':'正在启动工作台';box.querySelector('p').textContent=state==='failed'?'资源或数据尚未通过检查，页面操作未开放。请保持数据原样，检查网络后刷新；持续失败时联系维护人员。':'正在检查版本、资源和本机数据，请稍候。';box.querySelector('small').textContent=window.G2B5_BOOT_CONTRACT?.buildId||'';};
+ const timer=setTimeout(()=>fail(),60000);
+ function fail(){if(state!=='pending')return;state='failed';clearTimeout(timer);document.documentElement.dataset.g2Startup='failed';show();}
+ function complete(){if(state!=='pending')return;state='ready';clearTimeout(timer);observer?.disconnect();delete document.documentElement.dataset.g2Startup;document.getElementById('g2-startup')?.remove();}
+ addEventListener('DOMContentLoaded',()=>{show();observer=new MutationObserver(()=>{if(state!=='ready')show();});observer.observe(document.body,{childList:true});},{once:true});
+ return Object.freeze({fail,complete,get state(){return state;}});
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -10,11 +33,26 @@
 <meta name="description" content="为疾控监督员等公卫基层管理者提供个人工作台——统一管理任务、台账、会议、培训、灵感，消除碎片化工具切换和信息遗漏。">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.svg">
-<link rel="stylesheet" href="styles/base.css">
-<link rel="stylesheet" href="styles/layout.css">
-<link rel="stylesheet" href="styles/components.css?v=linked-records-1">
+<link rel="stylesheet" href="styles/base.css" integrity="sha256-DRzaaPE3SCI/+YVvnMTNmO1eKVWgv2JjYZ7qmULqYXE=">
+<link rel="stylesheet" href="styles/layout.css" integrity="sha256-7NIfE98sXCxJbdAjkZt0s7HRrjReyTHaHrxyWCibLIw=">
+<link rel="stylesheet" href="styles/components.css?v=linked-records-1" integrity="sha256-jp549CjBWf4HkOO1hwPMlZlCbHrzrir7MZYTt2P3lKw=">
+<script>
+window.G2B5Enabled=true;
+// This fence also survives a missing/stale external entry script.
+window.G2B5Preboot=(()=>{const p=Storage.prototype,native={setItem:p.setItem,removeItem:p.removeItem,clear:p.clear};let released=false;
+ for(const name of Object.keys(native))p[name]=function(...args){if(this===window.localStorage&&!released)throw Error('BUILD_VERIFICATION_REQUIRED');return native[name].apply(this,args);};
+ return Object.freeze({release(id){if(!id||window.G2B5_BOOT_VERIFIED!==id||window.G2B5_BOOT_CONTRACT?.buildId!==id)throw Error('BUILD_NOT_VERIFIED');released=true;for(const name of Object.keys(native))p[name]=native[name];}});
+})();
+</script>
+<script>/* I06_BOOT_CONTRACT_START */window.G2B5_BOOT_CONTRACT={"version":1,"buildId":"g2-b5-i06-9cd792e75c81d28f","schemaVersion":2,"exchangeRevision":1,"assets":[{"path":"manifest.json","sha256":"6a7a9e8b63ef7d152033a976c7df15af68c7592df5c65cedee9251351cee291b","bytes":880,"mime":"application/json","required":true},{"path":"icons/icon-192.svg","sha256":"785457a6a474e6c6f98ded187763a6d8a44ca54d090e5ab0bc48cc3484a960c0","bytes":791,"mime":"image/svg+xml","required":true},{"path":"icons/icon-512.svg","sha256":"9df12fc062f88b4eb697a70e6cc58795dd2a4070f1f44a0ec91a140ca1113a2a","bytes":802,"mime":"image/svg+xml","required":true},{"path":"styles/base.css","sha256":"0d1cda68f13748223ff9856f9cc4cd98ed5e2955a0bf6263619eea9942ea6171","bytes":2504,"mime":"text/css","required":true},{"path":"styles/layout.css","sha256":"ecd21f13df2c5c2c496dd023919b74b3b1d1ae345ec931da1ebc7258289b2c8c","bytes":4826,"mime":"text/css","required":true},{"path":"styles/components.css","sha256":"8e9e78f428c159fe0790e3b58703cc9599426c7af3ae2afb319613b763f794ac","bytes":61068,"mime":"text/css","required":true},{"path":"assets/ui2/foundations.css","sha256":"392c48632a768f78f45a387b91f8556ac548de74055e961ac86f18899fb0c2ef","bytes":1344,"mime":"text/css","required":true},{"path":"assets/ui2/components.css","sha256":"c15e8109ed0767eca5e64b0fc983061d49c811c9a4eb62189981447bd5df2903","bytes":16329,"mime":"text/css","required":true},{"path":"assets/ui2/pages.css","sha256":"2f7bf1f86ae64fe9daf57b6521c351802f5a3143f3a8951b270e65be0890acd8","bytes":21137,"mime":"text/css","required":true},{"path":"assets/ui2/business-records.css","sha256":"6e08276712d55091b87a96e7a6b8e0ba07e2948efd7cfa525b5c1ad0a830e279","bytes":2535,"mime":"text/css","required":true},{"path":"scripts/g2-b1-core.js","sha256":"2606802f87705035d9ec230d8fe7eb38ac5481ce644030d02d94b8c70b304a4b","bytes":26482,"mime":"application/javascript","required":true},{"path":"scripts/g2-b2-entry.js","sha256":"6a0aa3b82130cf79b8cdf3fa78306913a062bb8693a86ba9f0499e687442a9a7","bytes":2535,"mime":"application/javascript","required":true},{"path":"scripts/g2-b2-core.js","sha256":"9715ffc5782734b990755f9b3283ada11d7a21191e855b0204d0ab285804a3b4","bytes":12618,"mime":"application/javascript","required":true},{"path":"scripts/g2-b2-bindings.js","sha256":"0c61afa3dd9b90eceefa79135423f2c9fd6cafc72ab69f489c7b1b15f381b361","bytes":9341,"mime":"application/javascript","required":true},{"path":"scripts/g2-b2-ui.js","sha256":"6348c97d8d23d747efd325ae9eb7f76326ed872c6ffd876885cda87447d164c8","bytes":81788,"mime":"application/javascript","required":true},{"path":"scripts/g2-b2-legacy.js","sha256":"cf99d88b321775b1f37d744760d08c040c4bbed96ea7106e0d623165d4705bfc","bytes":1350,"mime":"application/javascript","required":true},{"path":"scripts/g2-b3-core.js","sha256":"87dd1de1b59dd13a086e10c390af8684c5354eae39947391002d5e6d10ebcb03","bytes":12862,"mime":"application/javascript","required":true},{"path":"scripts/g2-b3-bindings.js","sha256":"8208c6c4b2f6f5c1c95dcce776b1cb48af88379cc3b552260c1c51cb2f6128b3","bytes":4813,"mime":"application/javascript","required":true},{"path":"scripts/g2-b3-ui.js","sha256":"fadd571815d0ad6c353e4060facd287c67b556831cb7fb28b35450e651aeef05","bytes":11269,"mime":"application/javascript","required":true},{"path":"scripts/g2-b4-core.js","sha256":"94b42960b6e5349c550500d5a76e2bc999cb4bad0cf681133615e8d7f834cc51","bytes":30783,"mime":"application/javascript","required":true},{"path":"scripts/g2-b4-bindings.js","sha256":"d545a14b20fe7cb0f097b0810fa86b5f063c75173f35cba9b32aa41a45ab89f3","bytes":10985,"mime":"application/javascript","required":true},{"path":"scripts/g2-b4-ui.js","sha256":"3483bc007960e728389b308f3a565da4a507ca0b881f2923ea4594bb5b3fe025","bytes":23119,"mime":"application/javascript","required":true},{"path":"scripts/g2-b5-core.js","sha256":"ea78ac8e227199a33db79b79d45f8fbabb52ea2ebcbf69d2773c3e14cf8d2b07","bytes":34024,"mime":"application/javascript","required":true},{"path":"scripts/g2-b5-storage.js","sha256":"2eb3337bf00e5db89ab1e8ee5fe843ab0624802bd44d2222b9ae49acb03edcd2","bytes":23916,"mime":"application/javascript","required":true},{"path":"scripts/g2-b5-bindings.js","sha256":"45716232eeaf9dcc6dbd8668be1ee6da04f709d4c2d0077df5940b72d88b8e0b","bytes":22486,"mime":"application/javascript","required":true},{"path":"scripts/g2-b5-sync.js","sha256":"119d19e1676060a570e94e52ff3015e054c6415de60f3c65d5f007ef5934f67b","bytes":27870,"mime":"application/javascript","required":true},{"path":"scripts/g2-b5-ui.js","sha256":"a8878e308ec5d0aefe5c459dbedf391069434260a6aabe1d9a22b6fe31eb92a3","bytes":31243,"mime":"application/javascript","required":true}]};/* I06_BOOT_CONTRACT_END */</script>
+<script src="scripts/g2-b2-entry.js" integrity="sha256-agqjuCEwz3m4zfP6eDBpE6Biu4aTqGup8EmeaHRCqac="></script>
+<link rel="stylesheet" href="assets/ui2/foundations.css" integrity="sha256-OSxIYyp2j3j0Wjh7kfhVasVI3nQFXpYayG8YiZ+wwu8=">
+<link rel="stylesheet" href="assets/ui2/components.css" integrity="sha256-wV6BCe0HZ+yl5ksPyYMGHUnIEcmk62IYmYFEe9XfKQM=">
+<link rel="stylesheet" href="assets/ui2/pages.css" integrity="sha256-L3vx+GrmT+na9XtlIcNRgC9aMUPzqJUbJw5lvgiQrNg=">
+<link rel="stylesheet" href="assets/ui2/business-records.css" integrity="sha256-bggnZxLVUJG4epbnprjgugfilI79fPpSW1wa0Kgw4nk=">
 </head>
 <body>
+<div id="g2-startup" role="status" aria-live="polite"><div class="g2-startup-card"><div class="g2-startup-spinner" aria-hidden="true"></div><h1>正在启动工作台</h1><p>正在检查版本、资源和本机数据，请稍候。</p><small></small></div></div>
 <div class="app">
 
 <!-- NAV OVERLAY (mobile) -->
@@ -1661,7 +1699,6 @@
         <button class="btn btn-sm btn-outline" id="syncPushBtn" onclick="manualPush()">⬆️ 推送数据</button>
         <button class="btn btn-sm btn-outline" id="syncPullBtn" onclick="manualPull()">⬇️ 拉取数据</button>
         <button class="btn btn-sm btn-outline" id="syncTestBtn" onclick="testSync()">🔗 测试连接</button>
-        <button class="btn btn-sm btn-outline" onclick="deployHTML()">🚀 更新网页到仓库</button>
         <button class="btn btn-primary btn-sm" onclick="saveSettings()">💾 保存设置</button>
       </div>
     </div>
@@ -1970,6 +2007,7 @@
   </div>
 </div>
 
+<script src="scripts/g2-b1-core.js" integrity="sha256-JgaAL4dwUDXZ7CMNj+frOKxUgc5kQDDQLZS4xwswSks="></script>
 <script>
 // ============================================================
 //  DATA LAYER
@@ -1986,17 +2024,18 @@ function normalizeDate(str){
 const DB = {
   get(key){try{return JSON.parse(localStorage.getItem(key)||'[]').filter(r=>!r.deleted)}catch{return[]}},
   set(key,val){localStorage.setItem(key,JSON.stringify(val))},
-  nextId(arr){return arr.length?Math.max(0,...arr.map(x=>typeof x.id==='number'?x.id:0))+1:1},
+  nextId(arr){return G2B1.nextNumericId(arr)},
   raw(key){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch{return[]}}
 };
 function existingRecord(key,id){
-  return id ? (DB.raw(key).find(r=>String(r.id)===String(id))||{}) : {};
+  return id!==''&&id!==undefined&&id!==null ? (DB.raw(key).find(r=>String(r.id)===String(id))||{}) : {};
 }
 
 // A matter groups existing business records; it never owns their state or lifecycle.
 const MATTER_LEDGER_TYPES={todos:'work',purchases:'purchase',contracts:'contract',expenses:'expense',
   meetings:'meeting',trainings:'training',agencys:'agency'};
 const MATTER_TYPE_LEDGERS=Object.fromEntries(Object.entries(MATTER_LEDGER_TYPES).map(([key,type])=>[type,key]));
+function hasMatterId(value){return value!==undefined&&value!==null&&value!=='';}
 function matterRecord(ledger,id){
   if(!MATTER_LEDGER_TYPES[ledger])return null;
   const record=DB.raw(ledger).find(row=>String(row.id)===String(id)&&!row.deleted);
@@ -2006,10 +2045,10 @@ function matterRecord(ledger,id){
 }
 function matterMembers(matterId){
   return Object.keys(MATTER_LEDGER_TYPES).flatMap(ledger=>DB.raw(ledger)
-    .filter(record=>!record.deleted&&record.matter_id===matterId&&matterRecord(ledger,record.id))
+    .filter(record=>!record.deleted&&String(record.matter_id)===String(matterId)&&matterRecord(ledger,record.id))
     .map(record=>({ledger,record})));
 }
-function matterById(id){return DB.raw('matters').find(row=>row.id===id)||null;}
+function matterById(id){return DB.raw('matters').find(row=>String(row.id)===String(id))||null;}
 function matterSourceRef(ledger,id){return {type:MATTER_LEDGER_TYPES[ledger],id};}
 function sameMatterSource(a,b){return a?.type===b?.type&&String(a?.id)===String(b?.id);}
 function removeMatterSourceReferences(ledger,id){
@@ -2025,8 +2064,8 @@ function removeMatterSourceReferences(ledger,id){
   }
 }
 function pruneEmptyMatter(id){
-  if(!id||matterMembers(id).length)return;
-  const matters=DB.raw('matters'),remaining=matters.filter(row=>row.id!==id);
+  if(!hasMatterId(id)||matterMembers(id).length)return;
+  const matters=DB.raw('matters'),remaining=matters.filter(row=>String(row.id)!==String(id));
   if(remaining.length!==matters.length)DB.set('matters',remaining);
 }
 function cleanupDeletedMatterRecord(ledger,id){
@@ -2045,8 +2084,10 @@ function repairMatterRelations(){
       if(!Array.isArray(row.related_sources))return;
       const sources=row.related_sources.filter(source=>{
         const ledger=MATTER_TYPE_LEDGERS[source?.type];
-        const record=ledger&&matterRecord(ledger,source.id);
-        return Boolean(record&&row.matter_id&&record.matter_id===row.matter_id);
+        if(!source||typeof source.type!=='string'||source.id===undefined||source.id===null)return false;
+        if(!ledger)return true; // Future metadata is not proof of a dangling approved source.
+        const record=matterRecord(ledger,source.id);
+        return Boolean(record&&row.matter_id&&String(record.matter_id)===String(row.matter_id));
       });
       if(sources.length!==row.related_sources.length){row.related_sources=sources;changed=true;}
     });
@@ -2059,35 +2100,36 @@ function linkMatterRecords(sourceLedger,sourceId,targetLedger,targetId){
   const source=matterRecord(sourceLedger,sourceId),target=matterRecord(targetLedger,targetId);
   if(!source||!target)return {status:'missing'};
   if(sourceLedger===targetLedger&&String(sourceId)===String(targetId))return {status:'same-record'};
-  if(source.matter_id&&target.matter_id&&source.matter_id!==target.matter_id)return {status:'conflict'};
-  const matterId=source.matter_id||target.matter_id;
-  const matter=matterId?matterById(matterId):{
+  if(hasMatterId(source.matter_id)&&hasMatterId(target.matter_id)&&String(source.matter_id)!==String(target.matter_id))return {status:'conflict'};
+  const matterId=hasMatterId(source.matter_id)?source.matter_id:target.matter_id;
+  const matter=hasMatterId(matterId)?matterById(matterId):{
     id:newMatterId(),name:String(recordDisplayName(source)).trim()||'未命名事项',created_at:new Date().toISOString(),remark:''
   };
   if(!matter)return {status:'missing-matter'};
   const ref=matterSourceRef(sourceLedger,source.id);
-  if(source.matter_id===matter.id&&target.matter_id===matter.id&&
+  if(String(source.matter_id)===String(matter.id)&&String(target.matter_id)===String(matter.id)&&
      Array.isArray(target.related_sources)&&target.related_sources.some(existing=>sameMatterSource(existing,ref)))return {status:'already-linked',matter};
   const sourceRows=DB.raw(sourceLedger),targetRows=sourceLedger===targetLedger?sourceRows:DB.raw(targetLedger);
   const savedSource=sourceRows.find(row=>String(row.id)===String(sourceId));
   const savedTarget=targetRows.find(row=>String(row.id)===String(targetId));
-  savedSource.matter_id=matter.id;savedTarget.matter_id=matter.id;
+  if(!hasMatterId(savedSource.matter_id))savedSource.matter_id=matter.id;
+  if(!hasMatterId(savedTarget.matter_id))savedTarget.matter_id=matter.id;
   if(!Array.isArray(savedTarget.related_sources))savedTarget.related_sources=[];
   if(!savedTarget.related_sources.some(existing=>sameMatterSource(existing,ref)))savedTarget.related_sources.push(ref);
-  if(!matterId){const matters=DB.raw('matters');matters.push(matter);DB.set('matters',matters);}
+  if(!hasMatterId(matterId)){const matters=DB.raw('matters');matters.push(matter);DB.set('matters',matters);}
   DB.set(sourceLedger,sourceRows);
   if(targetLedger!==sourceLedger)DB.set(targetLedger,targetRows);
   return {status:'linked',matter};
 }
 function renameMatter(id,name){
   const clean=String(name||'').trim();if(!clean)return false;
-  const matters=DB.raw('matters'),matter=matters.find(row=>row.id===id);
+  const matters=DB.raw('matters'),matter=matters.find(row=>String(row.id)===String(id));
   if(!matter)return false;
   matter.name=clean;DB.set('matters',matters);return true;
 }
 function unlinkMatterRecord(ledger,id){
   const record=matterRecord(ledger,id);
-  if(!record?.matter_id)return false;
+  if(!record||!hasMatterId(record.matter_id))return false;
   const matterId=record.matter_id,rows=DB.raw(ledger);
   const saved=rows.find(row=>String(row.id)===String(id));
   delete saved.matter_id;delete saved.related_sources;DB.set(ledger,rows);
@@ -2137,8 +2179,8 @@ function completePendingLinkedRecord(targetLedger,targetId){
 function openLinkedNewRecord(sourceLedger,sourceId,targetLedger){
   const source=matterRecord(sourceLedger,sourceId);
   if(!source||!LINKED_NEW_PATHS[sourceLedger]?.includes(targetLedger)){toast('此业务类型暂不支持新建关联记录');return false;}
-  const existingMatter=source.matter_id?matterById(source.matter_id):null;
-  if(source.matter_id&&!existingMatter){toast('当前记录的事项数据缺失，请先检查快照');return false;}
+  const existingMatter=hasMatterId(source.matter_id)?matterById(source.matter_id):null;
+  if(hasMatterId(source.matter_id)&&!existingMatter){toast('当前记录的事项数据缺失，请先检查快照');return false;}
   const forms={
     purchases:['purchaseModal',clearPurchaseForm,'purchaseName','purchaseAssignee','purchaseAmount','purchaseSupplier'],
     contracts:['contractModal',clearContractForm,'contractName','contractAssignee','contractAmount','contractParty'],
@@ -2186,10 +2228,12 @@ function normalizeConfig(input){
   if(!input||typeof input!=='object'||Array.isArray(input))return fallback;
   const safeRows=(rows,types)=>Array.isArray(rows)?rows.filter(row=>row&&typeof row==='object'&&
     typeof row.id==='string'&&typeof row.name==='string'&&row.name.trim()&&(!types||types.includes(row.type)))
-    .map(row=>({...row,status:row.status==='inactive'?'inactive':'active',sort_order:Number(row.sort_order)||0})):[];
+    .map(row=>({...row,status:['active','inactive'].includes(row.status)?row.status:row.disabled===true?'inactive':'active',sort_order:Number(row.sort_order??row.sortOrder)||0})):[];
   return {
+    ...input,
     organizations:safeRows(input.organizations,['external','internal','supplier']),
     dictionaries:{
+      ...Object.fromEntries(Object.entries(input.dictionaries||{}).filter(([key])=>key!=='work_sources')),
       work_categories:safeRows(input.dictionaries?.work_categories)
     }
   };
@@ -2327,16 +2371,16 @@ function upsertConfig(group,entry){
 }
 function setConfigStatus(group,id,status){
   const config=getConfig(),rows=group==='organizations'?config.organizations:config.dictionaries[group];
-  const row=rows?.find(item=>item.id===id);
+  const row=rows?.find(item=>String(item.id)===String(id));
   if(!row)return false;
   row.status=status==='inactive'?'inactive':'active';saveConfig(config);return true;
 }
 function moveConfigRow(group,id,direction){
   const config=getConfig(),rows=group==='organizations'?config.organizations:config.dictionaries[group];
   if(!rows)return false;
-  const current=rows.find(row=>row.id===id);
+  const current=rows.find(row=>String(row.id)===String(id));
   const ordered=rows.filter(row=>group!=='organizations'||row.type===current?.type).sort((a,b)=>a.sort_order-b.sort_order);
-  const index=ordered.findIndex(row=>row.id===id),other=ordered[index+direction];
+  const index=ordered.findIndex(row=>String(row.id)===String(id)),other=ordered[index+direction];
   if(index<0||!other)return false;
   const previous=ordered[index].sort_order;
   ordered[index].sort_order=other.sort_order;other.sort_order=previous;
@@ -2358,7 +2402,7 @@ function configEntryUsed(row,group){
 }
 function deleteConfigRow(group,id){
   const config=getConfig(),rows=group==='organizations'?config.organizations:config.dictionaries[group];
-  const row=rows?.find(item=>item.id===id);
+  const row=rows?.find(item=>String(item.id)===String(id));
   if(!row)return false;
   if(configEntryUsed(row,group))return false;
   rows.splice(rows.indexOf(row),1);saveConfig(config);return true;
@@ -2419,7 +2463,7 @@ function hideOrgCombobox(input){
 }
 function selectOrgOption(inputId,name,id=''){
   const input=document.getElementById(inputId),row=organizationCandidates(input.dataset.orgScope)
-    .find(candidate=>candidate.name===name&&candidate.id===id);
+    .find(candidate=>candidate.name===name&&String(candidate.id)===String(id));
   if(!row)return;
   input.value=row.name;input.dataset.selectedId=row.id;input.dataset.touched='1';input.dataset.orgQuery='';
   hideOrgCombobox(input);updateCommonOrgButton(inputId);
@@ -2618,6 +2662,7 @@ ENTRY_KEYS.forEach(key=>{
 // 原生 status → 统一 state 映射（历史迁移用，规格 §7 + 计划 3.2）
 function mapStatusToState(ledgerKey, status){
   const s=String(status||'').trim();
+  if(Object.values(STATE).includes(s))return s;
   // 完成类语义 → 已完成(DONE)；取消/终止/流标/关闭类 → 已关闭(CLOSED)
   switch(ledgerKey){
     case 'todos':     return s==='进行中' ? STATE.DOING : s==='已完成' ? STATE.DONE : (s==='已取消'||s==='已关闭') ? STATE.CLOSED : STATE.TODO;
@@ -2639,7 +2684,7 @@ function validDateOrder(startId,endId,message){
 function recordState(key, rec){
   return rec.state_manual && rec.state ? rec.state : (rec.status ? mapStatusToState(key,rec.status) : (rec.state||STATE.TODO));
 }
-function finishWorkRecord(rec){
+function finishWorkRecord(rec,eventDate=''){
   if(rec.is_goal || (rec.owner_ledger && rec.owner_ledger!=='todos') || isLegacyLedgerMirror(rec)) return;
   const done=rec.state===STATE.DONE||rec.state===STATE.CLOSED;
   if(done && rec.type!=='record'){
@@ -2647,7 +2692,9 @@ function finishWorkRecord(rec){
   } else if(!done && rec.type==='record'){
     rec.type=rec._prevType||'';
   }
-  rec.completeDate=done?(rec.completeDate||todayStr()):'';
+  // Passive repair/save does not invent an event date.
+  if(eventDate&&rec.state===STATE.DONE)rec.completeDate=eventDate;
+  else if(eventDate&&!done)rec.completeDate='';
 }
 function isLegacyLedgerMirror(rec){
   return !!(rec.origin && /^(contracts|purchases|expenses|meetings|trainings|agencys):/.test(rec.origin));
@@ -2783,6 +2830,8 @@ function nextYearDate(base, M, D){
 }
 function nextDueDate(base, period){
   if(!base) return '';
+  if(period&&typeof period==='object')return calcNextDue(period,base)||'';
+  if(typeof period!=='string')return '';
   const legacy={weekly:'1w',monthly:'1m',quarterly:'3m',yearly:'1y'};
   if(legacy[period]) period=legacy[period];
   if(!period || period==='none') return '';
@@ -2801,6 +2850,7 @@ function nextDueDate(base, period){
   const m=period.match(/^(\d+)([dwmqy])$/);
   if(!m) return '';
   const n=+m[1], u=m[2];
+  if(!Number.isSafeInteger(n)||n<1)return '';
   const parts=base.split('-'); if(parts.length!==3) return '';
   const y=+parts[0], mo=+parts[1], da=+parts[2];
   const date=new Date(y, mo-1, da);
@@ -2813,6 +2863,8 @@ function nextDueDate(base, period){
 }
 // 人类可读周期显示：间隔类 + 固定日期类
 function formatLedgerRecurrence(period){
+  if(period&&typeof period==='object')return formatRecurrence(period);
+  if(typeof period!=='string')return '';
   const legacy={weekly:'1w',monthly:'1m',quarterly:'3m',yearly:'1y'};
   if(legacy[period]) period=legacy[period];
   if(!period||period==='none') return '';
@@ -2824,6 +2876,7 @@ function formatLedgerRecurrence(period){
   const m=period.match(/^(\d+)([dwmqy])$/);
   if(!m) return '';
   const n=+m[1], u=m[2];
+  if(!Number.isSafeInteger(n)||n<1)return '';
   const unit={d:'天',w:'周',m:'月',q:'季',y:'年'}[u];
   return '每'+n+unit;
 }
@@ -2866,10 +2919,10 @@ function ensureV14(){
     if(!records.length) return;
     const fixed=records.map(r=>{
       const rec=Object.assign({}, r);
-      if(!rec.state_manual) rec.state=recordState(key,rec);
+      if(rec.state!==undefined&&!rec.state_manual) rec.state=recordState(key,rec);
       // 迁移：旧数据里"已完成却被存成已关闭"的纠正为 已完成(DONE)
       // （完成类语义：完成/已采购/已报销/已委托/已结束/已到货/已结案）
-      if(rec.state===STATE.CLOSED){
+      if(rec.state===STATE.CLOSED&&!rec.state_manual){
         const _st=String(rec.status||'');
         if(/完成|已采购|已报销|已委托|已结束|已到货|已结案/.test(_st)) rec.state=STATE.DONE;
       }
@@ -2937,13 +2990,13 @@ function setState(ledgerKey, id, newState, reason){
   const i=records.findIndex(r=>String(r.id)===String(id));
   if(i<0) return;
   const rec=records[i];
-  const oldState=rec.state||STATE.TODO;
+  const oldState=recordState(ledgerKey,rec);
   if(oldState===newState) return;
   rec.state=newState;
   rec.state_manual=true;
   if(ledgerKey==='todos'){
     rec.status=newState;
-    finishWorkRecord(rec);
+    finishWorkRecord(rec,todayStr());
   }
   const now=new Date().toISOString();
   if(newState===STATE.CLOSED || newState===STATE.DONE){
@@ -2995,7 +3048,7 @@ function maybeRegenerate(ledgerKey, records, i, rec){
     rec.recurrence_group_id='rg_'+ledgerKey+'_'+rec.id+'_'+Date.now();
   }
   const next=nextDueDate(base, rec.recurrence);
-  if(!next) return;
+  if(!next||next<=base) return;
   const nrec=ledgerDefaults(ledgerKey);
   nrec.id=DB.nextId(records);
   // 复制展示/业务字段，保留上下文
@@ -3034,7 +3087,7 @@ function openStateModal(ledgerKey, id){
   if(recSel){
     let ru='none', rn='1', exDom='1', exDow='1', exDoq='1', exYM='1', exYD='1';
     const legacy={weekly:'1w',monthly:'1m',quarterly:'3m',yearly:'1y'};
-    const v=legacy[rec.recurrence]||rec.recurrence||'none';
+    const v=typeof rec.recurrence==='string'?(legacy[rec.recurrence]||rec.recurrence):'none';
     if(v==='wd'){ ru='wd'; }
     else if(v.indexOf('dom:')===0){ ru='dom'; exDom=clampInt(v.slice(4),1,31,1); }
     else if(v.indexOf('dow:')===0){ ru='dow'; exDow=clampInt(v.slice(4),1,7,1); }
@@ -3049,11 +3102,12 @@ function openStateModal(ledgerKey, id){
     if(ru==='doq'){ const e=document.getElementById('stateRecurrenceDoqDay'); if(e) e.value=exDoq; }
     if(ru==='yd'){ const a=document.getElementById('stateRecurrenceYM'); const b=document.getElementById('stateRecurrenceYD'); if(a) a.value=exYM; if(b) b.value=exYD; }
   }
+  if(recSel)recSel.dataset.recurrenceInitial=recurrenceFormSnapshot('state');
   openModal('stateModal');
 }
 function applyState(){
   const ledger=document.getElementById('stateModalLedger').value;
-  const id=+document.getElementById('stateModalId').value;
+  const id=document.getElementById('stateModalId').value;
   const chosen=document.querySelector('.state-btn.active');
   const ns=chosen?chosen.dataset.state:STATE.TODO;
   const reason=document.getElementById('stateReason').value;
@@ -3065,16 +3119,17 @@ function applyState(){
   else if(runit==='dow'){ const x=document.getElementById('stateRecurrenceDow'); recurrence='dow:'+clampInt(x?x.value:'1',1,7,1); }
   else if(runit==='doq'){ const d=document.getElementById('stateRecurrenceDoqDay'); recurrence='doq:'+clampInt(d?d.value:'1',1,92,1); }
   else if(runit==='yd'){ const m=document.getElementById('stateRecurrenceYM'); const d=document.getElementById('stateRecurrenceYD'); recurrence='yd:'+clampInt(m?m.value:'1',1,12,1)+'-'+clampInt(d?d.value:'1',1,31,1); }
-  else { const rn=document.getElementById('stateRecurrenceN').value||'1'; recurrence=rn+runit; }
+  else { const rn=Number(document.getElementById('stateRecurrenceN').value||'1'); if(!Number.isSafeInteger(rn)||rn<1){toast('周期间隔必须为正整数');return;} recurrence=rn+runit; }
   // 周期设置：启用时分配 group id（保证再生链唯一），落库后再 setState
   const recs=DB.raw(ledger);
   const ri=recs.findIndex(r=>String(r.id)===String(id));
   if(ri>=0){
-    if(recurrence!=='none' && !recs[ri].recurrence_group_id){
+    const field=document.getElementById('stateRecurrenceUnit');
+    const edited=field.dataset.recurrenceInitial!==undefined&&field.dataset.recurrenceInitial!==recurrenceFormSnapshot('state');
+    if(edited&&recurrence!=='none' && !recs[ri].recurrence_group_id){
       recs[ri].recurrence_group_id='rg_'+ledger+'_'+id+'_'+Date.now();
     }
-    recs[ri].recurrence=recurrence;
-    DB.set(ledger, recs);
+    if(edited){recs[ri].recurrence=recurrence;DB.set(ledger, recs);}
   }
   closeModal('stateModal');
   setState(ledger, id, ns, (ns===STATE.CLOSED||ns===STATE.DONE)?reason:undefined);
@@ -3150,12 +3205,13 @@ function createLedgerItem(ledgerKey, {title, requirement, due_date, priority, is
   if(isGoal) rec.is_goal=true;
   if(ledgerKey==='todos'){
     rec.status=rec.state;
-    finishWorkRecord(rec);
+    finishWorkRecord(rec,rec.state===STATE.DONE?todayStr():'');
   }
-  if(parentGoal) rec.parent_goal='todos:'+parentGoal;
+  if(parentGoal!==undefined&&parentGoal!==null&&parentGoal!=='') rec.parent_goal='todos:'+parentGoal;
   // 目标不能关联自身：否则 goalProgress 会把目标自身算进子任务、进度环错乱
   if(rec.is_goal && rec.parent_goal===('todos:'+rec.id)) rec.parent_goal='';
   if(extra) Object.assign(rec, extra);
+  if([STATE.DONE,STATE.CLOSED].includes(rec.state)){rec.closed_at=new Date().toISOString();rec.closed_by='user';}
   // 工作台账的"备注"动态字段并入 content，确保界面可见（todos 卡片/详情只读 content）
   if(ledgerKey==='todos' && extra && extra.note){
     rec.content = (rec.content ? rec.content+'｜' : '') + '备注：' + extra.note;
@@ -3812,7 +3868,7 @@ function renderConfigPage(){
 }
 function openConfigEditor(id=''){
   const group=configGroup==='organizations'?'organizations':configTab;
-  const row=configRows(group).find(item=>item.id===id);
+  const row=configRows(group).find(item=>String(item.id)===String(id));
   document.getElementById('configEntryId').value=row?.id||'';
   document.getElementById('configName').value=row?.name||'';
   document.getElementById('configShortName').value=row?.short_name||'';
@@ -3826,7 +3882,7 @@ function openConfigEditor(id=''){
 function saveConfigEditor(){
   const group=configGroup==='organizations'?'organizations':configTab;
   const id=document.getElementById('configEntryId').value;
-  const old=configRows(group).find(row=>row.id===id);
+  const old=configRows(group).find(row=>String(row.id)===String(id));
   try{
     const row=upsertConfig(group,{...old,id,name:document.getElementById('configName').value,
       short_name:document.getElementById('configShortName').value,
@@ -3842,14 +3898,14 @@ function saveConfigEditor(){
 }
 function toggleConfigEntry(id){
   const group=configGroup==='organizations'?'organizations':configTab;
-  const row=configRows(group).find(item=>item.id===id);
+  const row=configRows(group).find(item=>String(item.id)===String(id));
   if(!row)return;
   if(row.status!=='inactive'&&configEntryUsed(row,group))toast('该配置项已被历史记录使用。停用不会修改历史数据，仅停止在新建表单中推荐。');
   setConfigStatus(group,id,row.status==='inactive'?'active':'inactive');renderConfigPage();
 }
 function deleteConfigEntry(id){
   const group=configGroup==='organizations'?'organizations':configTab;
-  const row=configRows(group).find(item=>item.id===id);
+  const row=configRows(group).find(item=>String(item.id)===String(id));
   if(!row)return;
   if(configEntryUsed(row,group)){toast('该配置已被记录或工作来源引用，只能停用');return;}
   confirmAction(`确定永久删除“${row.name}”？`,()=>{
@@ -3941,7 +3997,7 @@ const MATTER_DATES={todos:['issueDate','deadline','due_date','dueDate'],purchase
 let matterPanelContext=null;
 function matterActionButton(ledger,record){
   if(!MATTER_LEDGER_TYPES[ledger]||!matterRecord(ledger,record.id))return '';
-  const count=record.matter_id&&matterById(record.matter_id)?matterMembers(record.matter_id).length:0;
+  const count=hasMatterId(record.matter_id)&&matterById(record.matter_id)?matterMembers(record.matter_id).length:0;
   const label=count?'关联 '+count+' 项':'关联业务';
   return `<button type="button" class="btn btn-ghost btn-sm matter-action" data-ledger="${ledger}" data-id="${esc(record.id)}" onclick="openMatterActions(this.dataset.ledger,this.dataset.id)">${label}</button>`;
 }
@@ -3973,11 +4029,11 @@ function renderMatterPanel(){
   if(!matterPanelContext)return;
   const {ledger,id}=matterPanelContext,source=matterRecord(ledger,id),body=document.getElementById('matterPanelBody');
   if(!source){body.innerHTML='<p>记录已不存在。</p>';return;}
-  const matter=source.matter_id?matterById(source.matter_id):null;
+  const matter=hasMatterId(source.matter_id)?matterById(source.matter_id):null;
   const paths=LINKED_NEW_PATHS[ledger]||[];
   const sections=[];
   sections.push(`<div class="matter-meta">当前记录 · ${MATTER_LABELS[ledger]} · ${esc(recordDisplayName(source))}</div>`);
-  if(source.matter_id&&!matter){body.innerHTML=sections.join('')+'<p>事项数据缺失，请检查本地或 Gitee 快照。</p>';return;}
+  if(hasMatterId(source.matter_id)&&!matter){body.innerHTML=sections.join('')+'<p>事项数据缺失，请检查本地或 Gitee 快照。</p>';return;}
   if(matter){
     const members=matterMembers(matter.id);
     sections.push(`<section class="matter-section"><h3>事项名称</h3><div class="matter-toolbar"><input class="form-control" id="matterNameInput" value="${esc(matter.name)}" aria-label="事项名称"><button class="btn btn-outline btn-sm" onclick="saveMatterName()">保存名称</button></div><div class="matter-meta">名称独立于各业务记录，不联动状态。</div></section>`);
@@ -4009,8 +4065,8 @@ function renderMatterCandidates(){
   const source=matterRecord(ledger,id),box=document.getElementById('matterCandidateResults');
   box.innerHTML=`<div class="matter-meta">找到 ${rows.length} 条${rows.length>100?'，显示前 100 条':''}</div>`+
     rows.slice(0,100).map(({ledger:targetLedger,record,status,date})=>{
-      const conflict=source.matter_id&&record.matter_id&&source.matter_id!==record.matter_id;
-      const same=source.matter_id&&source.matter_id===record.matter_id;
+      const conflict=hasMatterId(source.matter_id)&&hasMatterId(record.matter_id)&&String(source.matter_id)!==String(record.matter_id);
+      const same=hasMatterId(source.matter_id)&&hasMatterId(record.matter_id)&&String(source.matter_id)===String(record.matter_id);
       return `<div class="matter-candidate"><button class="btn btn-ghost btn-sm" data-ledger="${targetLedger}" data-id="${esc(record.id)}" onclick="matterChooseExisting(this.dataset.ledger,this.dataset.id)" ${conflict?'disabled':''}>${esc(recordDisplayName(record))}<div class="matter-meta">${MATTER_LABELS[targetLedger]} · ${esc(status)} · ${esc(date||'无日期')} · ${esc(record.assignee||'无经办人')}</div></button><span class="matter-meta">${conflict?'属于其他事项':same?'已在同一事项':'可关联'}</span></div>`;
     }).join('');
 }
@@ -4030,7 +4086,7 @@ function matterChooseExisting(targetLedger,targetId){
 }
 function saveMatterName(){
   const record=matterPanelContext&&matterRecord(matterPanelContext.ledger,matterPanelContext.id);
-  if(!record?.matter_id)return;
+  if(!record||!hasMatterId(record.matter_id))return;
   if(!renameMatter(record.matter_id,document.getElementById('matterNameInput').value)){toast('请输入事项名称');return;}
   toast('事项名称已更新');renderMatterPanel();
 }
@@ -4071,7 +4127,7 @@ function updateClock(){
   const t=now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
   document.getElementById('clockDisplay').textContent=d+' '+t;
 }
-setInterval(updateClock,30000);updateClock();
+if(!window.g2B2Enabled){setInterval(updateClock,30000);updateClock();}
 
 // ============================================================
 //  DASHBOARD
@@ -4782,7 +4838,7 @@ function addSubtask(todoId){
   const input=document.getElementById('subtaskInput-'+todoId);
   const text=input.value.trim();
   if(!text)return;
-  const todos=DB.get('todos');
+  const todos=DB.raw('todos');
   const t=todos.find(x=>x.id===todoId);
   if(!t)return;
   if(!t.subtasks)t.subtasks=[];
@@ -4793,7 +4849,7 @@ function addSubtask(todoId){
 }
 
 function toggleSubtask(todoId,idx){
-  const todos=DB.get('todos');
+  const todos=DB.raw('todos');
   const t=todos.find(x=>x.id===todoId);
   if(!t||!t.subtasks)return;
   t.subtasks[idx].done=!t.subtasks[idx].done;
@@ -4807,7 +4863,7 @@ function toggleSubtask(todoId,idx){
 }
 
 function deleteSubtask(todoId,idx){
-  const todos=DB.get('todos');
+  const todos=DB.raw('todos');
   const t=todos.find(x=>x.id===todoId);
   if(!t||!t.subtasks)return;
   t.subtasks.splice(idx,1);
@@ -4870,106 +4926,59 @@ function saveTodo(){
   const name=document.getElementById('todoName').value.trim();
   if(!name){toast('请输入工作名称');return;}
   if(!validDateOrder('todoIssueDate','todoDeadline','下发日期不能晚于截止日期'))return;
-  const todos=DB.get('todos');
-  const id=+document.getElementById('todoId').value;
+  const todos=DB.raw('todos');
+  const inputId=document.getElementById('todoId').value;
+  const previousTodo=todos.find(r=>String(r.id)===String(inputId))||{};
+  const editing=String(inputId)!=='';
+  if(editing&&(!Object.hasOwn(previousTodo,'id')||previousTodo.deleted)){toast('原工作记录不存在');return;}
+  const id=editing?previousTodo.id:DB.nextId(todos);
   const goalId=document.getElementById('todoGoal').value;
-  if(goalId&&!todos.some(g=>String(g.id)===goalId&&g.is_goal&&g.id!==id)){
-    toast('请选择有效的长期目标');return;
-  }
-  const now=new Date().toISOString().slice(0,10);
-  const previousTodo=existingRecord('todos',id);
+  if(goalId&&!todos.some(g=>!g.deleted&&String(g.id)===String(goalId)&&g.is_goal&&String(g.id)!==String(id))){toast('请选择有效的长期目标');return;}
   const item={
-    id:id||DB.nextId(todos),
-    type:document.getElementById('todoType').value,
-    name,
-    category:getMultiSelected('todoCategory'),
-    source:getMultiSelected('todoSource'),
-    work_category_ids:selectedWorkConfigIds('todoCategory',previousTodo,'work_category_ids'),
-    source_org_ids:selectedWorkSourceOrgIds(previousTodo),
-    ...(previousTodo.matter_id?{matter_id:previousTodo.matter_id}:{}),
-    ...(Array.isArray(previousTodo.related_sources)?{related_sources:previousTodo.related_sources}:{}),
-    priority:document.getElementById('todoPriority').value,
-    content:document.getElementById('todoContent').value,
-    issueDate:document.getElementById('todoIssueDate').value,
-    deadline:document.getElementById('todoDeadline').value,
-    blocker:document.getElementById('todoBlocker').value,
-    assignee:document.getElementById('todoAssignee').value.trim(),
-    status:'未开始',
-    completeDate:'',
-    subtasks:[],
-    createdAt:now,
-    recurrence:null,
-    contractRef:null,
-    purchaseRef:null,
-    expenseRef:null,
-    meetingRef:null,
-    trainingRef:null,
-    parent_goal:goalId?'todos:'+goalId:'',
-    deleted:false
+    ...(editing?previousTodo:{status:'未开始',state:STATE.TODO,completeDate:'',subtasks:[],createdAt:todayStr(),recurrence:'none',contractRef:null,purchaseRef:null,expenseRef:null,meetingRef:null,trainingRef:null,deleted:false}),
+    id,name,type:document.getElementById('todoType').value,
+    category:getMultiSelected('todoCategory'),source:getMultiSelected('todoSource'),
+    work_category_ids:selectedWorkConfigIds('todoCategory',previousTodo,'work_category_ids'),source_org_ids:selectedWorkSourceOrgIds(previousTodo),
+    priority:document.getElementById('todoPriority').value,content:document.getElementById('todoContent').value,
+    issueDate:document.getElementById('todoIssueDate').value,deadline:document.getElementById('todoDeadline').value,
+    blocker:document.getElementById('todoBlocker').value,assignee:document.getElementById('todoAssignee').value.trim(),
+    parent_goal:goalId?'todos:'+goalId:''
   };
-  // 如果是周期工作，保存周期配置
-  if(item.type==='recurring'){
-    const recType=document.getElementById('recType').value;
-    if(recType){
-      const rec={type:recType};
-      if(recType==='weekly'||recType==='biweekly')rec.day=document.getElementById('recDetail').value;
-      else if(recType==='monthly')rec.day=document.getElementById('recDetail').value;
-      else if(recType==='quarterly')rec.monthOfQuarter=document.getElementById('recDetail').value;
-      else if(recType==='custom')rec.days=parseInt(document.getElementById('recCustomDays').value)||1;
-      rec.remindBefore=parseInt(document.getElementById('recRemindBefore').value)||3;
-      item.recurrence=rec;
-      item.completedCount=0;
-      const firstDue=document.getElementById('recFirstDue').value;
-      if(firstDue)item.deadline=firstDue;
-      else item.deadline=calcNextDue(rec,now);
-    }
+  const initial=document.getElementById('todoId').dataset.recurrenceInitial;
+  const recurrenceEdited=!editing||initial!==undefined&&initial!==recurrenceFormSnapshot('todo');
+  if(recurrenceEdited){
+    if(item.type==='recurring'){
+      const recType=document.getElementById('recType').value;
+      if(recType){
+        const rec={type:recType};
+        if(['weekly','biweekly','monthly'].includes(recType))rec.day=document.getElementById('recDetail').value;
+        if(recType==='quarterly')rec.monthOfQuarter=document.getElementById('recDetail').value;
+        if(recType==='custom')rec.days=parseInt(document.getElementById('recCustomDays').value)||1;
+        rec.remindBefore=parseInt(document.getElementById('recRemindBefore').value)||3;
+        item.recurrence=rec;
+        const firstDue=document.getElementById('recFirstDue').value;
+        if(firstDue)item.deadline=firstDue;
+        else if(!editing)item.deadline=calcNextDue(rec,todayStr())||'';
+      }else item.recurrence='none';
+    }else item.recurrence='none';
   }
-  if(id){
-    const todosRaw=DB.raw('todos');
-    const i=todosRaw.findIndex(t=>t.id===id);
-    if(i>-1){
-      const old=todosRaw[i];
-      // 子任务仅由待办工作卡片维护；整理父工作时必须完整保留其历史。
-      item.subtasks=normalizeSubtasks(old.subtasks||[],old.id);
-      item.completeDate=old.completeDate||'';
-      item.status=old.status||'未开始';
-      item._prevType=old._prevType;
-      item.contractRef=old.contractRef||null;
-      item.purchaseRef=old.purchaseRef||null;
-      item.expenseRef=old.expenseRef||null;
-      item.meetingRef=old.meetingRef||null;
-      item.trainingRef=old.trainingRef||null;
-      item.deleted=old.deleted||false;
-      item.state=old.state;
-      item.state_manual=old.state_manual;
-      item.origin=old.origin||'';
-      item.owner_ledger=old.owner_ledger||'todos';
-      item.linked_ledgers=old.linked_ledgers||{};
-      item.closed_at=old.closed_at||'';
-      item.closed_reason=old.closed_reason||'';
-      item.recurrence_group_id=old.recurrence_group_id||'';
-      item.recurrence_index=old.recurrence_index||0;
-      item.next_generated=old.next_generated||false;
-      item.is_goal=old.is_goal||false;
-      item.due_date=item.deadline;
-      if(old.type==='record'){
-        item._prevType=item.type;
-        item.type='record';
-      }
-      finishWorkRecord(item);
-      todosRaw[i]=item;
-    }else{todosRaw.push(item);}
-    DB.set('todos',todosRaw);
-  }else{item.state=STATE.TODO;item.due_date=item.deadline;todos.push(item);DB.set('todos',todos);}
-  closeModal('todoModal');
-  clearTodoForm();
-  renderTodo();
+  item.due_date=item.deadline;
+  if(previousTodo.type==='record'){item._prevType=item.type;item.type='record';}
+  finishWorkRecord(item);
+  if(editing)todos[todos.findIndex(r=>String(r.id)===String(id))]=item;
+  else todos.push(item);
+  DB.set('todos',todos);
+  closeModal('todoModal');clearTodoForm();renderTodo();
   if(currentPage==='待办')renderTodos();
   toast('已保存');
 }
+function recurrenceFormSnapshot(prefix){
+  const ids=prefix==='todo'?['todoType','recType','recDetail','recCustomDays','recRemindBefore','recFirstDue']:['stateRecurrenceUnit','stateRecurrenceN','stateRecurrenceDomDay','stateRecurrenceDow','stateRecurrenceDoqDay','stateRecurrenceYM','stateRecurrenceYD'];
+  return JSON.stringify(ids.map(id=>[id,document.getElementById(id)?.value??'']));
+}
 
 function editTodo(id){
-  const t=DB.get('todos').find(x=>x.id===id);
+  const t=DB.get('todos').find(x=>String(x.id)===String(id));
   if(!t)return;
   document.getElementById('todoModalTitle').textContent='编辑工作';
   document.getElementById('todoId').value=t.id;
@@ -5006,6 +5015,7 @@ function editTodo(id){
   }else{
     document.getElementById('recurrenceConfig').style.display='none';
   }
+  document.getElementById('todoId').dataset.recurrenceInitial=recurrenceFormSnapshot('todo');
   openModal('todoModal');
 }
 
@@ -5035,7 +5045,7 @@ function deleteTodo(id,confirmed=false){
   if(!confirmed){confirmAction('确认删除此工作记录？',()=>deleteTodo(id,true));return;}
   cleanupDeletedMatterRecord('todos',id);
   const todos=DB.raw('todos');
-  const t=todos.find(t=>t.id===id);
+  const t=todos.find(t=>String(t.id)===String(id));
   if(t)t.deleted=true;
   DB.set('todos',todos);
   renderTodo();
@@ -5085,50 +5095,47 @@ function onRecTypeChange(){
 
 // 计算下次到期时间
 function calcNextDue(recurrence,fromDate){
-  if(!recurrence||!recurrence.type)return null;
-  const d=fromDate?new Date(fromDate):new Date();
-  const rec=recurrence;
+  if(typeof recurrence==='string')return nextDueDate(fromDate,recurrence)||null;
+  if(!recurrence||typeof recurrence!=='object'||!/^\d{4}-\d{2}-\d{2}$/.test(fromDate||''))return null;
+  const parts=fromDate.split('-').map(Number),[year,month,day]=parts;
+  const date=new Date(year,month-1,day),rec=recurrence;
   switch(rec.type){
-    case 'daily':
-      d.setDate(d.getDate()+1);
-      break;
-    case 'weekly':
-      d.setDate(d.getDate()+7);
-      if(rec.day!==undefined)d.setDate(d.getDate()-d.getDay()+parseInt(rec.day));
-      break;
-    case 'biweekly':
-      d.setDate(d.getDate()+14);
-      if(rec.day!==undefined)d.setDate(d.getDate()-d.getDay()+parseInt(rec.day));
-      break;
-    case 'monthly':
-      d.setMonth(d.getMonth()+1);
-      if(rec.day===0||rec.day==='0'){
-        d.setDate(0); // 最后一天
-      }else if(rec.day){
-        d.setDate(Math.min(parseInt(rec.day),new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));
-      }
-      break;
-    case 'quarterly':
-      d.setMonth(d.getMonth()+3);
-      break;
-    case 'yearly':
-      d.setFullYear(d.getFullYear()+1);
-      break;
-    case 'custom':
-      if(rec.days)d.setDate(d.getDate()+parseInt(rec.days));
-      break;
+    case 'daily':return nextDueDate(fromDate,'1d');
+    case 'weekly':case 'biweekly':{
+      if(rec.day===undefined)return nextDueDate(fromDate,rec.type==='weekly'?'1w':'2w');
+      const target=Number(rec.day);if(!Number.isInteger(target)||target<0||target>7)return null;
+      const delta=((target%7-date.getDay()+7)%7)||7;
+      date.setDate(date.getDate()+delta+(rec.type==='biweekly'?7:0));return fmtLocalDate(date);
+    }
+    case 'monthly':{
+      const next=new Date(year,month,1),last=new Date(year,month+1,0).getDate();
+      const requested=rec.day===0||rec.day==='0'?last:rec.day===undefined?day:Number(rec.day);
+      if(!Number.isInteger(requested)||requested<1||requested>31)return null;
+      next.setDate(Math.min(requested,last));return fmtLocalDate(next);
+    }
+    case 'quarterly':return nextDueDate(fromDate,'3m');
+    case 'yearly':return nextDueDate(fromDate,'1y');
+    case 'custom':{
+      const n=Number(rec.days);return Number.isInteger(n)&&n>0?nextDueDate(fromDate,n+'d'):null;
+    }
+    default:return null;
   }
-  return d.toISOString().slice(0,10);
 }
 
 // 跳过本期（不完成，直接推到期日期）
 function skipRecurringPeriod(id){
-  const todos=DB.get('todos');
-  const t=todos.find(x=>x.id===id);
+  const todos=DB.raw('todos');
+  const t=todos.find(x=>String(x.id)===String(id));
   if(!t||t.type!=='recurring')return;
   const today=new Date().toISOString().slice(0,10);
   let nextDue=calcNextDue(t.recurrence,t.deadline||today);
-  while(nextDue<=today)nextDue=calcNextDue(t.recurrence,nextDue);
+  if(!nextDue){toast('旧周期无法计算下一期，原记录未修改');return;}
+  let steps=0;
+  while(nextDue<=today){
+    const following=calcNextDue(t.recurrence,nextDue);
+    if(!following||following<=nextDue||++steps>10000){toast('周期计算未前进，原记录未修改');return;}
+    nextDue=following;
+  }
   t.deadline=nextDue;
   DB.set('todos',todos);
   renderTodo();
@@ -5136,8 +5143,8 @@ function skipRecurringPeriod(id){
 
 // 暂停/恢复周期工作
 function toggleRecurringPause(id){
-  const todos=DB.get('todos');
-  const t=todos.find(x=>x.id===id);
+  const todos=DB.raw('todos');
+  const t=todos.find(x=>String(x.id)===String(id));
   if(!t||t.type!=='recurring')return;
   t.paused=!t.paused;
   DB.set('todos',todos);
@@ -5146,6 +5153,8 @@ function toggleRecurringPause(id){
 
 // 格式化周期规则为可读文字
 function formatRecurrence(rec){
+  if(typeof rec==='string')return formatLedgerRecurrence(rec);
+  if(!rec||typeof rec!=='object')return '';
   if(!rec||!rec.type)return '';
   switch(rec.type){
     case 'daily':return '每天';
@@ -5622,20 +5631,20 @@ function filterInspStatus(status,el){
 function archiveInsp(id){
   if(!confirm('确认归档此灵感？'))return;
   const insps=DB.raw('inspirations');
-  const x=insps.find(i=>i.id===id);
+  const x=insps.find(i=>String(i.id)===String(id));
   if(x){x.status='archived';DB.set('inspirations',insps);toast('已归档');renderInspiration();}
 }
 
 function abandonInsp(id){
   if(!confirm('确认放弃此灵感？'))return;
   const insps=DB.raw('inspirations');
-  const x=insps.find(i=>i.id===id);
+  const x=insps.find(i=>String(i.id)===String(id));
   if(x){x.status='abandoned';DB.set('inspirations',insps);toast('已放弃');renderInspiration();}
 }
 
 function restoreInsp(id){
   const insps=DB.raw('inspirations');
-  const x=insps.find(i=>i.id===id);
+  const x=insps.find(i=>String(i.id)===String(id));
   if(x){x.status='active';DB.set('inspirations',insps);toast('已撤回');renderInspiration();}
 }
 
@@ -5675,19 +5684,21 @@ function clearInspForm(){
 function saveInspiration(){
   const title=document.getElementById('inspTitle').value.trim();
   if(!title){toast('请输入标题');return;}
-  const insps=DB.get('inspirations');
-  const id=+document.getElementById('inspId').value;
+  const insps=DB.raw('inspirations');
+  const formId=document.getElementById('inspId').value;
+  const id=insps.find(r=>String(r.id)===String(formId))?.id??formId;
+  if(String(formId)!==''&&!insps.some(r=>String(r.id)===String(formId)&&!r.deleted)){toast('原记录不存在或已删除');return;}
   const item={
     ...existingRecord('inspirations',id),
-    id:id||DB.nextId(insps),
+    id:id!==''?id:DB.nextId(insps),
     title,
     content:document.getElementById('inspContent').value,
     tags:JSON.parse(document.getElementById('inspTags').value||'[]'),
-    createdAt:new Date().toISOString().slice(0,10),
+    createdAt:id!==''?existingRecord('inspirations',id).createdAt:todayStr(),
     status:'active',
     deleted:false
   };
-  if(id){const i=insps.findIndex(x=>x.id===id);if(i>-1){item.deleted=insps[i].deleted;item.status=insps[i].status;insps[i]=item;}else insps.push(item);}
+  if(id!==''){const i=insps.findIndex(x=>String(x.id)===String(id));if(i>-1){item.deleted=insps[i].deleted;item.status=insps[i].status;insps[i]=item;}else insps.push(item);}
   else insps.push(item);
   DB.set('inspirations',insps);
   closeModal('inspModal');
@@ -5697,7 +5708,7 @@ function saveInspiration(){
 }
 
 function editInsp(id){
-  const x=DB.get('inspirations').find(i=>i.id===id);
+  const x=DB.get('inspirations').find(i=>String(i.id)===String(id));
   if(!x)return;
   document.getElementById('inspModalTitle').textContent='编辑灵感';
   document.getElementById('inspId').value=x.id;
@@ -5719,14 +5730,14 @@ function editInsp(id){
 function deleteInsp(id,confirmed=false){
   if(!confirmed){confirmAction('确认删除这条灵感记录？',()=>deleteInsp(id,true));return;}
   const insps=DB.raw('inspirations');
-  const x=insps.find(i=>i.id===id);
+  const x=insps.find(i=>String(i.id)===String(id));
   if(x)x.deleted=true;
   DB.set('inspirations',insps);
   renderInspiration();toast('已删除');
 }
 
 function viewInsp(id){
-  const x=DB.get('inspirations').find(i=>i.id===id);
+  const x=DB.get('inspirations').find(i=>String(i.id)===String(id));
   if(!x)return;
   document.getElementById('detailTitle').textContent=x.title;
   document.getElementById('detailBody').innerHTML=`
@@ -5800,12 +5811,14 @@ function saveContract(){
   prepareOrgInputs('contractParty');
   if(!validDateOrder('contractSignDate','contractExpiry','合同签署日期不能晚于到期日期'))return;
   const contracts=DB.raw('contracts');
-  const id=+document.getElementById('contractId').value;
+  const formId=document.getElementById('contractId').value;
+  const id=contracts.find(r=>String(r.id)===String(formId))?.id??formId;
+  if(String(formId)!==''&&!contracts.some(r=>String(r.id)===String(formId)&&!r.deleted)){toast('原记录不存在或已删除');return;}
   const previousContract=existingRecord('contracts',id);
   const now=new Date().toISOString().slice(0,10);
   const item={
     ...existingRecord('contracts',id),
-    id:id||DB.nextId(contracts),
+    id:id!==''?id:DB.nextId(contracts),
     name,
     assignee:document.getElementById('contractAssignee').value.trim(),
     party:document.getElementById('contractParty').value,
@@ -5814,18 +5827,18 @@ function saveContract(){
     category:document.getElementById('contractCategory').value,
     signDate:document.getElementById('contractSignDate').value,
     expiry:document.getElementById('contractExpiry').value,
-    status:id?existingRecord('contracts',id).status:document.getElementById('contractStatus').value,
+    status:id!==''?existingRecord('contracts',id).status:document.getElementById('contractStatus').value,
     no:document.getElementById('contractNo').value,
     note:document.getElementById('contractNote').value,
     todoRef:null,
     deleted:false,
-    createdAt:now
+    createdAt:id!==''?existingRecord('contracts',id).createdAt:now
   };
   item.state=recordState('contracts',existingRecord('contracts',id));item.state_manual=true;
-  if(id){const i=contracts.findIndex(c=>c.id===id);if(i>-1){item.todoRef=contracts[i].todoRef;item.deleted=contracts[i].deleted;contracts[i]=item;}else contracts.push(item);}
+  if(id!==''){const i=contracts.findIndex(c=>String(c.id)===String(id));if(i>-1){item.todoRef=contracts[i].todoRef;item.deleted=contracts[i].deleted;contracts[i]=item;}else contracts.push(item);}
   else contracts.push(item);
   DB.set('contracts',contracts);
-  if(!id)completePendingLinkedRecord('contracts',item.id);
+  if(id==='')completePendingLinkedRecord('contracts',item.id);
   closeModal('contractModal');
   clearContractForm();
   renderContracts();
@@ -5833,7 +5846,7 @@ function saveContract(){
 }
 
 function editContract(id){
-  const c=DB.get('contracts').find(x=>x.id===id);
+  const c=DB.get('contracts').find(x=>String(x.id)===String(id));
   if(!c)return;
   document.getElementById('contractModalTitle').textContent='编辑合同';
   document.getElementById('contractId').value=c.id;
@@ -5862,7 +5875,7 @@ function deleteContract(id,confirmed=false){
   if(!confirmed){confirmAction('确认删除这条合同记录？',()=>deleteContract(id,true));return;}
   cleanupDeletedMatterRecord('contracts',id);
   const contracts=DB.raw('contracts');
-  const c=contracts.find(c=>c.id===id);
+  const c=contracts.find(c=>String(c.id)===String(id));
   if(c){
     c.deleted=true;
     DB.set('contracts',contracts);
@@ -5937,7 +5950,9 @@ function savePurchase(){
   if(!name){toast('请输入采购名称');return;}
   prepareOrgInputs('purchaseSupplier','purchaseContractDept','purchaseExpenseDept');
   const purchases=DB.raw('purchases');
-  const id=+document.getElementById('purchaseId').value;
+  const formId=document.getElementById('purchaseId').value;
+  const id=purchases.find(r=>String(r.id)===String(formId))?.id??formId;
+  if(String(formId)!==''&&!purchases.some(r=>String(r.id)===String(formId)&&!r.deleted)){toast('原记录不存在或已删除');return;}
   const previousPurchase=existingRecord('purchases',id);
   if(!validInternalOrgInput('purchaseContractDept',previousPurchase,'contractDept')||
      !validInternalOrgInput('purchaseExpenseDept',previousPurchase,'expenseDept')){
@@ -5946,7 +5961,7 @@ function savePurchase(){
   const now=new Date().toISOString().slice(0,10);
   const item={
     ...existingRecord('purchases',id),
-    id:id||DB.nextId(purchases),
+    id:id!==''?id:DB.nextId(purchases),
     name,
     assignee:document.getElementById('purchaseAssignee').value.trim(),
     supplier:document.getElementById('purchaseSupplier').value,
@@ -5954,7 +5969,7 @@ function savePurchase(){
     amount:+(document.getElementById('purchaseAmount').value||0),
     date:document.getElementById('purchaseDate').value,
     category:document.getElementById('purchaseCategory').value,
-    status:id?existingRecord('purchases',id).status:document.getElementById('purchaseStatus').value,
+    status:id!==''?existingRecord('purchases',id).status:document.getElementById('purchaseStatus').value,
     note:document.getElementById('purchaseNote').value,
     hasContract:document.getElementById('purchaseHasContract').value,
     contractDept:document.getElementById('purchaseContractDept').value,
@@ -5965,10 +5980,10 @@ function savePurchase(){
     items:(window._purchaseItems||[]).filter(i=>i&&i.name),
     todoRef:null,
     deleted:false,
-    createdAt:now
+    createdAt:id!==''?existingRecord('purchases',id).createdAt:now
   };
   item.state=recordState('purchases',existingRecord('purchases',id));item.state_manual=true;
-  if(id){const i=purchases.findIndex(p=>p.id===id);if(i>-1){item.todoRef=purchases[i].todoRef;item.deleted=purchases[i].deleted;purchases[i]=item;}else purchases.push(item);}
+  if(id!==''){const i=purchases.findIndex(p=>String(p.id)===String(id));if(i>-1){item.todoRef=purchases[i].todoRef;item.deleted=purchases[i].deleted;purchases[i]=item;}else purchases.push(item);}
   else purchases.push(item);
   DB.set('purchases',purchases);
 
@@ -6000,7 +6015,7 @@ function savePurchase(){
     (item.linked_ledgers??={}).expenses=autoExpense.id;
   }
   if(item.linked_ledgers)DB.set('purchases',purchases);
-  if(!id)completePendingLinkedRecord('purchases',item.id);
+  if(id==='')completePendingLinkedRecord('purchases',item.id);
 
 
   closeModal('purchaseModal');
@@ -6010,7 +6025,7 @@ function savePurchase(){
 }
 
 function editPurchase(id){
-  const p=DB.get('purchases').find(x=>x.id===id);
+  const p=DB.get('purchases').find(x=>String(x.id)===String(id));
   if(!p)return;
   document.getElementById('purchaseModalTitle').textContent='编辑采购';
   document.getElementById('purchaseId').value=p.id;
@@ -6223,7 +6238,7 @@ function deletePurchase(id,confirmed=false){
   if(!confirmed){confirmAction('确认删除这条采购记录？',()=>deletePurchase(id,true));return;}
   cleanupDeletedMatterRecord('purchases',id);
   const purchases=DB.raw('purchases');
-  const p=purchases.find(p=>p.id===id);
+  const p=purchases.find(p=>String(p.id)===String(id));
   if(p){
     p.deleted=true;
     DB.set('purchases',purchases);
@@ -6328,7 +6343,9 @@ function saveAgency(){
   if(!name){toast('请输入项目名称');return;}
   prepareOrgInputs('agencyAgent','agencySupplier','agencyDept');
   const agencys=DB.raw('agencys');
-  const id=+document.getElementById('agencyId').value;
+  const formId=document.getElementById('agencyId').value;
+  const id=agencys.find(r=>String(r.id)===String(formId))?.id??formId;
+  if(String(formId)!==''&&!agencys.some(r=>String(r.id)===String(formId)&&!r.deleted)){toast('原记录不存在或已删除');return;}
   const previousAgency=existingRecord('agencys',id);
   if(!validInternalOrgInput('agencyDept',previousAgency,'dept')){
     toast('需求科室只能从内部组织配置中选择');return;
@@ -6341,7 +6358,7 @@ function saveAgency(){
   const methodEl=document.getElementById('agencyMethodPlaceholder');
   const item={
     ...existingRecord('agencys',id),
-    id:id||DB.nextId(agencys.filter(a=>!a.deleted)),
+    id:id!==''?id:DB.nextId(agencys),
     name:name,
     assignee:document.getElementById('agencyAssignee').value.trim(),
     method:methodEl&&methodEl.dataset.selected?JSON.parse(methodEl.dataset.selected)[0]||'':'',
@@ -6352,7 +6369,7 @@ function saveAgency(){
     date:document.getElementById('agencyDate').value,
     agent:document.getElementById('agencyAgent').value.trim(),
     agent_org_id:orgIdForSave('agencyAgent',previousAgency,'agent_org_id','agent'),
-    status:id?existingRecord('agencys',id).status:document.getElementById('agencyStatus').value,
+    status:id!==''?existingRecord('agencys',id).status:document.getElementById('agencyStatus').value,
     dealAmount:deal,
     savingsRate:savingsRate,
     winSupplier:document.getElementById('agencySupplier').value.trim(),
@@ -6363,16 +6380,16 @@ function saveAgency(){
     docDate:document.getElementById('agencyDocDate').value,
     todoRef:null,
     deleted:false,
-    createdAt:now
+    createdAt:id!==''?existingRecord('agencys',id).createdAt:now
   };
   item.state=recordState('agencys',existingRecord('agencys',id));item.state_manual=true;
-  if(id){
-    const i=agencys.findIndex(a=>a.id===id);
+  if(id!==''){
+    const i=agencys.findIndex(a=>String(a.id)===String(id));
     if(i>-1){item.createdAt=agencys[i].createdAt;item.todoRef=agencys[i].todoRef;agencys[i]=item;}
     else agencys.push(item);
   }else agencys.push(item);
   DB.set('agencys',agencys);
-  if(!id)completePendingLinkedRecord('agencys',item.id);
+  if(id==='')completePendingLinkedRecord('agencys',item.id);
 
   closeModal('agencyModal');
   clearAgencyForm();
@@ -6381,7 +6398,7 @@ function saveAgency(){
 }
 
 function editAgency(id){
-  const a=DB.get('agencys').find(x=>x.id===id);
+  const a=DB.get('agencys').find(x=>String(x.id)===String(id));
   if(!a)return;
   document.getElementById('agencyModalTitle').textContent='编辑委托';
   document.getElementById('agencyId').value=a.id;
@@ -6410,7 +6427,7 @@ function deleteAgency(id,confirmed=false){
   if(!confirmed){confirmAction('确认删除这条委托记录？',()=>deleteAgency(id,true));return;}
   cleanupDeletedMatterRecord('agencys',id);
   const agencys=DB.raw('agencys');
-  const a=agencys.find(p=>p.id===id);
+  const a=agencys.find(p=>String(p.id)===String(id));
   if(a){a.deleted=true;DB.set('agencys',agencys);}
   renderAgencys();toast('已删除');
 }
@@ -6570,11 +6587,13 @@ function saveHandover(){
   });
   if(!items.some(it=>it.content)){toast('请填写交接物品内容');return;}
   const handovers=DB.raw('handovers');
-  const id=+document.getElementById('handoverId').value;
+  const formId=document.getElementById('handoverId').value;
+  const id=handovers.find(r=>String(r.id)===String(formId))?.id??formId;
+  if(String(formId)!==''&&!handovers.some(r=>String(r.id)===String(formId)&&!r.deleted)){toast('原记录不存在或已删除');return;}
   const now=new Date().toISOString().slice(0,10);
   const item={
     ...existingRecord('handovers',id),
-    id:id||DB.nextId(handovers.filter(h=>!h.deleted)),
+    id:id!==''?id:DB.nextId(handovers),
     date:date,
     assignee:document.getElementById('handoverAssignee').value.trim(),
     giver:giver,
@@ -6582,10 +6601,10 @@ function saveHandover(){
     note:document.getElementById('handoverNote').value.trim()||'',
     items:items,
     deleted:false,
-    createdAt:now
+    createdAt:id!==''?existingRecord('handovers',id).createdAt:now
   };
-  if(id){
-    const i=handovers.findIndex(h=>h.id===id);
+  if(id!==''){
+    const i=handovers.findIndex(h=>String(h.id)===String(id));
     if(i>-1){item.createdAt=handovers[i].createdAt;handovers[i]=item;}
     else handovers.push(item);
   }else handovers.push(item);
@@ -6597,7 +6616,7 @@ function saveHandover(){
 }
 
 function editHandover(id){
-  const h=DB.get('handovers').find(x=>x.id===id);
+  const h=DB.get('handovers').find(x=>String(x.id)===String(id));
   if(!h)return;
   document.getElementById('handoverModalTitle').textContent='编辑交接记录';
   document.getElementById('handoverId').value=h.id;
@@ -6616,7 +6635,7 @@ function editHandover(id){
 function deleteHandover(id,confirmed=false){
   if(!confirmed){confirmAction('确认删除这条交接记录？',()=>deleteHandover(id,true));return;}
   const handovers=DB.raw('handovers');
-  const h=handovers.find(p=>p.id===id);
+  const h=handovers.find(p=>String(p.id)===String(id));
   if(h){h.deleted=true;DB.set('handovers',handovers);}
   renderHandovers();toast('已删除');
 }
@@ -6649,6 +6668,7 @@ function subcategoryOptions(fundId,selected){
 function addFundSubcategory(sub){
   const row=document.createElement('div');
   row.className='fund-sub-row';
+  row._g2Original=sub?structuredClone(sub):{};
   row.dataset.id=sub?.id||('sc_'+Date.now()+'_'+Math.random().toString(36).slice(2,7));
   row.innerHTML=`<input class="form-control fund-sub-name" placeholder="类别名称，如差旅费" value="${esc(sub?.name||'')}"><input type="number" min="0" step="0.01" class="form-control fund-sub-budget" placeholder="预算金额" value="${sub?.budget??''}"><button class="btn btn-sm btn-ghost" type="button" onclick="this.parentElement.remove()">移除</button>`;
   document.getElementById('fundSubcategories').appendChild(row);
@@ -6662,7 +6682,7 @@ function readFundSubcategories(total){
     const budget=Number(raw);
     if(!name||raw===''||!Number.isFinite(budget)||budget<0){toast('请填写子类别名称和不小于 0 的预算');return null;}
     if(items.some(s=>s.name===name)){toast('子类别名称不能重复');return null;}
-    items.push({id:row.dataset.id,name,budget});
+    items.push({...row._g2Original,id:row._g2Original?.id??row.dataset.id,name,budget});
   }
   if(items.reduce((n,s)=>n+s.budget,0)>total+0.001){toast('子类别预算合计不能超过经费总金额');return null;}
   return items;
@@ -6790,21 +6810,23 @@ function saveFund(){
   const subcategories=readFundSubcategories(budget);
   if(!subcategories)return;
   const funds=DB.raw('funds');
-  const id=+document.getElementById('fundId').value;
+  const formId=document.getElementById('fundId').value;
+  const id=funds.find(r=>String(r.id)===String(formId))?.id??formId;
+  if(String(formId)!==''&&!funds.some(r=>String(r.id)===String(formId)&&!r.deleted)){toast('原记录不存在或已删除');return;}
   const now=new Date().toISOString().slice(0,10);
   const item={
     ...existingRecord('funds',id),
-    id:id||DB.nextId(funds),
+    id:id!==''?id:DB.nextId(funds),
     name:name,
     assignee:document.getElementById('fundAssignee').value.trim(),
     budget,
     subcategories,
     note:document.getElementById('fundNote').value.trim()||'',
     deleted:false,
-    createdAt:now
+    createdAt:id!==''?existingRecord('funds',id).createdAt:now
   };
-  if(id){
-    const i=funds.findIndex(f=>f.id===id);
+  if(id!==''){
+    const i=funds.findIndex(f=>String(f.id)===String(id));
     if(i>-1){item.createdAt=funds[i].createdAt;funds[i]=item;}
     else funds.push(item);
   }else funds.push(item);
@@ -6816,7 +6838,7 @@ function saveFund(){
 }
 
 function editFund(id){
-  const f=DB.get('funds').find(x=>x.id===id);
+  const f=DB.get('funds').find(x=>String(x.id)===String(id));
   if(!f)return;
   document.getElementById('fundModalTitle').textContent='编辑经费';
   document.getElementById('fundId').value=f.id;
@@ -6832,7 +6854,7 @@ function editFund(id){
 function deleteFund(id,confirmed=false){
   if(!confirmed){confirmAction('确认删除该经费及其所有开支记录？',()=>deleteFund(id,true));return;}
   const funds=DB.raw('funds');
-  const f=funds.find(p=>p.id===id);
+  const f=funds.find(p=>String(p.id)===String(id));
   if(f){f.deleted=true;DB.set('funds',funds);}
   // Also mark all related fundRecords as deleted
   const records=DB.raw('fundRecords');
@@ -6880,7 +6902,7 @@ function onFundRecordExpenseRefChange(){
     return;
   }
   const expenses=DB.get('expenses');
-  const exp=expenses.find(e=>e.id===+val);
+  const exp=expenses.find(e=>String(e.id)===String(val));
   if(!exp)return;
   // 仅新增模式才自动填充，编辑模式保留原有值
   if(!document.getElementById('fundRecordId').value){
@@ -6891,7 +6913,8 @@ function onFundRecordExpenseRefChange(){
 }
 
 function saveFundRecord(){
-  const fundId=+document.getElementById('fundRecordFundId').value;
+  const fundValue=document.getElementById('fundRecordFundId').value;
+  const fundId=DB.raw('funds').find(f=>String(f.id)===String(fundValue))?.id??fundValue;
   const date=document.getElementById('fundRecordDate').value;
   const content=document.getElementById('fundRecordContent').value.trim();
   const amount=+(document.getElementById('fundRecordAmount').value||0);
@@ -6901,7 +6924,9 @@ function saveFundRecord(){
   const subcategoryId=document.getElementById('fundRecordSubcategory').value||'';
   if(subcategoryId&&!fundSubcategories(fundId).some(s=>String(s.id)===subcategoryId)){toast('请选择当前经费下的子类别');return;}
   const records=DB.raw('fundRecords');
-  const id=+document.getElementById('fundRecordId').value;
+  const formId=document.getElementById('fundRecordId').value;
+  const id=records.find(r=>String(r.id)===String(formId))?.id??formId;
+  if(String(formId)!==''&&!records.some(r=>String(r.id)===String(formId)&&!r.deleted)){toast('原记录不存在或已删除');return;}
   const now=new Date().toISOString().slice(0,10);
   const expenseRef=document.getElementById('fundRecordExpenseRef').value||null;
   if(expenseRef){
@@ -6910,7 +6935,7 @@ function saveFundRecord(){
     if(!exp){toast('关联的报销记录不存在');return;}
     exp.fundItem=fundId;exp.subcategoryId=subcategoryId;exp.fund_link_migrated=true;
     DB.set('expenses',expenses);
-    if(id){
+    if(id!==''){
       // 编辑手工开支并改为关联报销时，用报销记录作为唯一金额来源。
       const old=records.find(r=>String(r.id)===String(id));
       if(old){old.deleted=true;DB.set('fundRecords',records);}
@@ -6919,19 +6944,19 @@ function saveFundRecord(){
   }
   const item={
     ...existingRecord('fundRecords',id),
-    id:id||DB.nextId(records),
+    id:id!==''?id:DB.nextId(records),
     fundId:fundId,
     subcategoryId,
     date:date,
     content:content,
     assignee:document.getElementById('fundRecordAssignee').value.trim(),
     amount:amount,
-    expenseRef:expenseRef?+expenseRef:null,
+    expenseRef:expenseRef||null,
     note:document.getElementById('fundRecordNote').value.trim()||'',
     deleted:false,
-    createdAt:now
+    createdAt:id!==''?existingRecord('fundRecords',id).createdAt:now
   };
-  if(id){
+  if(id!==''){
     const i=records.findIndex(r=>String(r.id)===String(id));
     if(i>-1){item.createdAt=records[i].createdAt;records[i]=item;}
     else records.push(item);
@@ -6939,7 +6964,7 @@ function saveFundRecord(){
   // If expenseRef is set, update the expense's fundItem field
   if(expenseRef){
     const expenses=DB.raw('expenses');
-    const exp=expenses.find(e=>e.id===+expenseRef);
+    const exp=expenses.find(e=>String(e.id)===String(expenseRef));
     if(exp){exp.fundItem=fundId;DB.set('expenses',expenses);}
   }
   DB.set('fundRecords',records);
@@ -6949,7 +6974,7 @@ function saveFundRecord(){
 }
 
 function editFundRecord(id){
-  const r=DB.get('fundRecords').find(x=>x.id===id);
+  const r=DB.get('fundRecords').find(x=>String(x.id)===String(id));
   if(!r)return;
   document.getElementById('fundRecordModalTitle').textContent='编辑开支记录';
   document.getElementById('fundRecordId').value=r.id;
@@ -6969,7 +6994,7 @@ function editFundRecord(id){
 function deleteFundRecord(id,confirmed=false){
   if(!confirmed){confirmAction('确认删除该开支记录？',()=>deleteFundRecord(id,true));return;}
   const records=DB.raw('fundRecords');
-  const r=records.find(p=>p.id===id);
+  const r=records.find(p=>String(p.id)===String(id));
   if(r){r.deleted=true;DB.set('fundRecords',records);}
   renderFunds();toast('已删除');
 }
@@ -7088,16 +7113,18 @@ function saveExpense(){
   if(fundItem&&!DB.get('funds').some(f=>String(f.id)===String(fundItem))){toast('关联的经费项目不存在');return;}
   if(subcategoryId&&!fundSubcategories(fundItem).some(s=>String(s.id)===String(subcategoryId))){toast('请选择该经费项目下的子类别');return;}
   const expenses=DB.raw('expenses');
-  const id=+document.getElementById('expenseId').value;
+  const formId=document.getElementById('expenseId').value;
+  const id=expenses.find(r=>String(r.id)===String(formId))?.id??formId;
+  if(String(formId)!==''&&!expenses.some(r=>String(r.id)===String(formId)&&!r.deleted)){toast('原记录不存在或已删除');return;}
   const previousExpense=existingRecord('expenses',id);
-  const status=id?existingRecord('expenses',id).status:document.getElementById('expenseStatus').value;
+  const status=id!==''?existingRecord('expenses',id).status:document.getElementById('expenseStatus').value;
   // 已报销时自动记录报销日期
   let reimbDate=document.getElementById('expenseReimbDate').value;
-  if(!id&&status==='已报销'&&!reimbDate)reimbDate=new Date().toISOString().slice(0,10);
+  if(id===''&&status==='已报销'&&!reimbDate)reimbDate=new Date().toISOString().slice(0,10);
   const now=new Date().toISOString().slice(0,10);
   const item={
     ...existingRecord('expenses',id),
-    id:id||DB.nextId(expenses),
+    id:id!==''?id:DB.nextId(expenses),
     appDate,
     supplier:document.getElementById('expenseSupplier').value.trim(),
     supplier_org_id:orgIdForSave('expenseSupplier',previousExpense,'supplier_org_id','supplier'),
@@ -7116,13 +7143,13 @@ function saveExpense(){
     fund_link_migrated:true,
     todoRef:null,
     deleted:false,
-    createdAt:now
+    createdAt:id!==''?existingRecord('expenses',id).createdAt:now
   };
   item.state=recordState('expenses',existingRecord('expenses',id));item.state_manual=true;
-  if(id){const i=expenses.findIndex(e=>e.id===id);if(i>-1){item.todoRef=expenses[i].todoRef;item.deleted=expenses[i].deleted;expenses[i]=item;}else expenses.push(item);}
+  if(id!==''){const i=expenses.findIndex(e=>String(e.id)===String(id));if(i>-1){item.todoRef=expenses[i].todoRef;item.deleted=expenses[i].deleted;expenses[i]=item;}else expenses.push(item);}
   else expenses.push(item);
   DB.set('expenses',expenses);
-  if(!id)completePendingLinkedRecord('expenses',item.id);
+  if(id==='')completePendingLinkedRecord('expenses',item.id);
   closeModal('expenseModal');
   clearExpenseForm();
   renderExpenses();
@@ -7131,7 +7158,7 @@ function saveExpense(){
 }
 
 function editExpense(id){
-  const e=DB.get('expenses').find(x=>x.id===id);
+  const e=DB.get('expenses').find(x=>String(x.id)===String(id));
   if(!e)return;
   document.getElementById('expenseModalTitle').textContent='编辑报销';
   document.getElementById('expenseId').value=e.id;
@@ -7194,7 +7221,7 @@ function deleteExpense(id,confirmed=false){
   if(!confirmed){confirmAction('确认删除这条报销记录？',()=>deleteExpense(id,true));return;}
   cleanupDeletedMatterRecord('expenses',id);
   const expenses=DB.raw('expenses');
-  const e=expenses.find(e=>e.id===id);
+  const e=expenses.find(e=>String(e.id)===String(id));
   if(e){
     e.deleted=true;
     DB.set('expenses',expenses);
@@ -7273,7 +7300,9 @@ function saveMeeting(){
   if(!validDateOrder('meetingDate','meetingNextDate','下次会议日期不能早于本次会议日期'))return;
 
   const meetings=DB.raw('meetings');
-  const id=+document.getElementById('meetingId').value;
+  const formId=document.getElementById('meetingId').value;
+  const id=meetings.find(r=>String(r.id)===String(formId))?.id??formId;
+  if(String(formId)!==''&&!meetings.some(r=>String(r.id)===String(formId)&&!r.deleted)){toast('原记录不存在或已删除');return;}
   const previous=existingRecord('meetings',id);
   prepareOrgInputs('meetingOrganizer');
   const now=new Date().toISOString().slice(0,10);
@@ -7284,6 +7313,7 @@ function saveMeeting(){
     const text=row.querySelector('.ai-text')?.value?.trim();
     if(text){
       actionItems.push({
+        ...(row._g2Original||{}),
         text:text,
         assignee:row.querySelector('.ai-assignee')?.value?.trim()||'',
         deadline:row.querySelector('.ai-deadline')?.value||'',
@@ -7294,7 +7324,7 @@ function saveMeeting(){
 
   const item={
     ...previous,
-    id:id||DB.nextId(meetings),
+    id:id!==''?id:DB.nextId(meetings),
     name,
     assignee:document.getElementById('meetingAssignee').value.trim(),
     date,
@@ -7312,15 +7342,15 @@ function saveMeeting(){
     nextMeetingDate:document.getElementById('meetingNextDate').value,
     todoRef:null,
     deleted:false,
-    createdAt:now
+    createdAt:id!==''?existingRecord('meetings',id).createdAt:now
   };
-  if(id){
-    const i=meetings.findIndex(m=>m.id===id);
+  if(id!==''){
+    const i=meetings.findIndex(m=>String(m.id)===String(id));
     if(i>-1){item.todoRef=meetings[i].todoRef;item.deleted=meetings[i].deleted;meetings[i]=item;}
     else meetings.push(item);
   }else meetings.push(item);
   DB.set('meetings',meetings);
-  if(!id)completePendingLinkedRecord('meetings',item.id);
+  if(id==='')completePendingLinkedRecord('meetings',item.id);
 
   closeModal('meetingModal');
   clearMeetingForm();
@@ -7329,7 +7359,7 @@ function saveMeeting(){
 }
 
 function editMeeting(id){
-  const m=DB.get('meetings').find(x=>x.id===id);
+  const m=DB.get('meetings').find(x=>String(x.id)===String(id));
   if(!m)return;
   document.getElementById('meetingModalTitle').textContent='编辑会议';
   document.getElementById('meetingId').value=m.id;
@@ -7358,7 +7388,7 @@ function deleteMeeting(id,confirmed=false){
   if(!confirmed){confirmAction('确认删除此会议？',()=>deleteMeeting(id,true));return;}
   cleanupDeletedMatterRecord('meetings',id);
   const meetings=DB.raw('meetings');
-  const m=meetings.find(m=>m.id===id);
+  const m=meetings.find(m=>String(m.id)===String(id));
   if(m){
     m.deleted=true;
     DB.set('meetings',meetings);
@@ -7398,7 +7428,9 @@ function addMeetingActionItem(data){
     <label style="font-size:11px;white-space:nowrap;display:flex;align-items:center;gap:2px"><input type="checkbox" class="ai-done" ${done?'checked':''}> 完成</label>
     <button class="btn btn-ghost btn-sm" onclick="this.closest('.action-item-row').remove()" style="color:var(--color-danger);padding:2px 4px">×</button>
   </div>`;
-  document.getElementById('meetingActionItems').insertAdjacentHTML('beforeend',html);
+  const container=document.getElementById('meetingActionItems');
+  container.insertAdjacentHTML('beforeend',html);
+  container.lastElementChild._g2Original=data?structuredClone(data):{};
 }
 
 // ============================================================
@@ -7494,14 +7526,16 @@ function saveTraining(){
   if(!validDateOrder('trainingStartDate','trainingEndDate','培训开始日期不能晚于结束日期'))return;
 
   const trainings=DB.raw('trainings');
-  const id=+document.getElementById('trainingId').value;
+  const formId=document.getElementById('trainingId').value;
+  const id=trainings.find(r=>String(r.id)===String(formId))?.id??formId;
+  if(String(formId)!==''&&!trainings.some(r=>String(r.id)===String(formId)&&!r.deleted)){toast('原记录不存在或已删除');return;}
   const previous=existingRecord('trainings',id);
   prepareOrgInputs('trainingOrganizer');
   const now=new Date().toISOString().slice(0,10);
 
   const item={
     ...previous,
-    id:id||DB.nextId(trainings),
+    id:id!==''?id:DB.nextId(trainings),
     name,
     assignee:document.getElementById('trainingAssignee').value.trim(),
     organizer:document.getElementById('trainingOrganizer').value.trim(),
@@ -7512,27 +7546,34 @@ function saveTraining(){
     endDate:document.getElementById('trainingEndDate').value,
     credits:+(document.getElementById('trainingCredits').value||0),
     creditType:document.getElementById('trainingCreditType').value.trim(),
-    hasCertificate:document.getElementById('trainingHasCertificate').checked,
-    certificateNo:document.getElementById('trainingCertNo').value.trim(),
-    certificateExpiry:document.getElementById('trainingCertExpiry').value,
-    fee:+(document.getElementById('trainingFee').value||0),
-    feeStatus:document.getElementById('trainingFeeStatus').value,
-    hasExam:document.getElementById('trainingHasExam').checked,
-    examDate:document.getElementById('trainingExamDate').value,
-    examResult:document.getElementById('trainingExamResult').value,
+    hasCertificate:document.getElementById('trainingHasCertificate')?.checked??previous.hasCertificate??false,
+    certificateNo:document.getElementById('trainingCertNo')?.value?.trim()??previous.certificateNo??'',
+    certificateExpiry:document.getElementById('trainingCertExpiry')?.value??previous.certificateExpiry??'',
+    fee:document.getElementById('trainingFee')?Number(document.getElementById('trainingFee').value||0):previous.fee??0,
+    feeStatus:document.getElementById('trainingFeeStatus')?.value??previous.feeStatus??'',
+    hasExam:document.getElementById('trainingHasExam')?.checked??previous.hasExam??false,
+    examDate:document.getElementById('trainingExamDate')?.value??previous.examDate??'',
+    examResult:document.getElementById('trainingExamResult')?.value??previous.examResult??'',
     content:document.getElementById('trainingContent').value.trim(),
     attachment:document.getElementById('trainingAttachment').value.trim(),
     todoRef:null,
     deleted:false,
-    createdAt:now
+    createdAt:id!==''?existingRecord('trainings',id).createdAt:now
   };
-  if(id){
-    const i=trainings.findIndex(t=>t.id===id);
+  const locationInput=document.getElementById('trainingLocation');
+  const daysInput=document.getElementById('trainingDays');
+  const trainingPatch={};
+  if(locationInput)trainingPatch.location=locationInput.value;
+  if(daysInput)trainingPatch.days=daysInput.value.trim()===''?null:Number(daysInput.value);
+  try{Object.assign(item,G2B1.writeTraining(item,trainingPatch));}
+  catch(error){toast(error.message);return;}
+  if(id!==''){
+    const i=trainings.findIndex(t=>String(t.id)===String(id));
     if(i>-1){item.todoRef=trainings[i].todoRef;item.deleted=trainings[i].deleted;trainings[i]=item;}
     else trainings.push(item);
   }else trainings.push(item);
   DB.set('trainings',trainings);
-  if(!id)completePendingLinkedRecord('trainings',item.id);
+  if(id==='')completePendingLinkedRecord('trainings',item.id);
 
   closeModal('trainingModal');
   clearTrainingForm();
@@ -7541,7 +7582,7 @@ function saveTraining(){
 }
 
 function editTraining(id){
-  const t=DB.get('trainings').find(x=>x.id===id);
+  const t=DB.get('trainings').find(x=>String(x.id)===String(id));
   if(!t)return;
   document.getElementById('trainingModalTitle').textContent='编辑培训';
   document.getElementById('trainingId').value=t.id;
@@ -7574,7 +7615,7 @@ function deleteTraining(id,confirmed=false){
   if(!confirmed){confirmAction('确认删除此培训记录？',()=>deleteTraining(id,true));return;}
   cleanupDeletedMatterRecord('trainings',id);
   const trainings=DB.raw('trainings');
-  const t=trainings.find(t=>t.id===id);
+  const t=trainings.find(t=>String(t.id)===String(id));
   if(t){
     t.deleted=true;
     DB.set('trainings',trainings);
@@ -7605,8 +7646,7 @@ function clearTrainingForm(){
 // ============================================================
 //  EXPORT / IMPORT DATA
 // ============================================================
-const SYNC_BUSINESS_KEYS=['todos','inspirations','contracts','purchases','expenses','meetings',
-  'trainings','agencys','handovers','funds','fundRecords','quick_notes','matters'];
+const SYNC_BUSINESS_KEYS=G2B1.BUSINESS_KEYS;
 const SYNC_REMOTE_PATH='data.json';
 function normalizedSyncRows(data,key){
   return (Array.isArray(data?.[key])?data[key]:[]).filter(row=>row&&!row.deleted);
@@ -7647,11 +7687,7 @@ function safeSyncErrorMessage(error,token){
   return message;
 }
 function dumpData(){
-  const data={};
-  SYNC_BUSINESS_KEYS.forEach(key=>{data[key]=DB.get(key);});
-  data.config=getConfig();
-  data.exportedAt=new Date().toISOString();
-  return data;
+  return G2B1.exchangeSnapshot(Object.fromEntries(SYNC_BUSINESS_KEYS.map(key=>[key,DB.get(key)])),getConfig());
 }
 
 function exportData(){
@@ -8312,11 +8348,11 @@ function smartSave(){
   const due = normalizeDate(String(fields.deadline||fields.date||'').replace(/年|月/g,'-').replace(/日/g,''));
   const prio = (fields.title&&/急|紧急|尽快|马上|立即/.test(fields.title))?'重要且紧急':'不重要不紧急';
   if(cat==='inspiration'){
-    const insps=DB.get('inspirations');
+    const insps=DB.raw('inspirations');
     insps.push({id:DB.nextId(insps),title:text.slice(0,30),content:text,tags:['想法'],state:initialState,state_manual:true,owner_ledger:'inspirations',assignee,createdAt:todayStr(),archived_to:null,deleted:false});
     DB.set('inspirations',insps);
   } else if(cat==='reminder'){
-    createLedgerItem('todos',{title:text,requirement:'',due_date:due,priority:'重要且紧急',state:initialState,extra:{assignee}, parentGoal: sGoalVal?+sGoalVal:undefined});
+    createLedgerItem('todos',{title:text,requirement:'',due_date:due,priority:'重要且紧急',state:initialState,extra:{assignee}, parentGoal: sGoalVal?(/^\d+$/.test(sGoalVal)?Number(sGoalVal):sGoalVal):undefined});
   } else if(cat==='goal'){
     // 长期目标是 todos 中 owner_ledger=todos 的独立目标记录，不能写入不存在的 goals 台账。
     createLedgerItem('todos',{title:text,requirement:text,due_date:due,priority:prio,isGoal:true,state:initialState,extra:{assignee}});
@@ -8327,7 +8363,7 @@ function smartSave(){
     if(due)extra.date=due;
     if(cat==='expenses'&&due)extra.appDate=due;
     if(cat==='trainings'&&due)extra.startDate=due;
-    createLedgerItem(cat,{title:fields.title||fields.name||text.slice(0,60),requirement:text,due_date:due,priority:prio,state:initialState,extra,parentGoal:sGoalVal?+sGoalVal:undefined});
+    createLedgerItem(cat,{title:fields.title||fields.name||text.slice(0,60),requirement:text,due_date:due,priority:prio,state:initialState,extra,parentGoal:sGoalVal?(/^\d+$/.test(sGoalVal)?Number(sGoalVal):sGoalVal):undefined});
   }
   smartClear();
   closeModal('smartModal');
@@ -8553,19 +8589,20 @@ function normalizeSubtasks(items,parentId=''){
   return (Array.isArray(items)?items:[]).map((raw,index)=>{
     const s=raw&&typeof raw==='object'?raw:{};
     const completed=Boolean(s.completed??s.done);
-    const created=s.created_at||s.createdAt||s.addTime||s.date||todayStr();
+    const created=s.created_at||s.createdAt||s.addTime||s.date||'';
     return {
-      id:String(s.id||('sub_'+(parentId||'legacy')+'_'+index+'_'+created.replace(/[^0-9]/g,''))),
+      ...s,
+      id:s.id??('sub_'+(parentId||'legacy')+'_'+index+'_'+String(created).replace(/[^0-9]/g,'')),
       name:String(s.name??s.text??'').trim(),
       start_date:s.start_date||s.startDate||'',
       due_date:s.due_date||s.dueDate||'',
-      completed_date:completed?(s.completed_date||s.completedDate||s.completeTime||''): '',
+      completed_date:s.completed_date||s.completedDate||s.completeTime||'',
       completed,
       sort_order:Number.isFinite(+s.sort_order)?+s.sort_order:index,
       created_at:created,
       updated_at:s.updated_at||s.updatedAt||created
     };
-  }).filter(s=>s.name).sort((a,b)=>a.sort_order-b.sort_order).map((s,index)=>Object.assign(s,{sort_order:index}));
+  }).sort((a,b)=>a.sort_order-b.sort_order);
 }
 function workSubtasks(todo){return normalizeSubtasks(todo?.subtasks||[],todo?.id);}
 function subtaskSummary(todo){
@@ -8633,7 +8670,7 @@ function moveSubtaskTo(todoId,from,to){
 }
 function dropSubtask(todoId,targetId){
   const todo=DB.get('todos').find(t=>String(t.id)===String(todoId)); const list=workSubtasks(todo);
-  const from=list.findIndex(s=>s.id===v16DraggedSubtaskId), to=list.findIndex(s=>s.id===targetId);
+  const from=list.findIndex(s=>String(s.id)===String(v16DraggedSubtaskId)), to=list.findIndex(s=>String(s.id)===String(targetId));
   v16DraggedSubtaskId=''; return moveSubtaskTo(todoId,from,to);
 }
 function editCardSubtask(todoId,idx){
@@ -8879,6 +8916,7 @@ function removeObsoleteInvoiceCredentials(){
     }catch(e){console.warn('旧备份无法解析，未改动');}
   }
 }
+if(!window.g2B2Enabled&&!window.G2B5Enabled){
 removeObsoleteInvoiceCredentials();
 loadSettings();
 checkBackup();
@@ -8918,10 +8956,60 @@ checkReminders(); updateRemindPermBtn(); // v1.4 提醒：启动即扫描到期/
     }
   });
 })();
+}
+// I03 startup barrier: old system operations cannot run while modules/inspection
+// are pending or rejected. GITEE is lexical, not a window property.
+if(window.G2B5Enabled){
+ for(const name of ['importData','restoreV14','saveSettings','loadSettings','checkBackup','manualPush','manualPull','testSync','deployHTML'])window[name]=()=>{throw Error('SYSTEM_OPERATION_NOT_AUTHORIZED');};
+ GITEE.push=GITEE.pull=async()=>({ok:false,status:'blocked',code:'I04_NOT_AUTHORIZED'});
+ // I04 uses a separately versioned coordinator. Retired helpers cannot read
+ // device credentials, issue legacy requests or overwrite its unknown state.
+ GITEE.getConfig=()=>{throw Error('CONNECTION_NOT_BOUND');};
+ GITEE.isConfigured=()=>!!window.G2B5_SYNC;
+ for(const name of ['_rememberSha','_resolveTarget','_readApiFile'])GITEE[name]=()=>{throw Error('LEGACY_SYNC_BLOCKED');};
+ DB.set=()=>{throw Error('UNCLASSIFIED_WRITE');};
+ getConfig=saveConfig=()=>{throw Error('NOT_READY');};
+ window.addEventListener('click',event=>{if(!window.G2B5Started){event.preventDefault();event.stopImmediatePropagation();}},true);
+}
 </script>
 
 <!-- 全局悬浮速记按钮（v1.4） -->
 <button class="fab-quick" onclick="openSmartModal()" title="快速记录/智能录入">+</button>
 
+<script src="scripts/g2-b2-core.js" integrity="sha256-lxX/xXgnNLmQdV+bMoOtoR16IRkehVsCBNCrKFgEo7Q="></script>
+<script>if(window.g2B2Enabled){document.querySelectorAll("style,link[rel=stylesheet]").forEach(e=>{if(e.id!=="g2-startup-style"&&!e.href?.includes("assets/ui2/"))e.disabled=true;});}else{document.querySelectorAll("link[href*=\"assets/ui2/\"]").forEach(e=>e.disabled=true);}</script>
+<script src="scripts/g2-b3-core.js" integrity="sha256-h90d4bWd0ToIbhDDkK+GhMU1Tq45lHORAC1ebRDrywM="></script>
+<script src="scripts/g2-b4-core.js" integrity="sha256-lLQpYLblNJxVBQDVp24ryZnLS60M9oETNhXo1/g0zFE="></script>
+<script src="scripts/g2-b5-core.js" integrity="sha256-6nisjiJxmaM9t5t51F+PurtS6i68v2nSdzw+FM+NKwc="></script>
+<script src="scripts/g2-b5-storage.js" integrity="sha256-LrMze/AOXbiasejuX+hDqwYkgCvUTSIiua5JrLA+3NI="></script>
+<script src="scripts/g2-b5-bindings.js" integrity="sha256-RXFiMu6vncxtvYZovh7m2gT3CdTC0Ad99ZQLctiLjgs="></script>
+<script src="scripts/g2-b5-sync.js" integrity="sha256-EZ0Z4WdgYKVw6U5S/zAV4FTGQV3mDzxl1fAH71k09ns="></script>
+<script src="scripts/g2-b5-ui.js" integrity="sha256-qIeOMI7F0K7+XEWdvt85EGlDQmCmqr4dmiK2/jHrkqM="></script>
+<script>
+// I03 waits for strict storage/lock inspection; no fallback writer or migration.
+window.G2B5Ready=(async()=>{
+ if(!window.G2B5Boot)throw Error('BUILD_GATE_MISSING');
+ const build=await window.G2B5Boot.ready;window.G2B5_BOOT_VERIFIED=build.buildId;
+ if(!window.G2B5Core?.validateExchange||!window.G2B5Storage?.createAdapter||!window.G2B5Storage?.createWebLocksGate||!window.G2B5Bindings?.installBrowser||!window.G2B5Sync?.createSyncLock||!window.G2B5UI?.createController)throw Error('BUILD_CAPABILITY_MISMATCH');
+ if(window.G2B5Startup.state!=='pending')throw Error('STARTUP_DEADLINE_EXCEEDED');
+ window.G2B5Boot.release();
+ const app=await G2B5Bindings.installBrowser(window,{db:DB,optionsCache:OPTIONS_STORE});
+ const load=path=>new Promise((resolve,reject)=>{if(window.G2B5Startup.state!=='pending')return reject(Error('STARTUP_DEADLINE_EXCEEDED'));const script=document.createElement('script');const asset=build.assets.find(a=>a.path===path);if(!asset)return reject(Error('BUILD_MODULE_UNDECLARED'));script.src=path;script.integrity='sha256-'+btoa(String.fromCharCode(...asset.sha256.match(/../g).map(x=>parseInt(x,16))));script.onload=()=>window.G2B5Startup.state==='pending'?resolve():reject(Error('STARTUP_DEADLINE_EXCEEDED'));script.onerror=()=>reject(Error('MODULE_LOAD_FAILED'));document.body.append(script);});
+ const fixtureDeps=['127.0.0.1','localhost'].includes(location.hostname)?window.G2B5_SYSTEM_DEPS||{}:{};
+ const transport=fixtureDeps.transport||G2B5Sync.createApiTransport({fetch:window.fetch.bind(window),baseUrl:'https://gitee.com/api/v5',authorized:true});
+ const system=await app.bootSystem({transport,...(fixtureDeps.now?{now:fixtureDeps.now}:{})});G2B5UI.bind(system);
+ if(!app.recoveryOnly){
+  for(const path of ['g2-b2-bindings.js','g2-b3-bindings.js','g2-b3-ui.js','g2-b4-bindings.js','g2-b4-ui.js','g2-b2-ui.js'])await load('scripts/'+path);
+  if(!window.G2B4_APP||window.g2B2Enabled&&(!window.G2B2_APP||!window.G2B3_APP||!window.G2B4_UI))throw Error('MODULE_INITIALIZATION_FAILED');
+ }
+ app.seal();
+ // Final system UI is the only public system-operation dispatcher.
+ GITEE.push=()=>system.push();GITEE.pull=()=>Promise.resolve({ok:false,status:'blocked',code:'FINAL_UI_CONFIRMATION_REQUIRED'});
+ window.manualPush=()=>system.push();window.manualPull=()=>{location.hash='settings';return Promise.resolve({ok:false,status:'confirmation-required'});};
+ if(app.recoveryOnly){G2B5UI.mountRecovery(system);window.G2B5Started=true;return app;}
+ window.G2B5Started=true;await load('scripts/g2-b2-legacy.js');return app;
+})();
+window.G2B5Ready.then(()=>window.G2B5Startup.complete(),()=>window.G2B5Startup.fail());
+</script>
 </body>
 </html>
